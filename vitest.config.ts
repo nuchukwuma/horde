@@ -43,6 +43,7 @@ export default defineConfig({
         'src/lib/auth/password.ts',
         'src/lib/auth/cookies.ts',
         'src/lib/audit.ts',
+        'src/lib/webhooks/paystackEvent.ts',
       ],
       // Type-only modules emit no runtime code and only distort the report.
       exclude: ['**/types.ts'],

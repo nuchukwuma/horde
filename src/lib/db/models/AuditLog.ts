@@ -29,7 +29,9 @@ export type AuditAction =
   | 'membership.granted'
   | 'membership.revoked'
   | 'order.refunded'
-  | 'plan.changed';
+  | 'plan.changed'
+  /** Paystack reported an amount or currency that disagrees with the order. */
+  | 'webhook.amount_mismatch';
 
 export interface AuditLogAttributes {
   _id: Types.ObjectId;
