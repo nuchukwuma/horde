@@ -163,14 +163,14 @@ describe('who bears the Paystack fee', () => {
 
 describe('conservation — no kobo is created or destroyed', () => {
   it('balances when the seller bears the processing fee', () => {
-    for (let gross = 1_000; gross < 5_000_000; gross += 37_337) {
+    for (let gross = 10_000; gross < 5_000_000; gross += 37_337) {
       const split = computeSplit(gross, { ...proPlan, vatOnPlatformFeeBps: 750 });
       expect(split.transactionChargeKobo + split.paystackFee + split.sellerNet).toBe(gross);
     }
   });
 
   it('balances when the platform bears the processing fee', () => {
-    for (let gross = 1_000; gross < 5_000_000; gross += 37_337) {
+    for (let gross = 10_000; gross < 5_000_000; gross += 37_337) {
       const split = computeSplit(gross, {
         ...proPlan,
         vatOnPlatformFeeBps: 750,
@@ -194,7 +194,7 @@ describe('conservation — no kobo is created or destroyed', () => {
     ];
 
     for (const plan of shapes) {
-      for (const gross of [100, 2_500, 249_999, 250_000, 1_000_000, 99_999_999]) {
+      for (const gross of [10_000, 249_999, 250_000, 1_000_000, 99_999_999]) {
         const split = computeSplit(gross, plan);
         const paystackShare = plan.paystackFeeBearer === 'seller' ? split.paystackFee : 0;
         expect(
@@ -203,6 +203,32 @@ describe('conservation — no kobo is created or destroyed', () => {
         ).toBe(gross);
       }
     }
+  });
+
+  it('balances for a plan with no flat component, down to one kobo', () => {
+    // A purely percentage-based plan has no minimum viable order.
+    for (const gross of [1, 2, 99, 100, 2_500]) {
+      const split = computeSplit(gross, freePlan);
+      expect(split.transactionChargeKobo + split.paystackFee + split.sellerNet).toBe(gross);
+    }
+  });
+});
+
+describe('a flat fee creates a minimum viable order size', () => {
+  // Worth stating outright: with a ₦50 flat fee, a ₦10 order cannot be priced —
+  // the fee plus Paystack's cut exceeds what the customer paid. Checkout must
+  // surface this rather than letting a seller list unsellable items.
+  it('refuses an order smaller than the flat fee', () => {
+    expect(() => computeSplit(1_000, proPlan)).toThrow(FeeConfigurationError);
+  });
+
+  it('prices an order comfortably above the flat fee', () => {
+    const split = computeSplit(10_000, proPlan);
+    expect(split.sellerNet).toBeGreaterThan(0);
+  });
+
+  it('says what went wrong, in kobo', () => {
+    expect(() => computeSplit(1_000, proPlan)).toThrow(/exceed the order total of 1000 kobo/);
   });
 });
 
