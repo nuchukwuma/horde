@@ -8,7 +8,7 @@
 
 import type { Types } from 'mongoose';
 import { Membership, type SiteRole, type StaffPermission } from '../db/models/Membership';
-import { Site, type SiteAttributes } from '../db/models/Site';
+import { Site, type SiteDocument } from '../db/models/Site';
 import { ForbiddenError, NotFoundError } from '../errors';
 import type { AuthenticatedSession } from './session';
 
@@ -21,7 +21,7 @@ export function assertPlatformAdmin(session: AuthenticatedSession): void {
 }
 
 export interface SiteAccess {
-  site: SiteAttributes;
+  site: SiteDocument;
   role: SiteRole | 'platform_admin';
   permissions: StaffPermission[];
 }

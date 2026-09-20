@@ -9,3 +9,4 @@
 | [0005](0005-host-only-session-cookies.md) | Host-only session cookies, never a wildcard domain | accepted | 2026-09-20 |
 | [0006](0006-append-only-ledger.md) | Append-only ledger corrected by reversing entries | accepted | 2026-09-20 |
 | [0007](0007-never-hold-seller-funds.md) | Never hold seller funds | accepted | 2026-09-20 |
+| [0008](0008-never-store-bank-account-numbers.md) | Never store bank account numbers | accepted | 2026-09-20 |

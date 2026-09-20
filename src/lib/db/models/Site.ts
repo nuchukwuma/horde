@@ -4,7 +4,7 @@
  * Site itself is not tenant-scoped — it is the thing that defines the scope.
  */
 
-import mongoose, { Schema, type Model, type Types } from 'mongoose';
+import mongoose, { Schema, type HydratedDocument, type Model, type Types } from 'mongoose';
 import { SLUG_MAX_LENGTH, SLUG_MIN_LENGTH, validateSlug } from '../../tenant/reserved';
 
 export type SiteStatus = 'active' | 'suspended' | 'closed';
@@ -13,16 +13,15 @@ export type PayoutStatus = 'unset' | 'pending' | 'verified' | 'rejected';
 export interface SitePayout {
   businessName?: string;
   bankCode?: string;
-  /** Last four digits only. Safe to display, safe to log. */
-  accountNumberLast4?: string;
   /**
-   * Full account number, encrypted at rest with PAYOUT_ENCRYPTION_KEY.
+   * Last four digits only. Safe to display, safe to log.
    *
-   * Only needed to create the Paystack subaccount. Once subaccountCode exists,
-   * this should be cleared — the number is regulated personal financial data
-   * under the NDPA and keeping it past its purpose is pure liability.
+   * The full account number is deliberately never stored. It is needed once, to
+   * create the Paystack subaccount, and after that the subaccount code is what
+   * payouts route through. Under the NDPA it is regulated financial data, and
+   * data we do not hold cannot leak.
    */
-  accountNumberEnc?: string | null;
+  accountNumberLast4?: string;
   /** Account name as returned by Paystack's resolve endpoint, never user-typed. */
   resolvedAccountName?: string;
   /** Paystack subaccount code, e.g. ACCT_xxxxxxxx. */
@@ -109,7 +108,6 @@ const siteSchema = new Schema<SiteAttributes>(
       businessName: { type: String, trim: true, maxlength: 200 },
       bankCode: { type: String, trim: true, maxlength: 10 },
       accountNumberLast4: { type: String, trim: true, maxlength: 4 },
-      accountNumberEnc: { type: String, default: null, select: false },
       resolvedAccountName: { type: String, trim: true, maxlength: 200 },
       subaccountCode: { type: String, trim: true, index: true, sparse: true },
       status: {
@@ -154,6 +152,9 @@ siteSchema.methods.canAcceptPayments = function canAcceptPayments(now = new Date
 export interface SiteMethods {
   canAcceptPayments(now?: Date): { allowed: boolean; reason?: string };
 }
+
+/** A loaded Site, carrying its instance methods. */
+export type SiteDocument = HydratedDocument<SiteAttributes, SiteMethods>;
 
 export const Site: Model<SiteAttributes, Record<string, never>, SiteMethods> =
   (mongoose.models.Site as Model<SiteAttributes, Record<string, never>, SiteMethods>) ??
