@@ -9,7 +9,12 @@
 import { describe, expect, it } from 'vitest';
 import { Types } from 'mongoose';
 import { isReservedSlug, validateSlug } from '../../src/lib/tenant/reserved';
-import { resolveHost, normalizeHostname } from '../../src/lib/tenant/resolveHost';
+import {
+  isReservedHost,
+  normalizeHostname,
+  readHostConfigFromEnv,
+  resolveHost,
+} from '../../src/lib/tenant/resolveHost';
 import { Site } from '../../src/lib/db/models/Site';
 import { createSiteSchema } from '../../src/lib/validation/schemas';
 
@@ -176,5 +181,40 @@ describe('host resolution', () => {
   it('refuses a malformed tenant label', () => {
     expect(resolveHost('-bad.hordemart.com', config).kind).toBe('invalid');
     expect(resolveHost('ab.hordemart.com', config).kind).toBe('invalid'); // too short
+  });
+});
+
+describe('isReservedHost', () => {
+  it('treats a legitimate tenant host as available', () => {
+    expect(isReservedHost('ade-store.hordemart.com', config)).toBe(false);
+  });
+
+  it('treats the apex and dashboard hosts as reserved', () => {
+    expect(isReservedHost('hordemart.com', config)).toBe(true);
+    expect(isReservedHost('app.hordemart.com', config)).toBe(true);
+  });
+
+  it('treats a bank-lookalike host as reserved', () => {
+    expect(isReservedHost('gtbank.hordemart.com', config)).toBe(true);
+  });
+
+  it('treats an unrelated domain as reserved, since it is not a tenant host', () => {
+    expect(isReservedHost('shop.example.ng', config)).toBe(true);
+  });
+});
+
+describe('readHostConfigFromEnv', () => {
+  it('reads both hosts', () => {
+    const result = readHostConfigFromEnv({
+      ROOT_DOMAIN: 'hordemart.com',
+      APP_HOST: 'app.hordemart.com',
+    });
+    expect(result).toEqual({ rootDomain: 'hordemart.com', appHost: 'app.hordemart.com' });
+  });
+
+  it('refuses to start with either missing', () => {
+    // Defaulting here would silently route every tenant to the apex.
+    expect(() => readHostConfigFromEnv({ APP_HOST: 'app.hordemart.com' })).toThrow(/ROOT_DOMAIN/);
+    expect(() => readHostConfigFromEnv({ ROOT_DOMAIN: 'hordemart.com' })).toThrow(/APP_HOST/);
   });
 });

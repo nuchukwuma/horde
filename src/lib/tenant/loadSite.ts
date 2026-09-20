@@ -6,7 +6,7 @@
  * module does the database half: slug in, ambient tenant established.
  */
 
-import { Site, type SiteAttributes } from '../db/models/Site';
+import { Site, type SiteDocument } from '../db/models/Site';
 import { NotFoundError } from '../errors';
 import { runWithTenant, runWithoutTenantScope } from './context';
 import { isReservedSlug } from './reserved';
@@ -20,7 +20,7 @@ export const TENANT_HOST_HEADER = 'x-hm-host-kind';
  * Runs outside tenant scope by necessity: this call is what determines the
  * tenant, so it cannot already be inside one.
  */
-export async function findSiteBySlug(slug: string): Promise<SiteAttributes | null> {
+export async function findSiteBySlug(slug: string): Promise<SiteDocument | null> {
   if (isReservedSlug(slug)) return null;
 
   return runWithoutTenantScope(
@@ -37,7 +37,7 @@ export async function findSiteBySlug(slug: string): Promise<SiteAttributes | nul
  */
 export async function withSiteBySlug<T>(
   slug: string,
-  fn: (site: SiteAttributes) => Promise<T>,
+  fn: (site: SiteDocument) => Promise<T>,
 ): Promise<T> {
   const site = await findSiteBySlug(slug);
   if (!site) throw new NotFoundError('Site');
@@ -47,7 +47,7 @@ export async function withSiteBySlug<T>(
 
 /** Same, for code paths that already hold a Site document. */
 export async function withSite<T>(
-  site: SiteAttributes,
+  site: SiteDocument,
   fn: () => Promise<T>,
 ): Promise<T> {
   return runWithTenant({ siteId: String(site._id), slug: site.slug }, fn);

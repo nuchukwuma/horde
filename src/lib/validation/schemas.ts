@@ -90,6 +90,28 @@ export const createProductSchema = z.object({
   status: z.enum(['draft', 'active', 'archived']).default('draft'),
 });
 
+/**
+ * A cart is ids and quantities. Deliberately no price field: the server reads
+ * prices from the database, so there is nothing for a client to tamper with.
+ * A request carrying a price is not rejected — the field simply does not exist
+ * in this schema and is stripped.
+ */
+export const checkoutSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        productId: z.string().regex(/^[a-f0-9]{24}$/i, 'Invalid product id'),
+        quantity: z.number().int().min(1).max(999),
+      }),
+    )
+    .min(1, 'Your cart is empty')
+    .max(100, 'Too many items in one order'),
+  customerEmail: emailSchema,
+  customerName: z.string().trim().max(200).optional(),
+});
+
+export type CheckoutInputBody = z.infer<typeof checkoutSchema>;
+
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export type SignInInput = z.infer<typeof signInSchema>;
 export type CreateSiteInput = z.infer<typeof createSiteSchema>;
