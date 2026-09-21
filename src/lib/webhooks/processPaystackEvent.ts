@@ -34,6 +34,9 @@ import {
 } from './paystackEvent';
 import { runWithTenant, runWithoutTenantScope } from '../tenant/context';
 import { recordAudit } from '../audit';
+import { recordRefund, recordSettlement } from '../ledger/entries';
+import { refundedTotalForOrder } from '../ledger/balances';
+import { computeRefundSplit, readRefundPolicy } from '../payments/refundPolicy';
 
 export type ProcessOutcome =
   | 'invalid_signature'
@@ -169,21 +172,17 @@ async function handleEvent(
     case 'charge_failed':
       return transitionOrder(event, 'failed', ['pending']);
     case 'refund_processed':
-      // The refund LEDGER entry is deliberately not written here. Whether the
-      // platform returns its commission on a refund is a policy decision, and
-      // that policy is Phase 5's deliverable. Recording the order status now
-      // and the money movement there keeps the ledger from encoding a rule
-      // nobody has agreed to yet.
-      return transitionOrder(event, 'refunded', ['paid', 'partially_refunded', 'disputed']);
+      return handleRefundProcessed(event);
     case 'dispute_opened':
       return transitionOrder(event, 'disputed', ['paid']);
     case 'dispute_resolved':
       // Resolution can go either way; the payload says which. Left as a record
       // until the dispute workflow exists.
       return 'ignored';
+    case 'transfer_success':
+      return handleTransferSuccess(event);
     case 'refund_failed':
     case 'refund_pending':
-    case 'transfer_success':
     case 'transfer_failed':
     case 'ignored':
       return 'ignored';
@@ -275,6 +274,123 @@ async function handleChargeSuccess(
   });
 
   return 'processed';
+}
+
+/**
+ * A refund Paystack has completed.
+ *
+ * Two routes lead here: a seller clicked refund in our dashboard (in which case
+ * `issueRefund` already wrote the ledger entry), or someone refunded directly
+ * in the Paystack dashboard (in which case nobody has). Both end in this
+ * webhook, so it writes the entry only if one does not already exist for this
+ * Paystack refund id — keyed on the id rather than the amount, because two
+ * genuine partial refunds of the same value are not duplicates of each other.
+ */
+async function handleRefundProcessed(event: PaystackEvent): Promise<ProcessOutcome> {
+  const reference = extractReference(event);
+  if (!reference) return 'order_not_found';
+
+  const order = await findOrderByReference(reference);
+  if (!order) return 'order_not_found';
+
+  const refundId = event.data.id === undefined ? null : String(event.data.id);
+  const amountKobo = typeof event.data.amount === 'number' ? event.data.amount : null;
+  if (amountKobo === null) return 'ignored';
+
+  const siteId = String(order.siteId);
+  const tenant = { siteId, slug: `site-${siteId}` };
+
+  const alreadyRecorded = refundId
+    ? await runWithTenant(tenant, () =>
+        LedgerEntry.exists({
+          orderId: order._id,
+          entryType: 'refund',
+          'paystack.transactionId': refundId,
+        }),
+      )
+    : null;
+
+  if (alreadyRecorded) {
+    // Our own API already recorded it; just make sure the order status agrees.
+    return transitionOrder(event, 'refunded', ['paid', 'partially_refunded', 'disputed']);
+  }
+
+  const alreadyRefundedKobo = await runWithTenant(tenant, () =>
+    refundedTotalForOrder(order._id),
+  );
+
+  const split = computeRefundSplit(
+    {
+      grossKobo: order.totalKobo,
+      platformFeeKobo: order.split.platformFeeKobo,
+      platformFeeVatKobo: order.split.platformFeeVatKobo,
+      paystackFeeKobo: order.split.paystackFeeKobo,
+      sellerNetKobo: order.split.sellerNetKobo,
+      alreadyRefundedKobo,
+    },
+    amountKobo,
+    readRefundPolicy(),
+  );
+
+  await runWithTenant(tenant, async () => {
+    const sale = await LedgerEntry.findOne({ orderId: order._id, entryType: 'sale' }).lean();
+
+    await recordRefund({
+      groupId: sale?.groupId ?? new Types.ObjectId(),
+      orderId: order._id as Types.ObjectId,
+      split,
+      reference,
+      transactionId: refundId ?? undefined,
+    });
+
+    await Order.updateOne(
+      { _id: order._id },
+      { $set: { status: split.isFullRefund ? 'refunded' : 'partially_refunded' } },
+    );
+  });
+
+  return 'processed';
+}
+
+/**
+ * Paystack reports money moved out to a bank account.
+ *
+ * NEEDS CONFIRMATION WITH PAYSTACK: for split transactions the seller's share
+ * settles from Paystack to their subaccount, and whether we receive a usable
+ * event for that settlement — as opposed to only for our own payouts — has not
+ * been verified. Until it is, treat `settledKobo` in seller reporting as
+ * best-effort rather than authoritative.
+ */
+async function handleTransferSuccess(event: PaystackEvent): Promise<ProcessOutcome> {
+  const reference = extractReference(event);
+  if (!reference) return 'ignored';
+
+  const order = await findOrderByReference(reference);
+  if (!order) return 'ignored';
+
+  const siteId = String(order.siteId);
+  const tenant = { siteId, slug: `site-${siteId}` };
+
+  return runWithTenant(tenant, async () => {
+    const sale = await LedgerEntry.findOne({ orderId: order._id, entryType: 'sale' }).lean();
+    if (!sale) return 'ignored';
+
+    const settled = await LedgerEntry.exists({
+      groupId: sale.groupId,
+      entryType: 'settlement',
+    });
+    if (settled) return 'processed';
+
+    await recordSettlement({
+      groupId: sale.groupId,
+      orderId: order._id as Types.ObjectId,
+      sellerNetKobo: 0,
+      reference,
+      settlementId: event.data.id === undefined ? undefined : String(event.data.id),
+    });
+
+    return 'processed';
+  });
 }
 
 /**

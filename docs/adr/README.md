@@ -10,3 +10,4 @@
 | [0006](0006-append-only-ledger.md) | Append-only ledger corrected by reversing entries | accepted | 2026-09-20 |
 | [0007](0007-never-hold-seller-funds.md) | Never hold seller funds | accepted | 2026-09-20 |
 | [0008](0008-never-store-bank-account-numbers.md) | Never store bank account numbers | accepted | 2026-09-20 |
+| [0009](0009-refund-commission-policy.md) | Refund commission policy is named configuration | accepted | 2026-09-21 |
