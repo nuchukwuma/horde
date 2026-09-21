@@ -167,16 +167,16 @@ describe('audit redaction', () => {
 
 describe('new-seller hold configuration', () => {
   it('is off by default', () => {
-    expect(newSellerHoldDays({} as NodeJS.ProcessEnv)).toBe(0);
+    expect(newSellerHoldDays({})).toBe(0);
   });
 
   it('reads a positive integer', () => {
-    expect(newSellerHoldDays({ NEW_SELLER_HOLD_DAYS: '7' } as NodeJS.ProcessEnv)).toBe(7);
+    expect(newSellerHoldDays({ NEW_SELLER_HOLD_DAYS: '7' })).toBe(7);
   });
 
   it('ignores nonsense rather than holding forever', () => {
-    expect(newSellerHoldDays({ NEW_SELLER_HOLD_DAYS: 'soon' } as NodeJS.ProcessEnv)).toBe(0);
-    expect(newSellerHoldDays({ NEW_SELLER_HOLD_DAYS: '-3' } as NodeJS.ProcessEnv)).toBe(0);
+    expect(newSellerHoldDays({ NEW_SELLER_HOLD_DAYS: 'soon' })).toBe(0);
+    expect(newSellerHoldDays({ NEW_SELLER_HOLD_DAYS: '-3' })).toBe(0);
   });
 });
 

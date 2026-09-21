@@ -8,7 +8,7 @@ const config = [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
     // The vendored skills library is documentation, not project source.
-    ignores: ['.claude/**', '.next/**', 'node_modules/**'],
+    ignores: ['.claude/**', '.next/**', 'node_modules/**', 'next-env.d.ts'],
   },
   {
     rules: {

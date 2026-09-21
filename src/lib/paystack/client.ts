@@ -48,7 +48,9 @@ export interface PaystackConfig {
  * in writing, and a rule that only exists in a document gets broken by accident
  * during a deploy.
  */
-export function readPaystackConfig(env: NodeJS.ProcessEnv = process.env): PaystackConfig {
+export function readPaystackConfig(
+  env: Record<string, string | undefined> = process.env,
+): PaystackConfig {
   const secretKey = env.PAYSTACK_SECRET_KEY;
 
   if (!secretKey) {

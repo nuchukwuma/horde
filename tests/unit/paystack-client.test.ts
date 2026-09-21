@@ -36,19 +36,19 @@ afterEach(() => {
 
 describe('readPaystackConfig', () => {
   it('accepts a test key', () => {
-    const result = readPaystackConfig({ PAYSTACK_SECRET_KEY: 'sk_test_abc' } as NodeJS.ProcessEnv);
+    const result = readPaystackConfig({ PAYSTACK_SECRET_KEY: 'sk_test_abc' });
     expect(result.secretKey).toBe('sk_test_abc');
   });
 
   it('throws when unset', () => {
-    expect(() => readPaystackConfig({} as NodeJS.ProcessEnv)).toThrow(/not configured/);
+    expect(() => readPaystackConfig({})).toThrow(/not configured/);
   });
 
   it('refuses a live key by default', () => {
     // The repository rule is test keys only. A rule that lives only in a
     // document gets broken by a deploy.
     expect(() =>
-      readPaystackConfig({ PAYSTACK_SECRET_KEY: 'sk_live_abc' } as NodeJS.ProcessEnv),
+      readPaystackConfig({ PAYSTACK_SECRET_KEY: 'sk_live_abc' }),
     ).toThrow(/Refusing to use a non-test/);
   });
 
@@ -56,7 +56,7 @@ describe('readPaystackConfig', () => {
     const result = readPaystackConfig({
       PAYSTACK_SECRET_KEY: 'sk_live_abc',
       HORDEMART_ALLOW_LIVE_KEYS: 'true',
-    } as NodeJS.ProcessEnv);
+    });
     expect(result.secretKey).toBe('sk_live_abc');
   });
 });

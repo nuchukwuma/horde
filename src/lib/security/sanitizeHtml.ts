@@ -30,7 +30,6 @@ import DOMPurify from 'isomorphic-dompurify';
 const DATA_URI_ATTRIBUTES = ['src', 'href', 'xlink:href'];
 
 declare global {
-  // eslint-disable-next-line no-var
   var __hordemartPurifyHook: boolean | undefined;
 }
 

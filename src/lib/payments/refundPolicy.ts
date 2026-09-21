@@ -80,7 +80,7 @@ export class RefundError extends AppError {
  * happen. Override with REFUND_COMMISSION_POLICY.
  */
 export function readRefundPolicy(
-  env: NodeJS.ProcessEnv = process.env,
+  env: Record<string, string | undefined> = process.env,
 ): CommissionRefundPolicy {
   const configured = env.REFUND_COMMISSION_POLICY as CommissionRefundPolicy | undefined;
   if (!configured) return 'return_proportional';

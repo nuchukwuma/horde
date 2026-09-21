@@ -11,8 +11,7 @@ import { NotFoundError } from '../errors';
 import { runWithTenant, runWithoutTenantScope } from './context';
 import { isReservedSlug } from './reserved';
 
-export const TENANT_SLUG_HEADER = 'x-hm-site-slug';
-export const TENANT_HOST_HEADER = 'x-hm-host-kind';
+export { TENANT_SLUG_HEADER, TENANT_HOST_HEADER } from './headers';
 
 /**
  * Look up a Site by slug.

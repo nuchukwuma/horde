@@ -24,7 +24,9 @@ import { runWithoutTenantScope } from '../tenant/context';
  *
  * Gates transacting, never settlement — see ADR-0007. Zero disables the hold.
  */
-export function newSellerHoldDays(env: NodeJS.ProcessEnv = process.env): number {
+export function newSellerHoldDays(
+  env: Record<string, string | undefined> = process.env,
+): number {
   const raw = Number(env.NEW_SELLER_HOLD_DAYS ?? 0);
   return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 0;
 }
