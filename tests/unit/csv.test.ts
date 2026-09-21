@@ -39,7 +39,14 @@ describe('formula injection is neutralised', () => {
 
   it('leaves ordinary text alone', () => {
     expect(escapeCsvCell('Ankara Shirt')).toBe('Ankara Shirt');
-    expect(escapeCsvCell('buyer@example.com')).toBe('"\'buyer@example.com"');
+  });
+
+  it('only defuses a LEADING formula character, not one anywhere in the text', () => {
+    // An email contains @ but does not start with it, so it is not a formula
+    // and must not be mangled. Over-defusing would put a stray apostrophe in
+    // front of every address in the file.
+    expect(escapeCsvCell('buyer@example.com')).toBe('buyer@example.com');
+    expect(escapeCsvCell('Shirt = Large')).toBe('Shirt = Large');
   });
 
   it('does not mangle a negative number written as text', () => {
@@ -109,7 +116,7 @@ describe('toCsv', () => {
 
   it('emits a header row then the data', () => {
     const csv = toCsv(columns, [{ date: '2026-09-21', title: 'Shirt', amount: '2500.00' }]);
-    const lines = csv.trim().split('\n');
+    const lines = csv.trim().split('\r\n');
 
     expect(lines[0]).toBe('Date,Product,Amount (NGN)');
     expect(lines[1]).toBe('2026-09-21,Shirt,2500.00');
