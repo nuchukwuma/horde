@@ -46,6 +46,9 @@ export default defineConfig({
         'src/lib/webhooks/paystackEvent.ts',
         'src/lib/export/**',
         'src/lib/http/query.ts',
+        'src/lib/seo/**',
+        'src/lib/content/slug.ts',
+        'src/lib/security/**',
       ],
       // Type-only modules emit no runtime code and only distort the report.
       exclude: ['**/types.ts'],

@@ -11,6 +11,9 @@ import {
   type AuthenticatedSession,
 } from '../auth/session';
 import type { SessionScope } from '../db/models/Session';
+import type { SiteDocument } from '../db/models/Site';
+import { findSiteBySlug, TENANT_SLUG_HEADER } from '../tenant/loadSite';
+import { NotFoundError } from '../errors';
 
 /** Idempotent; the connection is cached per process. */
 export async function ensureDatabase(): Promise<void> {
@@ -34,6 +37,26 @@ export async function requireSession(
 
   assertAuthenticated(session);
   return session;
+}
+
+/**
+ * Resolve the tenant for a PUBLIC request from the host header.
+ *
+ * The header is set by middleware from the Host and any client-supplied copy is
+ * stripped there first, so it cannot be forged. Suspended and closed sites
+ * resolve to a 404: a suspended storefront should look absent to the public,
+ * not broken.
+ */
+export async function requirePublicSite(request: NextRequest): Promise<SiteDocument> {
+  await ensureDatabase();
+
+  const slug = request.headers.get(TENANT_SLUG_HEADER);
+  if (!slug) throw new NotFoundError('Store');
+
+  const site = await findSiteBySlug(slug);
+  if (!site || site.status !== 'active') throw new NotFoundError('Store');
+
+  return site;
 }
 
 export function requestIp(request: NextRequest): string | undefined {

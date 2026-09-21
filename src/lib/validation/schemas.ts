@@ -112,6 +112,60 @@ export const checkoutSchema = z.object({
 
 export type CheckoutInputBody = z.infer<typeof checkoutSchema>;
 
+/** Cloudinary-backed image reference. The URL is checked against our own CDN host. */
+const imageSchema = z.object({
+  cloudinaryPublicId: z.string().trim().min(1).max(300),
+  url: z.string().url().max(2_000),
+  alt: z.string().trim().max(300).optional(),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
+});
+
+const publishStatusSchema = z.enum(['draft', 'published', 'archived']);
+
+/**
+ * `contentHtml` is accepted as arbitrary HTML and sanitised on write. Trying to
+ * validate HTML safety with a schema would be a second, weaker sanitiser.
+ */
+export const createPostSchema = z.object({
+  title: z.string().trim().min(1).max(250),
+  slug: z.string().trim().max(250).optional(),
+  excerpt: z.string().trim().max(500).optional(),
+  contentHtml: z.string().max(200_000),
+  tags: z.array(z.string().trim().max(40)).max(20).optional(),
+  status: publishStatusSchema.optional(),
+  coverImage: imageSchema.nullable().optional(),
+  metaTitle: z.string().trim().max(200).optional(),
+  metaDescription: z.string().trim().max(400).optional(),
+  noindex: z.boolean().optional(),
+});
+
+export const updatePostSchema = createPostSchema.partial();
+
+export const createProjectSchema = z.object({
+  title: z.string().trim().min(1).max(250),
+  slug: z.string().trim().max(250).optional(),
+  summary: z.string().trim().max(500).optional(),
+  descriptionHtml: z.string().max(100_000).optional(),
+  images: z.array(imageSchema).max(30).optional(),
+  client: z.string().trim().max(200).optional(),
+  role: z.string().trim().max(200).optional(),
+  // http(s) only: a javascript: or data: URL here would be rendered as a link.
+  projectUrl: z.string().url().startsWith('http').max(2_000).optional(),
+  completedAt: z.string().datetime().optional(),
+  tags: z.array(z.string().trim().max(40)).max(20).optional(),
+  status: publishStatusSchema.optional(),
+  position: z.number().int().min(0).max(10_000).optional(),
+  metaTitle: z.string().trim().max(200).optional(),
+  metaDescription: z.string().trim().max(400).optional(),
+  noindex: z.boolean().optional(),
+});
+
+export const updateProjectSchema = createProjectSchema.partial();
+
+export type CreatePostInputBody = z.infer<typeof createPostSchema>;
+export type CreateProjectInputBody = z.infer<typeof createProjectSchema>;
+
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export type SignInInput = z.infer<typeof signInSchema>;
 export type CreateSiteInput = z.infer<typeof createSiteSchema>;

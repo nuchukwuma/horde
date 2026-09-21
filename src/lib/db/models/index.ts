@@ -37,5 +37,11 @@ export type { LedgerEntryAttributes, LedgerEntryType, LedgerStatus } from './Led
 export { WebhookEvent } from './WebhookEvent';
 export type { WebhookEventAttributes, WebhookStatus } from './WebhookEvent';
 
+export { Post } from './Post';
+export type { PostAttributes, PublishStatus, SeoFields } from './Post';
+
+export { Project } from './Project';
+export type { ProjectAttributes } from './Project';
+
 export { AuditLog } from './AuditLog';
 export type { AuditLogAttributes, AuditAction } from './AuditLog';

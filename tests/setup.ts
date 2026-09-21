@@ -14,6 +14,10 @@ import { TEST_MONGO_URI, hasMongo } from './helpers/mongo';
 // Registers every model so that `ref` resolution and index creation work.
 import '../src/lib/db/models/index';
 
+// Host configuration the SEO helpers require. They throw without it by design.
+process.env.ROOT_DOMAIN ??= 'hordemart.com';
+process.env.APP_HOST ??= 'app.hordemart.com';
+
 beforeAll(async () => {
   if (!hasMongo) return;
 
