@@ -5,6 +5,7 @@
  */
 
 import mongoose, { Schema, type HydratedDocument, type Model, type Types } from 'mongoose';
+import type { Timestamps } from './timestamps';
 import { SLUG_MAX_LENGTH, SLUG_MIN_LENGTH, validateSlug } from '../../tenant/reserved';
 
 export type SiteStatus = 'active' | 'suspended' | 'closed';
@@ -38,7 +39,7 @@ export interface SiteModules {
   blog: boolean;
 }
 
-export interface SiteAttributes {
+export interface SiteAttributes extends Timestamps {
   _id: Types.ObjectId;
   slug: string;
   customDomain?: string | null;

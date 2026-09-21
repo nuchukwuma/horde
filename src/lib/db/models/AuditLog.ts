@@ -12,6 +12,7 @@
  */
 
 import mongoose, { Schema, type Model, type Types } from 'mongoose';
+import type { CreatedAt } from './timestamps';
 import { appendOnlyPlugin } from '../plugins/appendOnly';
 
 export type AuditAction =
@@ -33,7 +34,7 @@ export type AuditAction =
   /** Paystack reported an amount or currency that disagrees with the order. */
   | 'webhook.amount_mismatch';
 
-export interface AuditLogAttributes {
+export interface AuditLogAttributes extends CreatedAt {
   _id: Types.ObjectId;
   siteId?: Types.ObjectId | null;
   actorUserId?: Types.ObjectId | null;

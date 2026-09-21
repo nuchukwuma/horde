@@ -11,6 +11,7 @@
  */
 
 import mongoose, { Schema, type Model, type Types } from 'mongoose';
+import type { Timestamps } from './timestamps';
 import { koboField } from '../../money/kobo';
 import { tenantScopePlugin } from '../plugins/tenantScope';
 import type { FeeBearer } from './Plan';
@@ -50,7 +51,7 @@ export interface OrderSplit {
   sellerNetKobo: number;
 }
 
-export interface OrderAttributes {
+export interface OrderAttributes extends Timestamps {
   _id: Types.ObjectId;
   siteId: Types.ObjectId;
   orderNumber: string;

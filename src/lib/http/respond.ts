@@ -34,6 +34,24 @@ export function noContent(): NextResponse {
   return new NextResponse(null, { status: 204 });
 }
 
+export interface PageMeta {
+  hasMore: boolean;
+  nextCursor: string | null;
+}
+
+/**
+ * A cursor-paginated collection.
+ *
+ * Never cached: these responses carry a seller's revenue, and a shared cache
+ * between two logged-in sellers would be the worst possible bug in this system.
+ */
+export function paginated<T>(rows: T[], meta: PageMeta): NextResponse {
+  return NextResponse.json(
+    { data: rows, meta },
+    { status: 200, headers: { 'Cache-Control': 'private, no-store' } },
+  );
+}
+
 export function toErrorResponse(error: unknown): NextResponse<ErrorBody> {
   if (error instanceof ZodError) {
     return NextResponse.json(

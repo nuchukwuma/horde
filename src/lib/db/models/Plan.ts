@@ -7,6 +7,7 @@
  */
 
 import mongoose, { Schema, type Model } from 'mongoose';
+import type { Timestamps } from './timestamps';
 import { koboField } from '../../money/kobo';
 
 export type PlanCode = 'free' | 'pro';
@@ -20,7 +21,7 @@ export interface PlanLimits {
   modules: Array<'store' | 'portfolio' | 'blog'>;
 }
 
-export interface PlanAttributes {
+export interface PlanAttributes extends Timestamps {
   code: PlanCode;
   name: string;
   /** Platform commission in basis points. 500 = 5%. */

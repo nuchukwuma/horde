@@ -12,10 +12,11 @@
  */
 
 import mongoose, { Schema, type Model, type Types } from 'mongoose';
+import type { Timestamps } from './timestamps';
 
 export type WebhookStatus = 'received' | 'processing' | 'processed' | 'failed' | 'ignored';
 
-export interface WebhookEventAttributes {
+export interface WebhookEventAttributes extends Timestamps {
   _id: Types.ObjectId;
   provider: 'paystack';
   /** Provider's event id where available, else a digest of the raw body. */

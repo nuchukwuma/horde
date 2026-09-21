@@ -9,11 +9,12 @@
  */
 
 import mongoose, { Schema, type Model, type Types } from 'mongoose';
+import type { Timestamps } from './timestamps';
 
 export type PlatformRole = 'admin' | 'user';
 export type UserStatus = 'active' | 'suspended';
 
-export interface UserAttributes {
+export interface UserAttributes extends Timestamps {
   _id: Types.ObjectId;
   email: string;
   /** argon2id hash. `select: false` — never travels unless explicitly asked for. */

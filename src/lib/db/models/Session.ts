@@ -10,10 +10,11 @@
  */
 
 import mongoose, { Schema, type Model, type Types } from 'mongoose';
+import type { Timestamps } from './timestamps';
 
 export type SessionScope = 'platform' | 'storefront';
 
-export interface SessionAttributes {
+export interface SessionAttributes extends Timestamps {
   _id: Types.ObjectId;
   tokenHash: string;
   userId: Types.ObjectId;

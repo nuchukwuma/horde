@@ -8,6 +8,7 @@
  */
 
 import mongoose, { Schema, type Model, type Types } from 'mongoose';
+import type { Timestamps } from './timestamps';
 
 export type SiteRole = 'owner' | 'staff';
 
@@ -20,7 +21,7 @@ export type StaffPermission =
   | 'settings:write'
   | 'payouts:read';
 
-export interface MembershipAttributes {
+export interface MembershipAttributes extends Timestamps {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
   siteId: Types.ObjectId;

@@ -13,6 +13,7 @@
  */
 
 import mongoose, { Schema, type Model, type Types } from 'mongoose';
+import type { CreatedAt } from './timestamps';
 import { koboField } from '../../money/kobo';
 import { tenantScopePlugin } from '../plugins/tenantScope';
 import { appendOnlyPlugin } from '../plugins/appendOnly';
@@ -28,7 +29,7 @@ export type LedgerEntryType =
 
 export type LedgerStatus = 'pending' | 'settled' | 'failed' | 'reversed';
 
-export interface LedgerEntryAttributes {
+export interface LedgerEntryAttributes extends CreatedAt {
   _id: Types.ObjectId;
   siteId: Types.ObjectId;
   orderId?: Types.ObjectId | null;

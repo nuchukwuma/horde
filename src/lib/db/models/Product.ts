@@ -7,6 +7,7 @@
  */
 
 import mongoose, { Schema, type Model, type Types } from 'mongoose';
+import type { Timestamps } from './timestamps';
 import { koboField } from '../../money/kobo';
 import { tenantScopePlugin } from '../plugins/tenantScope';
 
@@ -21,7 +22,7 @@ export interface ProductImage {
   alt?: string;
 }
 
-export interface ProductAttributes {
+export interface ProductAttributes extends Timestamps {
   _id: Types.ObjectId;
   siteId: Types.ObjectId;
   title: string;
