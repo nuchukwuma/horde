@@ -13,6 +13,9 @@ import { RateLimitError } from '../errors';
 export type LimitName =
   | 'auth:login'
   | 'auth:signup'
+  | 'auth:slug-check'
+  | 'shop:signup'
+  | 'shop:login'
   | 'payout:verify'
   | 'payout:update'
   | 'checkout:initialize';
@@ -26,6 +29,15 @@ export type LimitName =
 const LIMITS: Record<LimitName, { tokens: number; window: `${number} ${'s' | 'm' | 'h'}` }> = {
   'auth:login': { tokens: 10, window: '10 m' },
   'auth:signup': { tokens: 5, window: '1 h' },
+  // Typing a store name is interactive, so this has to be loose enough to
+  // check on every keystroke-ish and tight enough that it is not a free
+  // "which stores exist" scanner. Slugs are hostnames and therefore public
+  // anyway, so the limit is about cost, not secrecy.
+  'auth:slug-check': { tokens: 60, window: '10 m' },
+  // Per storefront per client. Shopper signup is cheaper to abuse than seller
+  // signup (no site is created) but it still writes a row and burns a hash.
+  'shop:signup': { tokens: 10, window: '1 h' },
+  'shop:login': { tokens: 10, window: '10 m' },
   'payout:verify': { tokens: 10, window: '1 h' },
   'payout:update': { tokens: 5, window: '24 h' },
   'checkout:initialize': { tokens: 20, window: '10 m' },

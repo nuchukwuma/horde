@@ -11,6 +11,8 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { Types } from 'mongoose';
 import { Session, type SessionScope } from '../db/models/Session';
 import { User, type UserAttributes } from '../db/models/User';
+import { Customer, type CustomerAttributes } from '../db/models/Customer';
+import { runWithTenant } from '../tenant/context';
 import { AuthenticationError, StepUpRequiredError } from '../errors';
 
 export const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14; // 14 days
@@ -38,8 +40,8 @@ export function constantTimeEquals(a: string, b: string): boolean {
 
 export interface CreateSessionInput {
   userId: Types.ObjectId;
-  scope: SessionScope;
-  siteId?: Types.ObjectId | null;
+  /** Platform only. Shoppers get a storefront session via createCustomerSession. */
+  scope: 'platform';
   ip?: string;
   userAgent?: string;
 }
@@ -51,7 +53,42 @@ export async function createSession(input: CreateSessionInput): Promise<{ token:
     tokenHash: hashSessionToken(token),
     userId: input.userId,
     scope: input.scope,
-    siteId: input.siteId ?? null,
+    siteId: null,
+    reauthenticatedAt: new Date(),
+    ip: input.ip,
+    userAgent: input.userAgent,
+    expiresAt: new Date(Date.now() + SESSION_TTL_MS),
+  });
+
+  return { token };
+}
+
+export interface CreateCustomerSessionInput {
+  customerId: Types.ObjectId;
+  /** The store this session is valid on. Never omitted — it is the whole point. */
+  siteId: Types.ObjectId;
+  ip?: string;
+  userAgent?: string;
+}
+
+/**
+ * Issue a storefront session for a shopper.
+ *
+ * Separate from createSession because the subject lives in a different
+ * collection and the session is bound to one site. Sharing one function would
+ * mean a `scope` parameter deciding which id field to populate, and getting
+ * that wrong writes a session that authorises the wrong kind of principal.
+ */
+export async function createCustomerSession(
+  input: CreateCustomerSessionInput,
+): Promise<{ token: string }> {
+  const token = generateSessionToken();
+
+  await Session.create({
+    tokenHash: hashSessionToken(token),
+    customerId: input.customerId,
+    scope: 'storefront',
+    siteId: input.siteId,
     reauthenticatedAt: new Date(),
     ip: input.ip,
     userAgent: input.userAgent,
@@ -89,7 +126,7 @@ export async function validateSessionToken(
     expiresAt: { $gt: new Date() },
   });
 
-  if (!session) return null;
+  if (!session || !session.userId) return null;
 
   const user = await User.findById(session.userId);
   if (!user || user.status !== 'active') return null;
@@ -101,6 +138,47 @@ export async function validateSessionToken(
     siteId: session.siteId,
     reauthenticatedAt: session.reauthenticatedAt,
   };
+}
+
+export interface AuthenticatedCustomer {
+  sessionId: Types.ObjectId;
+  customer: CustomerAttributes;
+  siteId: Types.ObjectId;
+}
+
+/**
+ * Resolve a storefront cookie to a shopper on a SPECIFIC store.
+ *
+ * `siteId` is supplied by the caller from the resolved host, and the session
+ * row must match it. Without that check a session issued on one storefront
+ * would authenticate its holder on every other storefront, since they all
+ * share the same application and differ only by hostname.
+ */
+export async function validateCustomerSessionToken(
+  token: string | undefined | null,
+  siteId: Types.ObjectId,
+): Promise<AuthenticatedCustomer | null> {
+  if (!token) return null;
+
+  const session = await Session.findOne({
+    tokenHash: hashSessionToken(token),
+    scope: 'storefront',
+    siteId,
+    revokedAt: null,
+    expiresAt: { $gt: new Date() },
+  });
+
+  if (!session?.customerId || !session.siteId) return null;
+
+  // Read through the tenant scope so a customer row from another store cannot
+  // be reached even if a session somehow pointed at one.
+  const customer = await runWithTenant({ siteId: String(session.siteId) }, () =>
+    Customer.findById(session.customerId),
+  );
+
+  if (!customer || customer.status !== 'active') return null;
+
+  return { sessionId: session._id, customer, siteId: session.siteId };
 }
 
 export async function revokeSession(token: string): Promise<void> {

@@ -52,6 +52,40 @@ export const signInSchema = z.object({
   password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
 });
 
+/**
+ * Seller signup: the account and its first site in one submission.
+ *
+ * Deliberately one step. Splitting it would leave a User with no Site in the
+ * database whenever someone abandons the second screen, and that account can
+ * log in to nothing.
+ */
+export const sellerSignUpSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+  name: z.string().trim().min(1).max(120),
+  siteName: z.string().trim().min(1).max(120),
+  slug: slugSchema,
+});
+
+/**
+ * Shopper signup on one storefront.
+ *
+ * No siteId field: the store comes from the host header, which middleware sets
+ * and strips any client copy of first. A body naming a site would be the exact
+ * cross-tenant hole the header handling exists to close.
+ */
+export const customerSignUpSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+  name: z.string().trim().min(1).max(120),
+  phone: z.string().trim().max(32).optional(),
+});
+
+export const customerSignInSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
+});
+
 export const createSiteSchema = z.object({
   slug: slugSchema,
   name: z.string().trim().min(1).max(120),

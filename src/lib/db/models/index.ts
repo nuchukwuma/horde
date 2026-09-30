@@ -10,6 +10,9 @@ export type { PlanAttributes, PlanCode, PlanLimits, FeeBearer } from './Plan';
 export { User } from './User';
 export type { UserAttributes, PlatformRole, UserStatus } from './User';
 
+export { Customer } from './Customer';
+export type { CustomerAttributes, CustomerStatus } from './Customer';
+
 export { Membership } from './Membership';
 export type { MembershipAttributes, SiteRole, StaffPermission } from './Membership';
 

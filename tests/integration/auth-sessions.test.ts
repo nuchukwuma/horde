@@ -11,6 +11,7 @@ import { Session } from '../../src/lib/db/models/Session';
 import { LedgerEntry } from '../../src/lib/db/models/LedgerEntry';
 import { hashPassword } from '../../src/lib/auth/password';
 import {
+  createCustomerSession,
   createSession,
   hashSessionToken,
   markReauthenticated,
@@ -87,11 +88,15 @@ describe.runIf(hasMongo)('session lifecycle', () => {
     expect(String(session?.user._id)).toBe(String(user._id));
   });
 
-  it('rejects a token presented at the wrong scope', async () => {
-    const user = await makeUser();
-    const { token } = await createSession({ userId: user._id, scope: 'storefront' });
+  it('rejects a storefront token presented to the dashboard', async () => {
+    // A storefront session must never authenticate a dashboard request. Since
+    // the two scopes now resolve against different collections, the token
+    // cannot resolve to a User even though the session row is perfectly valid.
+    const { token } = await createCustomerSession({
+      customerId: new Types.ObjectId(),
+      siteId: new Types.ObjectId(),
+    });
 
-    // A storefront session must never authenticate a dashboard request.
     expect(await validateSessionToken(token, 'platform')).toBeNull();
   });
 

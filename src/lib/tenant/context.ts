@@ -14,9 +14,15 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { TenantScopeError } from '../errors';
 
 export interface TenantIdentity {
-  /** Site _id as a 24-character hex string. */
+  /** Site _id as a 24-character hex string. This alone defines the scope. */
   siteId: string;
-  slug: string;
+  /**
+   * Optional, and carried for diagnostics only — nothing in the scoping path
+   * reads it. Callers that resolved the tenant from a host have it and should
+   * pass it; callers that only hold an id (a session row, a webhook) must not
+   * have to fetch the Site just to satisfy a type.
+   */
+  slug?: string;
 }
 
 export interface TenantBypass {

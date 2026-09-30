@@ -31,6 +31,13 @@ export interface CheckoutInput {
   items: CartLine[];
   customerEmail: string;
   customerName?: string;
+  /**
+   * Set only when a signed-in shopper is checking out. Null for a guest, which
+   * is the normal case and always will be — an account is never required to
+   * buy. The order stands on its own either way: customerEmail is what a
+   * receipt and a dispute are argued from, not this link.
+   */
+  customerId?: Types.ObjectId | null;
   callbackUrl?: string;
 }
 
@@ -98,6 +105,7 @@ export async function createCheckout(
   const order = await runWithTenant({ siteId, slug: site.slug }, () =>
     Order.create({
       orderNumber,
+      customerId: input.customerId ?? null,
       customerEmail: input.customerEmail,
       customerName: input.customerName,
       items,
