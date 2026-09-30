@@ -6,6 +6,8 @@ import { Product } from '@/lib/db/models/Product';
 import { listPublishedPosts } from '@/lib/content/posts';
 import { listPublishedProjects } from '@/lib/content/projects';
 import { formatNaira, formatDate } from '@/lib/ui/format';
+import { buildSocialLinks } from '@/lib/content/socials';
+import SocialLinks from '@/components/shop/SocialLinks';
 
 /**
  * Storefront home.
@@ -116,6 +118,8 @@ export default async function StorefrontHome({ params }) {
           </ul>
         </section>
       ) : null}
+
+      <SocialLinks links={buildSocialLinks(site.socials)} />
     </>
   );
 }

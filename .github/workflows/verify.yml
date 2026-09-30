@@ -1,0 +1,138 @@
+# Typecheck, lint, and the full test suite — including the database-backed
+# integration tests, which are the point of running a service container here.
+#
+# REQUIRE_DB_TESTS=1 makes tests/helpers/mongo.ts throw if MONGODB_TEST_URI is
+# missing. Without that, losing the service container would turn 49 integration
+# tests into 49 silent skips and the job would still go green.
+
+name: verify
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        # A replica set is not needed: nothing in src/ or scripts/ opens a
+        # Mongo session or transaction. A standalone mongod is the smaller,
+        # faster thing that is sufficient.
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --log-driver=none
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      MONGODB_TEST_URI: mongodb://127.0.0.1:27017/hordemart_test
+      REQUIRE_DB_TESTS: '1'
+      # The Paystack client refuses a non-test key unless explicitly overridden.
+      # A fake test-prefixed key keeps that guard satisfied without a secret:
+      # every HTTP call in the suite is stubbed, so nothing reaches Paystack.
+      PAYSTACK_SECRET_KEY: sk_test_ci_placeholder_not_a_real_key
+      ROOT_DOMAIN: hordemart.test
+      APP_HOST: app.hordemart.test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      # Unit and integration in one run, with a JSON report kept either way so
+      # the summary step below can name what failed. Without the report a
+      # failure is only visible in the step's own output, which is appended
+      # before the service container's logs and is effectively unreadable.
+      - name: Test
+        run: npm test -- --reporter=default --reporter=json --outputFile=test-report.json
+
+      # Runs on failure as well as success, and prints a short list rather than
+      # the whole log.
+      - name: Test summary
+        if: always()
+        run: |
+          node -e '
+            const fs = require("fs");
+            if (!fs.existsSync("test-report.json")) {
+              console.error("No test report was written: the run died before any test executed.");
+              process.exit(0);
+            }
+            const r = JSON.parse(fs.readFileSync("test-report.json", "utf8"));
+            console.log(`total: ${r.numPassedTests ?? 0} passed, ${r.numFailedTests ?? 0} failed, ${r.numPendingTests ?? 0} skipped`);
+
+            const failures = [];
+            for (const suite of r.testResults ?? []) {
+              for (const test of suite.assertionResults ?? []) {
+                if (test.status !== "failed") continue;
+                failures.push({
+                  name: `${suite.name?.split("/").slice(-1)[0]} > ${test.fullName ?? test.title}`,
+                  message: (test.failureMessages ?? []).join(" | ").split("\n").slice(0, 4).join(" "),
+                });
+              }
+            }
+
+            if (failures.length === 0) {
+              console.log("No failing tests.");
+              process.exit(0);
+            }
+
+            console.log(`\n${failures.length} failing:`);
+            for (const failure of failures.slice(0, 40)) {
+              console.log(`\n  ${failure.name}\n    ${failure.message.slice(0, 400)}`);
+            }
+          '
+
+      # Belt and braces on top of the REQUIRE_DB_TESTS guard: prove the
+      # integration suites actually EXECUTED rather than trusting the exit code.
+      #
+      # Counts status === "passed". An earlier version of this step counted
+      # anything that was not "pending", which passed a run where all 49
+      # integration tests reported "skipped" — vitest's status for a suite
+      # switched off by describe.runIf. A guard against silent skipping that
+      # is itself fooled by silent skipping is worse than none, because it
+      # reports the assurance without providing it.
+      - name: Assert integration tests ran
+        run: |
+          node -e '
+            const r = JSON.parse(require("fs").readFileSync("test-report.json", "utf8"));
+            const suites = (r.testResults ?? []).filter((s) => (s.name ?? "").includes("tests/integration"));
+            const tests = suites.flatMap((s) => s.assertionResults ?? []);
+            const passed = tests.filter((t) => t.status === "passed").length;
+            const skipped = tests.filter((t) => t.status === "skipped" || t.status === "pending").length;
+
+            console.log(`integration: ${tests.length} collected, ${passed} passed, ${skipped} skipped`);
+
+            if (tests.length === 0) {
+              console.error("No integration suite was collected at all.");
+              process.exit(1);
+            }
+            if (skipped > 0) {
+              console.error(`${skipped} integration tests were skipped. MONGODB_TEST_URI is not reaching them, so this run proves nothing about tenant isolation, ledger immutability or session scope.`);
+              process.exit(1);
+            }
+            if (passed === 0) {
+              console.error("No integration test passed.");
+              process.exit(1);
+            }
+          '
+
+      - name: Build
+        run: npm run build

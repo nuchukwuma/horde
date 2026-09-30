@@ -1,3 +1,4 @@
+import AdSlot from '@/components/ads/AdSlot';
 /**
  * Apex landing page.
  *
@@ -43,6 +44,12 @@ export default function Home() {
         <p style={{ marginTop: 40, fontSize: 13, color: 'var(--text-muted)' }}>
           Running in Paystack test mode.
         </p>
+
+        {/* Platform surface, so ads are permitted here. Renders nothing at all
+            unless NEXT_PUBLIC_ADSENSE_CLIENT and a slot id are configured, and
+            nothing on a seller's storefront under any configuration — see
+            components/ads/AdSlot.jsx and lib/security/csp.ts. */}
+        <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_HOME} label="Sponsored" />
       </main>
     </div>
   );

@@ -86,6 +86,16 @@ export const customerSignInSchema = z.object({
   password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
 });
 
+/** The token from a verification email. Opaque base64url, not an email. */
+export const verifyEmailSchema = z.object({
+  token: z.string().trim().min(20).max(200),
+});
+
+/** A chat message. Plain text; the service strips any HTML on write. */
+export const chatMessageSchema = z.object({
+  body: z.string().trim().min(1, 'Write a message first').max(4000),
+});
+
 export const createSiteSchema = z.object({
   slug: slugSchema,
   name: z.string().trim().min(1).max(120),

@@ -79,6 +79,45 @@ export class RefundError extends AppError {
  * left paying commission on a sale that, from the customer's side, did not
  * happen. Override with REFUND_COMMISSION_POLICY.
  */
+/**
+ * ADR-0009's open risk, enforced instead of merely written down.
+ *
+ * Our ledger records how a refund SHOULD divide between the seller, the
+ * platform and Paystack. What is unverified is who Paystack actually debits on
+ * a refund of a split transaction. Two possibilities, with very different
+ * consequences:
+ *
+ *   a) Paystack claws back each party's share from the subaccount and the
+ *      platform respectively. Our ledger matches reality. Nothing to do.
+ *
+ *   b) Paystack debits the platform balance for the whole amount and does not
+ *      touch the subaccount. Then every refund leaves us holding a receivable
+ *      against the seller — money they have and we are owed. That is lending,
+ *      and it contradicts ADR-0007's "we never hold seller funds, we are not a
+ *      regulated entity" posture. It is also invisible until the balance runs
+ *      out.
+ *
+ * Because (b) is discovered by running out of money rather than by an error, a
+ * document warning about it is not enough. Production refunds therefore refuse
+ * to run until someone has actually asked Paystack and recorded the answer by
+ * setting this variable. See docs/paystack-questions.md for the question.
+ *
+ * Development and test runs are unaffected: the whole point is to exercise this
+ * code before going live.
+ */
+export function assertRefundMechanicsConfirmed(
+  env: Record<string, string | undefined> = process.env,
+): void {
+  if (env.NODE_ENV !== 'production') return;
+  if (env.PAYSTACK_REFUND_MECHANICS_CONFIRMED === 'true') return;
+
+  throw new RefundError(
+    'Refunds are disabled: who Paystack debits on a split-transaction refund is ' +
+      'unconfirmed (ADR-0009). Ask Paystack, then set ' +
+      'PAYSTACK_REFUND_MECHANICS_CONFIRMED=true.',
+  );
+}
+
 export function readRefundPolicy(
   env: Record<string, string | undefined> = process.env,
 ): CommissionRefundPolicy {

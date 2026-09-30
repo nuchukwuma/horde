@@ -15,6 +15,14 @@ import { Post } from '@/lib/db/models/Post';
 import { Project } from '@/lib/db/models/Project';
 import { Product } from '@/lib/db/models/Product';
 
+/**
+ * Per-tenant, so it cannot be prerendered: the response depends on the Host
+ * header and on a database read. Without this the build tries to generate it
+ * statically, fails on a missing MONGODB_URI, and prints an error it then
+ * ignores — noise that would hide a real build failure later.
+ */
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const MAX_PER_TYPE = 5_000;

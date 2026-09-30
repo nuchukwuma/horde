@@ -76,5 +76,15 @@ paying commission on a sale that, from the customer's side, did not happen.
   share, we hold a receivable against the seller — which is a different
   relationship from the one ADR-0007 is built on, and a question for Paystack
   before any real refund is issued.
+
+  **Now enforced rather than only documented.** `assertRefundMechanicsConfirmed`
+  makes `issueRefund` throw in production until `PAYSTACK_REFUND_MECHANICS_CONFIRMED=true`
+  is set, which is an assertion that somebody has asked Paystack and written the
+  answer into `docs/paystack-questions.md`. The reason for a hard gate rather
+  than a warning: the bad case is not signalled by an error. It is discovered by
+  the platform balance draining, one refund at a time, while every individual
+  refund appears to succeed. A risk that surfaces as insolvency rather than as a
+  stack trace has to be blocked, not noted. Development and test runs are
+  unaffected — exercising this code before launch is the point.
 - VAT on returned commission is returned proportionally. Whether that matches
   what a tax authority expects is a question for an accountant.

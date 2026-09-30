@@ -12,6 +12,8 @@
 
 import type { Types } from 'mongoose';
 import { Site, type SiteAttributes } from '../db/models/Site';
+import { User } from '../db/models/User';
+import { assertEmailVerified } from '../auth/emailVerification';
 import { createSubaccount, resolveAccount } from '../paystack/accounts';
 import type { PaystackCallOptions } from '../paystack/accounts';
 import { PaystackError } from '../paystack/client';
@@ -109,6 +111,14 @@ export async function savePayoutDetails(
   input: SavePayoutInput,
   options: PaystackCallOptions = {},
 ): Promise<SavePayoutResult> {
+  // The email gate lives here rather than only in the route handler, so a new
+  // caller — an admin tool, a script, a second endpoint — cannot reach the
+  // step that attaches a bank account without passing it. See
+  // auth/emailVerification.ts for why the gate is here and not on login.
+  const actor = await User.findById(input.actorUserId).select('emailVerifiedAt');
+  if (!actor) throw new NotFoundError('User');
+  assertEmailVerified(actor);
+
   const site = await loadSiteForPayout(input.siteId);
 
   // Re-resolve. This is the KYC check, and it is cheap relative to sending

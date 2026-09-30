@@ -11,6 +11,14 @@ import { requirePublicSite } from '@/lib/http/context';
 import { toErrorResponse } from '@/lib/http/respond';
 import { buildRobots } from '@/lib/seo/sitemap';
 
+/**
+ * Per-tenant, so it cannot be prerendered: the response depends on the Host
+ * header and on a database read. Without this the build tries to generate it
+ * statically, fails on a missing MONGODB_URI, and prints an error it then
+ * ignores — noise that would hide a real build failure later.
+ */
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
