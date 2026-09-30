@@ -13,6 +13,8 @@ import { clientIdentifier, enforceRateLimit } from '@/lib/ratelimit';
 import { createCheckout } from '@/lib/checkout/createCheckout';
 import { checkoutSchema } from '@/lib/validation/schemas';
 import { findSiteBySlug, TENANT_SLUG_HEADER } from '@/lib/tenant/loadSite';
+import { validateCustomerSessionToken } from '@/lib/auth/session';
+import { sessionCookieName } from '@/lib/auth/cookies';
 import { NotFoundError } from '@/lib/errors';
 
 export const runtime = 'nodejs';
@@ -35,11 +37,24 @@ export async function POST(request: NextRequest) {
 
     const body = checkoutSchema.parse(await request.json());
 
+    // Optional by design. A guest checkout is the normal path; a session only
+    // adds the link back to an account. The session is validated against THIS
+    // site, so a cookie from another storefront resolves to nothing rather
+    // than attaching someone else's customer to this order.
+    const shopper = await validateCustomerSessionToken(
+      request.cookies.get(sessionCookieName('storefront'))?.value,
+      site._id,
+    );
+
     const result = await createCheckout({
       site,
       items: body.items,
-      customerEmail: body.customerEmail,
-      customerName: body.customerName,
+      // A signed-in shopper's address comes from their account, not the body:
+      // otherwise an order could be filed under one account and receipted to
+      // a different address.
+      customerEmail: shopper?.customer.email ?? body.customerEmail,
+      customerName: shopper?.customer.name ?? body.customerName,
+      customerId: shopper?.customer._id ?? null,
       callbackUrl: process.env.CHECKOUT_CALLBACK_URL,
     });
 
