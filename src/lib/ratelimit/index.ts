@@ -14,8 +14,10 @@ export type LimitName =
   | 'auth:login'
   | 'auth:signup'
   | 'auth:slug-check'
+  | 'auth:verify-email'
   | 'shop:signup'
   | 'shop:login'
+  | 'chat:send'
   | 'payout:verify'
   | 'payout:update'
   | 'checkout:initialize';
@@ -34,10 +36,17 @@ const LIMITS: Record<LimitName, { tokens: number; window: `${number} ${'s' | 'm'
   // "which stores exist" scanner. Slugs are hostnames and therefore public
   // anyway, so the limit is about cost, not secrecy.
   'auth:slug-check': { tokens: 60, window: '10 m' },
+  // Tight: what is being rationed is mail delivered to one inbox. A seller
+  // who genuinely did not receive it can try a few times an hour; a script
+  // cannot use us to flood an address.
+  'auth:verify-email': { tokens: 6, window: '1 h' },
   // Per storefront per client. Shopper signup is cheaper to abuse than seller
   // signup (no site is created) but it still writes a row and burns a hash.
   'shop:signup': { tokens: 10, window: '1 h' },
   'shop:login': { tokens: 10, window: '10 m' },
+  // Generous: this is a conversation, and a limit that interrupts one pushes
+  // both parties to WhatsApp, where we can see nothing at all.
+  'chat:send': { tokens: 60, window: '10 m' },
   'payout:verify': { tokens: 10, window: '1 h' },
   'payout:update': { tokens: 5, window: '24 h' },
   'checkout:initialize': { tokens: 20, window: '10 m' },

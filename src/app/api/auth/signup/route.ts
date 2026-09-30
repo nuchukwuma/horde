@@ -12,6 +12,7 @@ import { ensureDatabase, requestIp, requestUserAgent } from '@/lib/http/context'
 import { toErrorResponse } from '@/lib/http/respond';
 import { signUpSeller } from '@/lib/onboarding/signup';
 import { createSession } from '@/lib/auth/session';
+import { issueEmailVerification } from '@/lib/auth/emailVerification';
 import { sessionCookieName, sessionCookieOptions } from '@/lib/auth/cookies';
 import { sellerSignUpSchema } from '@/lib/validation/schemas';
 import { clientIdentifier, enforceRateLimit } from '@/lib/ratelimit';
@@ -39,9 +40,27 @@ export async function POST(request: NextRequest) {
       userAgent: requestUserAgent(request),
     });
 
+    // Best effort, deliberately. A mail outage must not cost us a completed
+    // signup: the account and store already exist, the seller is already
+    // signed in, and they can resend from the dashboard. What they cannot do
+    // until it arrives is connect a bank account, which is the only thing the
+    // gate protects.
+    let verificationSent = false;
+    try {
+      const { delivery } = await issueEmailVerification({
+        user: { _id: result.userId, email: body.email, name: body.name },
+        appOrigin: new URL(request.url).origin,
+      });
+      verificationSent = delivery.transport === 'resend';
+    } catch {
+      // Swallowed on purpose. The detail is in the thrown error's message,
+      // which stays server-side; the seller sees an actionable prompt instead.
+    }
+
     const response = NextResponse.json(
       {
         data: {
+          verificationSent,
           siteId: String(result.siteId),
           slug: result.slug,
           // The seller's own public address, ready to copy and share. This is

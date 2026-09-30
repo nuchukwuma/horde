@@ -9,6 +9,8 @@ import { dashboardSummary, listTransactions } from '@/lib/dashboard/seller';
 import { dailyRevenue } from '@/lib/dashboard/series';
 import RevenueChart from '@/components/charts/RevenueChart';
 import { formatNaira, formatDateTime } from '@/lib/ui/format';
+import { siteOrigin } from '@/lib/seo/meta';
+import StoreLink from '@/components/dashboard/StoreLink';
 
 /**
  * Seller dashboard.
@@ -58,6 +60,11 @@ export default async function DashboardPage({ params }) {
 
   const gate = site.canAcceptPayments();
 
+  // One source for the public address. The nav link previously hardcoded
+  // https:// and re-derived the host, which pointed at a dead URL in dev and
+  // ignored a custom domain entirely.
+  const storeUrl = siteOrigin(site);
+
   return (
     <div className="shell">
       <a className="skip-link" href="#main">
@@ -73,7 +80,7 @@ export default async function DashboardPage({ params }) {
             <a href={`/dashboard/${siteId}`} aria-current="page">
               Overview
             </a>
-            <a href={`https://${site.slug}.${process.env.ROOT_DOMAIN ?? 'hordemart.local:3000'}`}>
+            <a href={storeUrl} target="_blank" rel="noopener noreferrer">
               View store ↗
             </a>
           </nav>
@@ -95,6 +102,10 @@ export default async function DashboardPage({ params }) {
           ) : (
             <span className="badge badge--warning">▲ {humanise(gate.reason)}</span>
           )}
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <StoreLink url={storeUrl} />
         </div>
 
         {!gate.allowed ? (

@@ -24,6 +24,7 @@ export type AuditAction =
   | 'site.reinstated'
   | 'site.prohibited_flag.set'
   | 'site.prohibited_flag.cleared'
+  | 'site.settings.changed'
   | 'user.login'
   | 'user.login.failed'
   | 'user.password.changed'

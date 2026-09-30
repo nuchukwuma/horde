@@ -64,6 +64,11 @@ export interface SiteAttributes extends Timestamps {
   prohibitedProductFlag: boolean;
   theme: Record<string, unknown>;
   settings: Record<string, unknown>;
+  /**
+   * Seller social handles. Handles, never URLs — lib/content/socials.ts
+   * explains why, and builds the links for rendering.
+   */
+  socials: Record<string, string>;
 }
 
 const siteSchema = new Schema<SiteAttributes>(
@@ -125,6 +130,7 @@ const siteSchema = new Schema<SiteAttributes>(
     prohibitedProductFlag: { type: Boolean, default: false, index: true },
     theme: { type: Schema.Types.Mixed, default: {} },
     settings: { type: Schema.Types.Mixed, default: {} },
+    socials: { type: Schema.Types.Mixed, default: {} },
   },
   { timestamps: true },
 );

@@ -23,6 +23,7 @@ import { recordRefund } from '../ledger/entries';
 import { createRefund } from '../paystack/refunds';
 import type { PaystackCallOptions } from '../paystack/accounts';
 import {
+  assertRefundMechanicsConfirmed,
   computeRefundSplit,
   readRefundPolicy,
   RefundError,
@@ -60,6 +61,11 @@ export async function issueRefund(
   input: IssueRefundInput,
   options: PaystackCallOptions = {},
 ): Promise<IssueRefundResult> {
+  // Before anything else, including before reading the order: in production
+  // this throws until the ADR-0009 question has actually been answered. See
+  // assertRefundMechanicsConfirmed for why a documented risk was not enough.
+  assertRefundMechanicsConfirmed();
+
   const tenant = { siteId: input.siteId, slug: input.siteSlug };
 
   const order = await runWithTenant(tenant, () => Order.findById(input.orderId));

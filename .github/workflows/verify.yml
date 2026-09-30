@@ -1,0 +1,83 @@
+# Typecheck, lint, and the full test suite — including the database-backed
+# integration tests, which are the point of running a service container here.
+#
+# REQUIRE_DB_TESTS=1 makes tests/helpers/mongo.ts throw if MONGODB_TEST_URI is
+# missing. Without that, losing the service container would turn 49 integration
+# tests into 49 silent skips and the job would still go green.
+
+name: verify
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        # A replica set is not needed: nothing in src/ or scripts/ opens a
+        # Mongo session or transaction. A standalone mongod is the smaller,
+        # faster thing that is sufficient.
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      MONGODB_TEST_URI: mongodb://127.0.0.1:27017/hordemart_test
+      REQUIRE_DB_TESTS: '1'
+      # The Paystack client refuses a non-test key unless explicitly overridden.
+      # A fake test-prefixed key keeps that guard satisfied without a secret:
+      # every HTTP call in the suite is stubbed, so nothing reaches Paystack.
+      PAYSTACK_SECRET_KEY: sk_test_ci_placeholder_not_a_real_key
+      ROOT_DOMAIN: hordemart.test
+      APP_HOST: app.hordemart.test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      # A belt-and-braces check on top of the REQUIRE_DB_TESTS guard: prove the
+      # integration suites actually executed rather than trusting the exit code.
+      - name: Assert integration tests ran
+        run: |
+          npx vitest run tests/integration --reporter=json --outputFile=/tmp/it.json
+          node -e '
+            const r = require("/tmp/it.json");
+            const skipped = r.numPendingTests ?? 0;
+            const passed = r.numPassedTests ?? 0;
+            console.log(`integration: ${passed} passed, ${skipped} skipped`);
+            if (passed === 0) {
+              console.error("No integration test executed. The database was not reachable.");
+              process.exit(1);
+            }
+            if (skipped > 0) {
+              console.error(`${skipped} integration tests skipped; CI must run all of them.`);
+              process.exit(1);
+            }
+          '
+
+      - name: Build
+        run: npm run build

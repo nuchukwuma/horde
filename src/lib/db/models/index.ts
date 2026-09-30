@@ -13,8 +13,20 @@ export type { UserAttributes, PlatformRole, UserStatus } from './User';
 export { Customer } from './Customer';
 export type { CustomerAttributes, CustomerStatus } from './Customer';
 
+export { Conversation } from './Conversation';
+export type { ConversationAttributes, ConversationStatus } from './Conversation';
+
+export { Message } from './Message';
+export type { MessageAttributes, MessageSender } from './Message';
+
 export { Membership } from './Membership';
 export type { MembershipAttributes, SiteRole, StaffPermission } from './Membership';
+
+export { VerificationToken } from './VerificationToken';
+export type {
+  VerificationTokenAttributes,
+  VerificationPurpose,
+} from './VerificationToken';
 
 export { Session } from './Session';
 export type { SessionAttributes, SessionScope } from './Session';
