@@ -20,3 +20,6 @@ coverage/
 .vitest/
 *.tsbuildinfo
 next-env.d.ts
+
+# Vitest JSON report, written by CI for the failure-summary step.
+test-report.json
