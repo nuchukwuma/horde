@@ -320,7 +320,15 @@ describe.runIf(hasMongo)('an amount that disagrees is never marked paid', () => 
     );
 
     expect(result.outcome).toBe('ignored');
-    expect((await reload((await seedOrder())._id))?.status).toBe('pending');
+
+    // Re-read the order beforeEach created. An earlier version of this line
+    // called seedOrder() again, which both tripped the unique index on
+    // paystack.reference and asserted nothing: a freshly created order is
+    // 'pending' whatever the webhook did.
+    const order = await runWithTenant(tenant, () =>
+      Order.findOne({ 'paystack.reference': REFERENCE }).lean(),
+    );
+    expect(order?.status).toBe('pending');
   });
 });
 

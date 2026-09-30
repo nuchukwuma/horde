@@ -111,31 +111,84 @@ async function claimEvent(
   eventId: string,
   rawBody: string,
 ): Promise<'claimed' | 'already_processed'> {
-  const existing = await runWithoutTenantScope(
-    'recording an inbound webhook, which arrives before any tenant is known',
-    () =>
-      WebhookEvent.findOneAndUpdate(
-        { provider: 'paystack', eventId },
-        {
-          $setOnInsert: {
-            provider: 'paystack',
-            eventId,
-            eventType: event.event,
-            reference: extractReference(event),
-            signatureVerified: true,
-            // The digest only, never the body: a charge payload carries
-            // cardholder detail we have no reason to retain.
-            rawBodySha256: createHash('sha256').update(rawBody).digest('hex'),
-            receivedAt: new Date(),
+  // `status: { $ne: 'processed' }` is the whole idempotency guarantee.
+  //
+  // An earlier version matched on (provider, eventId) alone and unconditionally
+  // set status to 'processing', deciding duplicate-ness from the pre-image. That
+  // is wrong in two compounding ways, and the integration suite caught it the
+  // first time it ever ran:
+  //
+  //   - a redelivery of a processed event rewrote its status to 'processing'
+  //     and returned duplicate without ever finishing it, so the row stayed
+  //     'processing' forever — indistinguishable from a genuinely crashed run
+  //   - the NEXT redelivery then saw 'processing', not 'processed', claimed it,
+  //     and RE-RAN THE HANDLER. Every second retry double-processed.
+  //
+  // Money survived that only because handleChargeSuccess bails on an already
+  // paid order. Idempotency was being provided by a downstream guard rather
+  // than by the mechanism whose entire job it is.
+  //
+  // With the filter, a processed row no longer matches, so the upsert attempts
+  // an insert and the unique (provider, eventId) index rejects it. That
+  // rejection IS the "already processed" signal, and it is atomic — no
+  // read-then-write window for a concurrent redelivery to slip through.
+  //
+  // A row left in 'processing' by a crashed run still matches, so it is still
+  // retried rather than skipped forever.
+  try {
+    await runWithoutTenantScope(
+      'recording an inbound webhook, which arrives before any tenant is known',
+      () =>
+        WebhookEvent.findOneAndUpdate(
+          { provider: 'paystack', eventId, status: { $ne: 'processed' } },
+          {
+            $setOnInsert: {
+              provider: 'paystack',
+              eventId,
+              eventType: event.event,
+              reference: extractReference(event),
+              signatureVerified: true,
+              // The digest only, never the body: a charge payload carries
+              // cardholder detail we have no reason to retain.
+              rawBodySha256: createHash('sha256').update(rawBody).digest('hex'),
+              receivedAt: new Date(),
+            },
+            $set: { status: 'processing' },
+            $inc: { attempts: 1 },
           },
-          $set: { status: 'processing' },
-          $inc: { attempts: 1 },
-        },
-        { upsert: true, new: false },
-      ),
-  );
+          { upsert: true, new: false },
+        ),
+    );
 
-  return existing?.status === 'processed' ? 'already_processed' : 'claimed';
+    // Inserted, or took over a row that was not yet processed. Either way this
+    // call owns the event.
+    return 'claimed';
+  } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      // A processed row exists. Count the redelivery so the record shows how
+      // many times Paystack sent it, but do not touch status.
+      await runWithoutTenantScope(
+        'counting a redelivery of an already-processed webhook',
+        () =>
+          WebhookEvent.updateOne(
+            { provider: 'paystack', eventId },
+            { $inc: { attempts: 1 } },
+          ),
+      );
+      return 'already_processed';
+    }
+    throw error;
+  }
+}
+
+/** Mongo's duplicate-key code. */
+function isDuplicateKeyError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: unknown }).code === 11000
+  );
 }
 
 async function finishEvent(

@@ -38,8 +38,11 @@ jobs:
       # A fake test-prefixed key keeps that guard satisfied without a secret:
       # every HTTP call in the suite is stubbed, so nothing reaches Paystack.
       PAYSTACK_SECRET_KEY: sk_test_ci_placeholder_not_a_real_key
-      ROOT_DOMAIN: hordemart.test
-      APP_HOST: app.hordemart.test
+      # ROOT_DOMAIN and APP_HOST are deliberately NOT set here. tests/setup.ts
+      # assigns them with ??=, so a value set in this file wins, and the SEO
+      # suite asserts against the literal hordemart.com that setup.ts provides.
+      # Setting them to hordemart.test here failed 7 unit tests that pass
+      # everywhere else — a CI-only failure caused by CI's own configuration.
 
     steps:
       - uses: actions/checkout@v4
