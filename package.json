@@ -14,9 +14,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "reconcile": "tsx scripts/reconcile.ts",
-    "seed": "tsx scripts/seed.ts",
+    "reconcile": "tsx --env-file=.env.local scripts/reconcile.ts",
+    "seed": "tsx --env-file=.env.local scripts/seed.ts",
     "verify": "npm run typecheck && npm run lint && npm run test"
   },
   "dependencies": {
@@ -24,6 +23,7 @@
     "@upstash/ratelimit": "^2.1.0",
     "@upstash/redis": "^1.38.4",
     "isomorphic-dompurify": "^2.19.0",
+    "mongodb": "^7.7.0",
     "mongoose": "^8.9.5",
     "next": "^15.1.6",
     "react": "^19.0.0",
