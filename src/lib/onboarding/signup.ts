@@ -168,13 +168,13 @@ async function assertEmailFree(email: string): Promise<void> {
     // the lesser harm for a seller-facing form, and the rate limit blocks
     // bulk enumeration. Revisit if we ever add mail: the privacy-preserving
     // flow needs a transport to send "someone tried to sign up as you".
-    throw new ConflictError('An account with that email already exists. Try signing in.');
+    throw new ConflictError('An account with that email already exists.', { field: 'email' });
   }
 }
 
 async function assertSlugFree(slug: string): Promise<void> {
   if (!(await isSlugAvailable(slug))) {
-    throw new ConflictError(`The address ${slug} is already taken. Pick another.`);
+    throw new ConflictError(`The address ${slug} is already taken.`, { field: 'slug' });
   }
 }
 

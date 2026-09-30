@@ -52,6 +52,9 @@ export default function SignupPage() {
   const [slugTouched, setSlugTouched] = useState(false);
   const [slugState, setSlugState] = useState({ status: 'idle', reason: null });
   const [error, setError] = useState(null);
+  // Which field a 409 blamed, so the message can sit beside it. See
+  // ConflictError's details in lib/errors.ts.
+  const [conflict, setConflict] = useState(null);
   const [busy, setBusy] = useState(false);
 
   // Keeps an in-flight availability check from overwriting a newer one.
@@ -113,6 +116,7 @@ export default function SignupPage() {
     event.preventDefault();
     setBusy(true);
     setError(null);
+    setConflict(null);
 
     try {
       const response = await fetch('/api/auth/signup', {
@@ -125,6 +129,7 @@ export default function SignupPage() {
 
       if (!response.ok) {
         setError(body?.error?.message ?? 'Could not create your account');
+        setConflict(body?.error?.details?.field ?? null);
         return;
       }
 
@@ -156,6 +161,12 @@ export default function SignupPage() {
           {error ? (
             <div className="card" role="alert" style={{ borderColor: 'var(--critical)' }}>
               {error}
+              {conflict === 'email' ? (
+                <>
+                  {' '}
+                  <a href="/login">Sign in instead</a>, or use a different address.
+                </>
+              ) : null}
             </div>
           ) : null}
 
@@ -260,16 +271,19 @@ export default function SignupPage() {
                 fontSize: 13,
                 minHeight: 18,
                 color:
-                  slugState.status === 'taken'
+                  conflict === 'slug' || slugState.status === 'taken'
                     ? 'var(--critical)'
                     : slugState.status === 'available'
                       ? 'var(--success)'
                       : 'var(--text-secondary)',
               }}
             >
-              {slugState.status === 'checking' && 'Checking…'}
-              {slugState.status === 'available' && `${effectiveSlug}.${apex} is available`}
-              {slugState.status === 'taken' && slugState.reason}
+              {conflict === 'slug' && 'That address was taken just now — pick another.'}
+              {conflict !== 'slug' && slugState.status === 'checking' && 'Checking…'}
+              {conflict !== 'slug' &&
+                slugState.status === 'available' &&
+                `${effectiveSlug}.${apex} is available`}
+              {conflict !== 'slug' && slugState.status === 'taken' && slugState.reason}
             </p>
           </Field>
 

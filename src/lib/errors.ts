@@ -56,8 +56,14 @@ export class NotFoundError extends AppError {
 }
 
 export class ConflictError extends AppError {
-  constructor(message: string) {
-    super(409, 'conflict', message);
+  /**
+   * `details` lets a caller say WHICH field collided, so a form can put the
+   * message beside the offending input instead of in a banner at the top and
+   * leaving the reader to work out which box to change. Optional, so every
+   * existing call site is unaffected.
+   */
+  constructor(message: string, details?: unknown) {
+    super(409, 'conflict', message, { details });
   }
 }
 
