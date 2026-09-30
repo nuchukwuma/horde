@@ -62,6 +62,17 @@ export default function SignupPage() {
   const [apex, setApex] = useState('');
   useEffect(() => setApex(rootDomain()), []);
 
+  // The landing page's subdomain preview sends whatever was typed there as
+  // ?slug=. Carrying it in means the first thing a seller did on the marketing
+  // page is not thrown away and retyped here — which would make the preview a
+  // trick rather than a step.
+  useEffect(() => {
+    const proposed = new URLSearchParams(window.location.search).get('slug');
+    if (!proposed) return;
+    setSlug(slugify(proposed));
+    setSlugTouched(true);
+  }, []);
+
   // Until the seller edits the address themselves, it follows the store name.
   const effectiveSlug = slugTouched ? slug : slugify(siteName);
 
