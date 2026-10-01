@@ -58,13 +58,65 @@ const HANDLE = /^[A-Za-z0-9._-]{1,64}$/;
 /** WhatsApp needs digits: a handle-shaped value there would build a dead link. */
 const PHONE_DIGITS = /^[0-9]{7,15}$/;
 
-export const socialHandleSchema = z
+/** Each platform's own websites. Only links on these are cut down to a handle. */
+const PLATFORM_HOSTS: Partial<Record<SocialPlatform, string[]>> = {
+  instagram: ['instagram.com'],
+  x: ['x.com', 'twitter.com'],
+  facebook: ['facebook.com', 'fb.com'],
+  tiktok: ['tiktok.com'],
+  youtube: ['youtube.com'],
+  linkedin: ['linkedin.com'],
+};
+
+/**
+ * Turn what a seller pasted into a bare handle.
+ *
+ * Sellers copy their profile link from the app, which arrives as
+ * "https://www.instagram.com/adetextiles/", "instagram.com/adetextiles" or a
+ * share link carrying "?igsh=…". When — and only when — the link is on the
+ * platform's own site, keep just the last part of its path (the handle; for
+ * LinkedIn "/in/name", for YouTube "/@channel") and drop the rest. Anything
+ * else comes back untouched, so a link to some other site still fails the
+ * handle pattern below rather than being quietly accepted.
+ */
+function extractHandle(raw: string, platform: SocialPlatform): string {
+  const value = raw.trim();
+  const hosts = PLATFORM_HOSTS[platform] ?? [];
+  if (/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/|$)/i.test(value)) {
+    try {
+      const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+      const host = url.hostname.toLowerCase().replace(/^(www|m|mobile|web)\./, '');
+      if (hosts.includes(host)) {
+        const last = url.pathname.split('/').filter(Boolean).pop() ?? '';
+        return last.replace(/^@/, '');
+      }
+    } catch {
+      // Not a URL after all: fall through and let the pattern decide.
+    }
+  }
+  return value.replace(/^@/, '');
+}
+
+function handleFor(platform: SocialPlatform) {
+  return z
+    .string()
+    .trim()
+    .transform((value) => extractHandle(value, platform))
+    .refine((value) => value !== 'profile.php', 'Use your page’s username (facebook.com/yourpage), not a profile.php link')
+    .refine((value) => HANDLE.test(value), 'Use just your handle, without the full link');
+}
+
+/**
+ * WhatsApp wants the full international number. Spaces, "+" and dashes are
+ * dropped; a Nigerian number written the local way (0801 234 5678) gains
+ * its 234 country code, because wa.me cannot dial a local number.
+ */
+const whatsappSchema = z
   .string()
   .trim()
-  // A pasted profile URL is the most common input mistake, so strip the parts
-  // we are going to add back rather than rejecting it.
-  .transform((value) => value.replace(/^https?:\/\/(www\.)?[^/]+\//i, '').replace(/^@/, ''))
-  .refine((value) => HANDLE.test(value), 'Use just your handle, without the full link');
+  .transform((value) => value.replace(/[^0-9]/g, ''))
+  .transform((digits) => (/^0[789][01][0-9]{8}$/.test(digits) ? `234${digits.slice(1)}` : digits))
+  .refine((value) => PHONE_DIGITS.test(value), 'Enter the number in full, like 2348012345678');
 
 export const socialWebsiteSchema = z
   .string()
@@ -93,18 +145,13 @@ export const socialWebsiteSchema = z
 
 export const socialsSchema = z
   .object({
-    instagram: socialHandleSchema.optional(),
-    x: socialHandleSchema.optional(),
-    facebook: socialHandleSchema.optional(),
-    tiktok: socialHandleSchema.optional(),
-    whatsapp: z
-      .string()
-      .trim()
-      .transform((value) => value.replace(/[^0-9]/g, ''))
-      .refine((value) => PHONE_DIGITS.test(value), 'Enter the number in full, like 2348012345678')
-      .optional(),
-    youtube: socialHandleSchema.optional(),
-    linkedin: socialHandleSchema.optional(),
+    instagram: handleFor('instagram').optional(),
+    x: handleFor('x').optional(),
+    facebook: handleFor('facebook').optional(),
+    tiktok: handleFor('tiktok').optional(),
+    whatsapp: whatsappSchema.optional(),
+    youtube: handleFor('youtube').optional(),
+    linkedin: handleFor('linkedin').optional(),
     website: socialWebsiteSchema.optional(),
   })
   .strict();

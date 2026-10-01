@@ -54,6 +54,37 @@ describe('social handles', () => {
     expect(socialsSchema.safeParse({ whatsapp: 'callme' }).success).toBe(false);
   });
 
+  it('cuts links copied from the apps down to the handle, on that platform’s own site only', () => {
+    const cases: Array<[string, string, string]> = [
+      ['instagram', 'https://www.instagram.com/adestores/', 'adestores'],
+      ['instagram', 'https://instagram.com/adestores?igsh=MWx0b2', 'adestores'],
+      ['instagram', 'instagram.com/adestores', 'adestores'],
+      ['tiktok', 'https://www.tiktok.com/@adestores?lang=en', 'adestores'],
+      ['x', 'https://twitter.com/adestores', 'adestores'],
+      ['linkedin', 'https://www.linkedin.com/in/ade-ola/', 'ade-ola'],
+      ['youtube', 'https://youtube.com/@AdeStores', 'AdeStores'],
+      ['facebook', 'https://m.facebook.com/adestores', 'adestores'],
+    ];
+    for (const [platform, pasted, handle] of cases) {
+      expect(socialsSchema.parse({ [platform]: pasted })[platform as 'instagram'], pasted).toBe(handle);
+    }
+    // Someone else's site is not unpacked, so it still fails the handle rule.
+    expect(socialsSchema.safeParse({ instagram: 'https://evil.example/adestores' }).success).toBe(false);
+    expect(socialsSchema.safeParse({ x: 'https://instagram.com/adestores' }).success).toBe(false);
+  });
+
+  it('explains a Facebook profile.php link instead of storing a dead one', () => {
+    const result = socialsSchema.safeParse({ facebook: 'https://www.facebook.com/profile.php?id=1000123' });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toMatch(/username/);
+  });
+
+  it('adds 234 to a Nigerian number written the local way, and leaves other countries alone', () => {
+    expect(socialsSchema.parse({ whatsapp: '0801 234 5678' }).whatsapp).toBe('2348012345678');
+    expect(socialsSchema.parse({ whatsapp: '0907-123-4567' }).whatsapp).toBe('2349071234567');
+    expect(socialsSchema.parse({ whatsapp: '+44 7700 900123' }).whatsapp).toBe('447700900123');
+  });
+
   it('refuses an unknown platform rather than storing it', () => {
     // .strict() — an unknown key would otherwise be persisted and then handed
     // to buildSocialLinks, which is not expecting it.

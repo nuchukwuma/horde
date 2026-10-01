@@ -22,6 +22,8 @@ import { FONT_PAIRS } from '../../src/lib/design/fonts';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import StoreBrand from '../../src/components/shop/StoreBrand';
+import { ContactWhatsApp, SocialLinks } from '../../src/components/blocks/Blocks';
+import { buildSocialLinks } from '../../src/lib/content/socials';
 import { MAX_PAGE_BYTES, parsePageData, sanitizeBlockRichText, type PageData } from '../../src/lib/design/blocks';
 import { PRESET_THEMES, presetPage } from '../../src/lib/design/presets';
 import { promoteDraft, validateDraft } from '../../src/lib/design/service';
@@ -279,6 +281,43 @@ describe('page layout: allow-list and sanitising', () => {
     const wa = (phone: string) => ({ type: 'ContactWhatsApp', props: { id: 'wa', phone } });
     expect(() => parsePageData(page([wa('evil.example/?')]))).toThrow(ValidationError);
     expect(() => parsePageData(page([wa('2348012345678')]))).not.toThrow();
+  });
+});
+
+describe('social media and WhatsApp blocks', () => {
+  const render = (Component: unknown, props: Record<string, unknown>) =>
+    renderToStaticMarkup(createElement(Component as Parameters<typeof createElement>[0], props));
+  const socials = buildSocialLinks({ instagram: 'adetextiles', whatsapp: '2348012345678', website: 'https://ade.ng' });
+
+  it('accepts a social links block, and refuses one that tries to carry its own links', () => {
+    expect(() => parsePageData(page([{ type: 'SocialLinks', props: { id: 's1' } }]))).not.toThrow();
+    const smuggled = { type: 'SocialLinks', props: { id: 's1', links: [{ href: 'javascript:alert(1)' }] } };
+    expect(() => parsePageData(page([smuggled]))).toThrow(ValidationError);
+    expect(() => parsePageData(page([{ type: 'SocialLinks', props: { id: 's1', style: 'marquee' } }]))).toThrow(ValidationError);
+  });
+
+  it('lets a WhatsApp block leave its number empty to use the store’s saved one', () => {
+    const parsed = parsePageData(page([{ type: 'ContactWhatsApp', props: { id: 'wa' } }]));
+    expect((parsed.content[0] as { props: { phone: string } }).props.phone).toBe('');
+  });
+
+  it('renders saved socials as safe outbound links, and nothing for customers when there are none', () => {
+    const html = render(SocialLinks, { heading: 'Follow us', style: 'buttons', puck: { metadata: { socials } } });
+    expect(html).toContain('href="https://instagram.com/adetextiles"');
+    expect(html).toContain('href="https://wa.me/2348012345678"');
+    expect(html.match(/rel="noopener noreferrer nofollow"/g)).toHaveLength(3);
+    expect(render(SocialLinks, { puck: { metadata: { socials: [] }, isEditing: false } })).toBe('');
+    expect(render(SocialLinks, { puck: { metadata: { socials: [] }, isEditing: true } })).toContain('Brand → Social media');
+    const icons = render(SocialLinks, { style: 'icons', puck: { metadata: { socials } } });
+    expect(icons).toContain('aria-label="Instagram: @adetextiles"');
+  });
+
+  it('uses the block’s own number, else the saved one, and hides from customers with neither', () => {
+    const store = { whatsapp: '2348099999999' };
+    expect(render(ContactWhatsApp, { heading: 'Chat', phone: '', puck: { metadata: { store } } })).toContain('https://wa.me/2348099999999');
+    expect(render(ContactWhatsApp, { heading: 'Chat', phone: '2348012345678', puck: { metadata: { store } } })).toContain('https://wa.me/2348012345678');
+    expect(render(ContactWhatsApp, { heading: 'Chat', phone: '', puck: { metadata: {}, isEditing: false } })).toBe('');
+    expect(render(ContactWhatsApp, { heading: 'Chat', phone: '', puck: { metadata: {}, isEditing: true } })).toContain('Brand → Social media');
   });
 });
 

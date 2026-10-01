@@ -5,7 +5,7 @@
  * That JSON comes from the seller's browser, so it is untrusted input and
  * gets the same treatment as any other request body:
  *
- *   - ALLOW-LIST of block types. Exactly eight, all ours. There is no raw
+ *   - ALLOW-LIST of block types. Exactly nine, all ours. There is no raw
  *     HTML block, no script block, no iframe/embed block — not disabled, not
  *     present. An unknown `type` fails validation.
  *   - STRICT props. Every block's props are a closed zod object: an extra key
@@ -165,9 +165,25 @@ export const BLOCK_SCHEMAS = {
       heading: plain(80).default('Order on WhatsApp'),
       text: plain(240).default(''),
       // International format without "+": 2348012345678. wa.me builds the link.
-      phone: z.string().trim().regex(/^[0-9]{7,15}$/, 'Use digits only, like 2348012345678'),
+      // Empty means "use the WhatsApp number saved in Brand → Social media".
+      phone: z
+        .string()
+        .trim()
+        .regex(/^([0-9]{7,15})?$/, 'Use digits only, like 2348012345678')
+        .default(''),
       prefill: plain(160).default(''),
       buttonLabel: plain(32).default('Chat on WhatsApp'),
+    })
+    .strict(),
+
+  // The links themselves are NOT props: they come from the store's saved
+  // social handles (lib/content/socials.ts), so they are edited in one place
+  // and every URL is built from a handle on a host we chose.
+  SocialLinks: z
+    .object({
+      id,
+      heading: plain(80).default('Follow us'),
+      style: z.enum(['buttons', 'icons']).default('buttons'),
     })
     .strict(),
 } as const;

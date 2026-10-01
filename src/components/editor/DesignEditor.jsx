@@ -7,6 +7,8 @@ import { Puck } from '@puckeditor/core';
 import '@puckeditor/core/no-external.css';
 import { buildEditorConfig } from './editorConfig';
 import ThemePanel from './ThemePanel';
+import ClickToAddItem from './ClickToAddItem';
+import { buildSocialLinks } from '@/lib/content/socials';
 import { themeContrastProblems, withLook } from '@/lib/design/theme';
 import { PRESET_THEMES, presetPage } from '@/lib/design/presets';
 
@@ -33,7 +35,7 @@ function snapshot(theme, page) {
   return JSON.stringify({ theme, page });
 }
 
-export default function DesignEditor({ siteId, storeName, storeUrl, products, initial }) {
+export default function DesignEditor({ siteId, storeName, storeUrl, products, initial, initialSocials = {} }) {
   const [theme, setTheme] = useState(initial.draft.theme);
   const [page, setPage] = useState(initial.draft.page);
   const [revision, setRevision] = useState(initial.revision);
@@ -49,6 +51,7 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
   const dirty = snapshot(theme, page) !== saved;
   const unreadable = themeContrastProblems(theme).length > 0;
   const [previewDark, setPreviewDark] = useState(false);
+  const [socials, setSocials] = useState(initialSocials);
 
   // Warn before leaving with unsaved changes.
   useEffect(() => {
@@ -135,8 +138,14 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
   }
 
   const metadata = useMemo(
-    () => ({ theme, products, previewDark, store: { name: storeName, look: theme.style ?? 'adire' } }),
-    [theme, products, previewDark, storeName],
+    () => ({
+      theme,
+      products,
+      previewDark,
+      socials: buildSocialLinks(socials),
+      store: { name: storeName, look: theme.style ?? 'adire', whatsapp: socials?.whatsapp ?? null },
+    }),
+    [theme, products, previewDark, socials, storeName],
   );
 
   return (
@@ -150,6 +159,8 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
         viewports={VIEWPORTS}
         headerTitle={`${storeName} — store design`}
         overrides={{
+          // Blocks can be clicked to add, not only dragged (ClickToAddItem).
+          drawerItem: ClickToAddItem,
           headerActions: () => (
             <div className="ed-actions">
               <span className={`ed-state${dirty ? ' is-dirty' : ''}`} role="status">
@@ -180,6 +191,8 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
           onClose={() => setBrandOpen(false)}
           previewDark={previewDark}
           onPreviewDark={setPreviewDark}
+          socials={socials}
+          onSocialsSaved={setSocials}
         />
       ) : null}
 

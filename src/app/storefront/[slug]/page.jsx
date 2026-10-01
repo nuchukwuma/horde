@@ -5,7 +5,7 @@ import { listPublishedPosts } from '@/lib/content/posts';
 import { listPublishedProjects } from '@/lib/content/projects';
 import { formatDate } from '@/lib/ui/format';
 import { buildSocialLinks } from '@/lib/content/socials';
-import SocialLinks from '@/components/shop/SocialLinks';
+import { SocialLinks } from '@/components/blocks/Blocks';
 import ProductCard from '@/components/shop/ProductCard';
 import StoreMonogram from '@/components/shop/StoreMonogram';
 import ProductArt from '@/components/art/ProductArt';
@@ -29,14 +29,22 @@ export default async function StorefrontHome({ params }) {
   if (design && design.page.content.length > 0) {
     const products = site.modules.store ? await withSite(site, () => listActiveProducts(9)) : [];
     return (
-      <>
-        <Render
-          config={renderConfig}
-          data={design.page}
-          metadata={{ products, store: { name: site.name, slug: site.slug, look: design.theme.style ?? 'adire' } }}
-        />
-        <SocialLinks links={buildSocialLinks(site.socials)} />
-      </>
+      // Social links are in the footer of every page, and wherever the seller
+      // placed a "Social media links" block.
+      <Render
+        config={renderConfig}
+        data={design.page}
+        metadata={{
+          products,
+          socials: buildSocialLinks(site.socials),
+          store: {
+            name: site.name,
+            slug: site.slug,
+            look: design.theme.style ?? 'adire',
+            whatsapp: site.socials?.whatsapp ?? null,
+          },
+        }}
+      />
     );
   }
 
@@ -190,7 +198,7 @@ export default async function StorefrontHome({ params }) {
         </section>
       ) : null}
 
-      <SocialLinks links={links} />
+      <SocialLinks heading="Find us" style="buttons" puck={{ metadata: { socials: links } }} />
     </>
   );
 }

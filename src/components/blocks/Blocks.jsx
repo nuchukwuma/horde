@@ -1,5 +1,5 @@
 /**
- * The eight page blocks a seller can arrange with the store editor.
+ * The nine page blocks a seller can arrange with the store editor.
  *
  * Plain components — no hooks, no browser APIs — so the SAME code renders on
  * the server for customers (Puck's RSC Render) and in the editor's live
@@ -19,6 +19,7 @@
 
 import LookArt from '@/components/design/LookArt';
 import ProductCard from '@/components/shop/ProductCard';
+import SocialIcon from '@/components/shop/SocialIcon';
 
 /** Rich text is a sanitised string on the server, a live editor in Puck. */
 function Rich({ value, className }) {
@@ -197,11 +198,14 @@ export function FAQ({ heading, items = [] }) {
   );
 }
 
-export function ContactWhatsApp({ heading, text, phone, prefill, buttonLabel }) {
-  const digits = String(phone ?? '').replace(/\D/g, '');
+export function ContactWhatsApp({ heading, text, phone, prefill, buttonLabel, puck }) {
+  // The block's own number if the seller typed one, otherwise the WhatsApp
+  // number saved with the store's social media.
+  const digits = String(phone || puck?.metadata?.store?.whatsapp || '').replace(/\D/g, '');
   const href = digits
     ? `https://wa.me/${digits}${prefill ? `?text=${encodeURIComponent(prefill)}` : ''}`
     : null;
+  if (!href && !puck?.isEditing) return null;
   return (
     <section className="container blk-section">
       <div className="blk-wa">
@@ -213,12 +217,56 @@ export function ContactWhatsApp({ heading, text, phone, prefill, buttonLabel }) 
           <a className="btn btn--lg blk-wa__btn" href={href} target="_blank" rel="noopener noreferrer nofollow">
             {buttonLabel || 'Chat on WhatsApp'}
           </a>
-        ) : null}
+        ) : (
+          <p className="blk-empty">Add your WhatsApp number here, or in Brand → Social media.</p>
+        )}
       </div>
       <p className="blk-wa__note">
         Pay through this store&rsquo;s checkout, not by direct transfer — it is the only way a
         payment can be traced and refunded.
       </p>
+    </section>
+  );
+}
+
+/**
+ * The store's social media, from the handles saved in Brand → Social media.
+ * Links arrive as metadata built by buildSocialLinks, so every href is a
+ * host we chose plus a validated handle — the block has no URL props at all.
+ */
+export function SocialLinks({ heading, style = 'buttons', puck }) {
+  const links = puck?.metadata?.socials ?? [];
+  if (links.length === 0) {
+    return puck?.isEditing ? (
+      <section className="container blk-section">
+        <p className="blk-empty">No social media yet. Add your accounts in Brand → Social media and they appear here.</p>
+      </section>
+    ) : null;
+  }
+  return (
+    <section className="container blk-section">
+      {heading ? <h2 className="store-section__title blk-heading">{heading}</h2> : null}
+      <ul className={`blk-socials blk-socials--${style}`}>
+        {links.map((link) => (
+          <li key={link.platform}>
+            <a
+              className="blk-social"
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              aria-label={style === 'icons' ? `${link.label}: ${link.text}` : undefined}
+            >
+              <SocialIcon platform={link.platform} />
+              {style === 'buttons' ? (
+                <span className="blk-social__text">
+                  <span className="blk-social__label">{link.label}</span>
+                  <span className="blk-social__handle">{link.text}</span>
+                </span>
+              ) : null}
+            </a>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -232,4 +280,5 @@ export const BLOCK_COMPONENTS = {
   ImageText,
   FAQ,
   ContactWhatsApp,
+  SocialLinks,
 };

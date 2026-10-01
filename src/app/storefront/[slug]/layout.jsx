@@ -6,6 +6,8 @@ import { sessionCookieName } from '@/lib/auth/cookies';
 import CartButton from '@/components/shop/CartButton';
 import StoreBrand from '@/components/shop/StoreBrand';
 import BrandMark from '@/components/art/BrandMark';
+import SocialIcon from '@/components/shop/SocialIcon';
+import { buildSocialLinks } from '@/lib/content/socials';
 import { getPublishedDesign } from '@/lib/design/published';
 import { logoIconUrl, themeAttributes, themeToCssVars } from '@/lib/design/theme';
 import { cloudinaryConfig } from '@/lib/products/images';
@@ -57,6 +59,9 @@ export default async function StorefrontLayout({ children, params }) {
   const design = await getPublishedDesign(String(site._id), site.slug);
   const style = design ? themeToCssVars(design.theme) : themeStyle(site.settings?.theme ?? site.theme);
 
+  // Built from stored handles on hosts we chose (lib/content/socials.ts).
+  const socialLinks = buildSocialLinks(site.socials);
+
   const token = (await cookies()).get(sessionCookieName('storefront'))?.value;
   const shopper = modules.store ? await validateCustomerSessionToken(token, site._id) : null;
 
@@ -101,6 +106,23 @@ export default async function StorefrontLayout({ children, params }) {
             <p className="muted" style={{ margin: '4px 0 0' }}>
               © {new Date().getFullYear()} · Payments secured by Paystack
             </p>
+            {socialLinks.length > 0 ? (
+              <ul className="store-footer__socials" aria-label={`${site.name} on social media`}>
+                {socialLinks.map((link) => (
+                  <li key={link.platform}>
+                    <a
+                      className="store-footer__social"
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      aria-label={`${link.label}: ${link.text}`}
+                    >
+                      <SocialIcon platform={link.platform} />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
           <a className="store-footer__powered" href={platformOrigin()} rel="noopener">
             <BrandMark className="store-footer__mark" />
