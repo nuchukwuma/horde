@@ -31,6 +31,7 @@ export default async function DesignPage({ params }) {
       storeUrl={siteOrigin(site)}
       products={products}
       initial={JSON.parse(JSON.stringify(design))}
+      initialSocials={JSON.parse(JSON.stringify(site.socials ?? {}))}
     />
   );
 }

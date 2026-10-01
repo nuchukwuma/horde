@@ -81,7 +81,8 @@ export function buildEditorConfig(siteId) {
     categories: {
       top: { title: 'Top of page', components: ['AnnouncementBar', 'Hero'] },
       selling: { title: 'Selling', components: ['FeaturedProducts', 'CategoryGrid'] },
-      story: { title: 'Trust and story', components: ['Testimonials', 'ImageText', 'FAQ', 'ContactWhatsApp'] },
+      story: { title: 'Trust and story', components: ['Testimonials', 'ImageText', 'FAQ'] },
+      contact: { title: 'Contact and social', components: ['ContactWhatsApp', 'SocialLinks'] },
     },
     components: {
       AnnouncementBar: {
@@ -245,18 +246,36 @@ export function buildEditorConfig(siteId) {
         fields: {
           heading: text('Heading', true),
           text: textarea('Text'),
-          phone: text('WhatsApp number, digits only (2348012345678)'),
+          phone: text('WhatsApp number, like 2348012345678 (leave empty to use the one in Brand → Social media)'),
           prefill: text('Message to start the chat'),
           buttonLabel: text('Button text'),
         },
         defaultProps: {
           heading: 'Order on WhatsApp',
           text: 'Prefer to chat first? Message us and we will reply within the hour.',
-          phone: '2348000000000',
+          // Empty: use the number saved in Brand → Social media. A placeholder
+          // number here would go live and send customers to nobody.
+          phone: '',
           prefill: 'Hello, I saw your store on HordeMart',
           buttonLabel: 'Chat on WhatsApp',
         },
         render: C.ContactWhatsApp,
+      },
+      SocialLinks: {
+        label: 'Social media links',
+        fields: {
+          heading: text('Heading', true),
+          style: {
+            type: 'radio',
+            label: 'Show as',
+            options: [
+              { label: 'Buttons with names', value: 'buttons' },
+              { label: 'Icons only', value: 'icons' },
+            ],
+          },
+        },
+        defaultProps: { heading: 'Follow us', style: 'buttons' },
+        render: C.SocialLinks,
       },
     },
   };

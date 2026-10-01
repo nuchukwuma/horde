@@ -364,6 +364,34 @@
   pointer-events: none;
 }
 
+/* Social media fields in the Brand panel. */
+.ed-socials {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ed-social {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.ed-social__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+/* Blocks in the editor's list can be clicked as well as dragged. */
+.ed-drawer-item {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
 .ed-input {
   min-height: 38px;
   font-size: 13.5px;

@@ -5,10 +5,11 @@ import { contrastProblems, withLook } from '@/lib/design/theme';
 import { LOOKS } from '@/lib/design/looks';
 import { PRESET_THEMES } from '@/lib/design/presets';
 import ImageField from './ImageField';
+import SocialsSection from './SocialsSection';
 
 /**
- * Brand settings: logo, look, light/dark mode, preset, colours, fonts,
- * corners, buttons.
+ * Brand settings: logo, social media, look, light/dark mode, preset,
+ * colours, fonts, corners, buttons.
  *
  * Contrast is checked as the seller picks. A colour that makes text
  * unreadable is flagged immediately and the editor will not save it — and
@@ -73,7 +74,16 @@ function ColorSet({ title, colors, onColor, idPrefix }) {
   );
 }
 
-export default function ThemePanel({ theme, onChange, siteId, onClose, previewDark = false, onPreviewDark }) {
+export default function ThemePanel({
+  theme,
+  onChange,
+  siteId,
+  onClose,
+  previewDark = false,
+  onPreviewDark,
+  socials,
+  onSocialsSaved,
+}) {
   const look = theme.style ?? 'adire';
   const mode = theme.mode ?? 'light';
   const darkColors = theme.darkColors ?? LOOKS[look].dark;
@@ -159,6 +169,8 @@ export default function ThemePanel({ theme, onChange, siteId, onClose, previewDa
         ) : null}
         <p className="ed-hint">You can see it at the top of the preview. Publish to put it on your store.</p>
       </section>
+
+      <SocialsSection siteId={siteId} socials={socials} onSaved={onSocialsSaved} />
 
       <section className="ed-group">
         <h3 className="ed-group__title">Look</h3>

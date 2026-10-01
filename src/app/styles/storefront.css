@@ -1121,42 +1121,6 @@
 
 /* ---------- Social links ---------- */
 
-.socials {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.social {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 8px 16px;
-  border-radius: 999px;
-  border: 1.5px solid var(--line);
-  background: var(--surface-1);
-  text-decoration: none;
-  font-size: 14.5px;
-  transition: transform var(--dur) var(--ease-spring), background-color var(--dur-fast);
-}
-
-.social:hover {
-  transform: translateY(-2px) rotate(-1deg);
-  background: var(--accent-wash);
-}
-
-.social__label {
-  font-weight: 700;
-}
-
-.social__handle {
-  color: var(--text-secondary);
-}
-
 /* ==========================================================================
    Store editor blocks (components/blocks/Blocks.jsx)
 
@@ -1991,6 +1955,117 @@
 
 @media (prefers-reduced-motion: reduce) {
   .storefront[data-look='danfo'] .btn {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   Social media: the "Social media links" block and the footer icons.
+   ========================================================================== */
+
+.social-icon {
+  flex: none;
+}
+
+.blk-socials {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.blk-social {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 16px 8px 12px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 14.5px;
+  transition: transform var(--dur) var(--ease-spring), background-color var(--dur-fast);
+}
+
+.blk-social:hover {
+  transform: translateY(-2px);
+  background: var(--accent-wash);
+}
+
+.blk-social__text {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+}
+
+.blk-social__label {
+  font-weight: 700;
+}
+
+.blk-social__handle {
+  color: var(--text-secondary);
+}
+
+/* Icons only: round 48px targets, easy to hit on a phone. */
+.blk-socials--icons .blk-social {
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+}
+
+.blk-socials--icons .social-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.store-footer__socials {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.store-footer__social {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border-strong);
+  color: var(--text-primary);
+  transition: background-color var(--dur-fast), border-color var(--dur-fast);
+}
+
+.store-footer__social:hover {
+  background: var(--accent-wash);
+  border-color: var(--accent);
+}
+
+/* Looks: Danfo's chunky outline, Credit Alert's dashed slip. */
+.storefront[data-look='danfo'] :is(.blk-social, .store-footer__social) {
+  border: 2.5px solid var(--text-primary);
+  box-shadow: 2px 2px 0 var(--text-primary);
+  border-radius: 0;
+}
+
+.storefront[data-look='receipt'] :is(.blk-social, .store-footer__social) {
+  border-style: dashed;
+  border-radius: 0;
+}
+
+.storefront[data-look='receipt'] .blk-social__handle {
+  font-family: var(--font-mono);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blk-social {
     transition: none;
   }
 }
