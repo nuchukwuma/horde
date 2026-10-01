@@ -2,6 +2,9 @@ import { defineConfig } from 'vitest/config';
 import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
+  // Same JSX runtime as Next.js, so components can be rendered in tests
+  // without importing React into every file.
+  esbuild: { jsx: 'automatic' },
   test: {
     globals: true,
     environment: 'node',

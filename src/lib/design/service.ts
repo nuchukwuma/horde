@@ -53,7 +53,7 @@ export function validateDraft(
   const theme = themeSchema.parse(input.theme);
   const page = parsePageData(input.page);
 
-  const images = [...pageImages(page), ...(theme.logo ? [theme.logo] : [])];
+  const images = [...pageImages(page), ...(theme.logo ? [theme.logo] : []), ...(theme.logoDark ? [theme.logoDark] : [])];
   // Throws unless every image is on our cloud, in this store's design folder.
   assertOwnImages(images, siteId, 'design', config);
 

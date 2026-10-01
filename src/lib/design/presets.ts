@@ -30,6 +30,9 @@ export const PRESET_THEMES: Record<PresetId, Theme> = {
     radius: 'soft',
     buttonStyle: 'pill',
     logo: null,
+    logoDark: null,
+    logoSize: 'md',
+    showName: true,
   },
   food: {
     preset: 'food',
@@ -47,6 +50,9 @@ export const PRESET_THEMES: Record<PresetId, Theme> = {
     radius: 'round',
     buttonStyle: 'solid',
     logo: null,
+    logoDark: null,
+    logoSize: 'md',
+    showName: true,
   },
   electronics: {
     preset: 'electronics',
@@ -64,6 +70,9 @@ export const PRESET_THEMES: Record<PresetId, Theme> = {
     radius: 'none',
     buttonStyle: 'solid',
     logo: null,
+    logoDark: null,
+    logoSize: 'md',
+    showName: true,
   },
 };
 

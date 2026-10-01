@@ -1165,11 +1165,39 @@
    mobile-first from 360px.
    ========================================================================== */
 
+/* The seller's logo: height by the size they chose, width follows. */
+.store-brand__picture {
+  display: contents;
+}
+
 .store-brand__logo {
-  height: 38px;
+  display: block;
+  height: 40px;
   width: auto;
-  max-width: 140px;
+  max-width: 170px;
   object-fit: contain;
+}
+
+.store-brand--logo-sm .store-brand__logo {
+  height: 30px;
+  max-width: 130px;
+}
+
+.store-brand--logo-lg .store-brand__logo {
+  height: 52px;
+  max-width: 230px;
+}
+
+/* Phones: a large logo must still leave room for the menu and basket. */
+@media (max-width: 480px) {
+  .store-brand--logo-lg .store-brand__logo {
+    height: 44px;
+    max-width: 150px;
+  }
+
+  .store-brand__logo {
+    max-width: 130px;
+  }
 }
 
 /* Button styles from the theme. */

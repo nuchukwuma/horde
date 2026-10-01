@@ -7,8 +7,8 @@ import { PRESET_THEMES } from '@/lib/design/presets';
 import ImageField from './ImageField';
 
 /**
- * Brand settings: look, light/dark mode, preset, colours, fonts, corners,
- * buttons, logo.
+ * Brand settings: logo, look, light/dark mode, preset, colours, fonts,
+ * corners, buttons.
  *
  * Contrast is checked as the seller picks. A colour that makes text
  * unreadable is flagged immediately and the editor will not save it — and
@@ -100,6 +100,65 @@ export default function ThemePanel({ theme, onChange, siteId, onClose, previewDa
           Close
         </button>
       </div>
+
+      <section className="ed-group">
+        <h3 className="ed-group__title">Logo</h3>
+        <ImageField
+          value={theme.logo}
+          onChange={(logo) => onChange({ ...theme, logo })}
+          siteId={siteId}
+          label={null}
+          noun="logo"
+          withAlt={false}
+          emptyText="No logo yet: your initials are shown in a badge instead."
+          hint="A PNG with a transparent background looks best. Square and wide logos both fit."
+        />
+        {theme.logo ? (
+          <>
+            <h4 className="ed-subtitle">Size in the header</h4>
+            <div className="ed-segment">
+              {[
+                ['sm', 'Small'],
+                ['md', 'Medium'],
+                ['lg', 'Large'],
+              ].map(([value, label]) => (
+                <label key={value} className={(theme.logoSize ?? 'md') === value ? 'is-on' : ''}>
+                  <input
+                    type="radio"
+                    name="logoSize"
+                    value={value}
+                    checked={(theme.logoSize ?? 'md') === value}
+                    onChange={() => onChange({ ...theme, logoSize: value })}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+            <label className="ed-check">
+              <input
+                type="checkbox"
+                checked={theme.showName !== false}
+                onChange={(event) => onChange({ ...theme, showName: event.target.checked })}
+              />
+              Show the store name next to the logo
+            </label>
+            <p className="ed-hint">Turn this off if your logo already spells out your name.</p>
+            {mode !== 'light' ? (
+              <ImageField
+                value={theme.logoDark ?? null}
+                onChange={(logoDark) => onChange({ ...theme, logoDark })}
+                siteId={siteId}
+                label="Logo for dark mode (optional)"
+                noun="logo"
+                withAlt={false}
+                onDark
+                emptyText="Not set: your main logo is used on dark backgrounds too. Add a light-coloured version if it is hard to see."
+              />
+            ) : null}
+          </>
+        ) : null}
+        <p className="ed-hint">You can see it at the top of the preview. Publish to put it on your store.</p>
+      </section>
 
       <section className="ed-group">
         <h3 className="ed-group__title">Look</h3>
@@ -244,9 +303,6 @@ export default function ThemePanel({ theme, onChange, siteId, onClose, previewDa
         </div>
       </section>
 
-      <section className="ed-group">
-        <ImageField value={theme.logo} onChange={(logo) => onChange({ ...theme, logo })} siteId={siteId} label="Logo" />
-      </section>
     </aside>
   );
 }
