@@ -24,6 +24,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import StoreBrand from '../../src/components/shop/StoreBrand';
 import { ContactWhatsApp, SocialLinks } from '../../src/components/blocks/Blocks';
 import { buildSocialLinks } from '../../src/lib/content/socials';
+import { describeDesignError } from '../../src/components/editor/designErrors';
+import { normaliseHex } from '../../src/components/editor/ThemePanel';
+import { internalPath } from '../../src/lib/design/blocks';
 import { MAX_PAGE_BYTES, parsePageData, sanitizeBlockRichText, type PageData } from '../../src/lib/design/blocks';
 import { PRESET_THEMES, presetPage } from '../../src/lib/design/presets';
 import { promoteDraft, validateDraft } from '../../src/lib/design/service';
@@ -318,6 +321,57 @@ describe('social media and WhatsApp blocks', () => {
     expect(render(ContactWhatsApp, { heading: 'Chat', phone: '2348012345678', puck: { metadata: { store } } })).toContain('https://wa.me/2348012345678');
     expect(render(ContactWhatsApp, { heading: 'Chat', phone: '', puck: { metadata: {}, isEditing: false } })).toBe('');
     expect(render(ContactWhatsApp, { heading: 'Chat', phone: '', puck: { metadata: {}, isEditing: true } })).toContain('Brand → Social media');
+  });
+});
+
+describe('design editor fixes', () => {
+  it('checks only the palettes visitors can see: a dark store is not refused over hidden light colours', () => {
+    const badLight = { ...fashion.colors, text: '#eeeeee' };
+    expect(themeSchema.safeParse({ ...fashion, mode: 'dark', colors: badLight }).success).toBe(true);
+    expect(themeSchema.safeParse({ ...fashion, mode: 'auto', colors: badLight }).success).toBe(false);
+    expect(themeSchema.safeParse({ ...fashion, mode: 'light', colors: badLight }).success).toBe(false);
+  });
+
+  it('accepts a WhatsApp number in a block the way the Social media field does', () => {
+    const parsed = parsePageData(page([
+      { type: 'ContactWhatsApp', props: { id: 'a', phone: '+234 801 234 5678' } },
+      { type: 'ContactWhatsApp', props: { id: 'b', phone: '0801 234 5678' } },
+    ]));
+    expect(parsed.content.map((block) => (block.props as { phone: string }).phone)).toEqual(['2348012345678', '2348012345678']);
+    expect(() => parsePageData(page([{ type: 'ContactWhatsApp', props: { id: 'c', phone: 'call me' } }]))).toThrow(ValidationError);
+  });
+
+  it('adds the missing slash to a bare store path, and still refuses anything that leaves the store', () => {
+    expect(internalPath.parse('shop')).toBe('/shop');
+    expect(internalPath.parse('shop/adire-wrap?colour=blue')).toBe('/shop/adire-wrap?colour=blue');
+    for (const bad of ['https://evil.example', '//evil.example', 'javascript:alert(1)', '\\\\evil', '/\\evil', 'mailto:x@y.z', ' ']) {
+      expect(internalPath.safeParse(bad).success, bad).toBe(false);
+    }
+  });
+
+  it('names the block and field a seller sees instead of a data path', () => {
+    const config = {
+      components: {
+        Hero: { label: 'Hero with image', fields: { ctaHref: { type: 'text', label: 'Button link (a page in your store, like /shop)' } } },
+        FAQ: { label: 'Questions (FAQ)', fields: { items: { type: 'array', label: 'Questions', arrayFields: { question: { type: 'text', label: 'Question' } } } } },
+      },
+    };
+    const sent = { content: [{ type: 'AnnouncementBar' }, { type: 'Hero' }, { type: 'FAQ' }] };
+    const pageError = { error: { message: 'Page layout rejected', details: { issues: [{ path: ['content', 1, 'props', 'ctaHref'], message: 'Links must point inside your store, like /shop' }] } } };
+    expect(describeDesignError(422, pageError, sent, config).text).toBe('Hero with image (block 2) → Button link: Links must point inside your store, like /shop');
+    const listError = { error: { details: { issues: [{ path: ['content', 2, 'props', 'items', 0, 'question'], message: 'Too long' }] } } };
+    expect(describeDesignError(422, listError, sent, config).text).toBe('Questions (FAQ) (block 3) → Questions 1 → Question: Too long');
+    const themeError = { error: { details: [{ field: 'darkColors.text', message: 'Dark mode: Text is hard to read on the background' }] } };
+    expect(describeDesignError(422, themeError, sent, config).text).toBe('Brand colours: Dark mode: Text is hard to read on the background');
+    expect(describeDesignError(401, null, sent, config).text).toMatch(/signed out/);
+    expect(describeDesignError(409, { error: { message: 'Changed in another tab.' } }, sent, config)).toEqual({ text: 'Changed in another tab.', reload: true });
+  });
+
+  it('reads colour codes typed with or without #, short or long, and refuses anything else', () => {
+    expect(normaliseHex('#22307A')).toBe('#22307a');
+    expect(normaliseHex('22307a')).toBe('#22307a');
+    expect(normaliseHex('#fff')).toBe('#ffffff');
+    for (const bad of ['red', '#12345', '#ggg', 'url(x)', '']) expect(normaliseHex(bad), bad).toBeNull();
   });
 });
 

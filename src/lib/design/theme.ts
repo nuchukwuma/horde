@@ -93,10 +93,11 @@ export const themeSchema = z
   .strict()
   .transform((theme) => ({ ...theme, darkColors: theme.darkColors ?? { ...LOOKS[theme.style].dark } }))
   .superRefine((theme, ctx) => {
-    // Both palettes a visitor can actually see must be readable. The dark
-    // set is only checked when it can be shown; a light-only store is never
-    // refused over colours nobody will see.
-    const sets = theme.mode === 'light' ? (['colors'] as const) : (['colors', 'darkColors'] as const);
+    // Every palette a visitor can actually see must be readable — and only
+    // those: a light-only store is never refused over its dark colours, nor
+    // a dark-only store over light colours nobody will see (and which the
+    // editor hides, so the seller could not even find the problem).
+    const sets = visiblePalettes(theme.mode);
     for (const key of sets) {
       for (const problem of contrastProblems(theme[key])) {
         ctx.addIssue({
@@ -109,6 +110,13 @@ export const themeSchema = z
   });
 
 export type Theme = z.infer<typeof themeSchema>;
+
+/** Which palettes a store in this mode can show its visitors. */
+export function visiblePalettes(mode: string | undefined): Array<'colors' | 'darkColors'> {
+  if (mode === 'dark') return ['darkColors'];
+  if (mode === 'auto') return ['colors', 'darkColors'];
+  return ['colors'];
+}
 
 /** A theme as a client may send it: look, mode and dark colours optional. */
 export type ThemeInput = z.input<typeof themeSchema>;
@@ -190,11 +198,12 @@ export function themeAttributes(theme: Theme): Record<string, string> {
   };
 }
 
-/** Every contrast problem a visitor could see: light always, dark when shown. */
+/** Every contrast problem in the palettes this store's visitors can see. */
 export function themeContrastProblems(theme: Pick<Theme, 'colors' | 'darkColors' | 'mode'>) {
-  const light = contrastProblems(theme.colors).map((problem) => ({ ...problem, set: 'colors' as const }));
-  if ((theme.mode ?? 'light') === 'light' || !theme.darkColors) return light;
-  return [...light, ...contrastProblems(theme.darkColors).map((problem) => ({ ...problem, set: 'darkColors' as const }))];
+  return visiblePalettes(theme.mode).flatMap((set) => {
+    const colors = set === 'darkColors' ? (theme.darkColors ?? LOOKS.adire.dark) : theme.colors;
+    return contrastProblems(colors).map((problem) => ({ ...problem, set }));
+  });
 }
 
 /**

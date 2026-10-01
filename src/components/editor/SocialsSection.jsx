@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SOCIAL_PLATFORMS } from '@/lib/content/socials';
 import SocialIcon from '@/components/shop/SocialIcon';
 
@@ -17,12 +17,16 @@ import SocialIcon from '@/components/shop/SocialIcon';
 
 const ORDER = ['whatsapp', 'instagram', 'tiktok', 'facebook', 'x', 'youtube', 'linkedin', 'website'];
 
-export default function SocialsSection({ siteId, socials, onSaved }) {
+export default function SocialsSection({ siteId, socials, onSaved, onDirtyChange }) {
   const [values, setValues] = useState(() => Object.fromEntries(ORDER.map((key) => [key, socials?.[key] ?? ''])));
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState(null);
 
   const changed = ORDER.some((key) => (values[key] ?? '') !== (socials?.[key] ?? ''));
+  // Lets the Brand panel ask before closing over unsaved links.
+  useEffect(() => {
+    onDirtyChange?.(changed);
+  }, [changed, onDirtyChange]);
 
   async function save() {
     setBusy(true);
