@@ -33,6 +33,24 @@ export interface SitePayout {
   lastChangedBy?: Types.ObjectId | null;
 }
 
+export type SubscriptionStatus = 'none' | 'pending' | 'active' | 'non_renewing' | 'cancelled' | 'attention';
+
+/**
+ * The store's Premium subscription with HordeMart — the platform's own
+ * revenue, paid by the seller. Nothing here touches a seller's sales money.
+ */
+export interface SiteSubscription {
+  status: SubscriptionStatus;
+  /** Our reference for the checkout that started it (hmsub_…). */
+  pendingReference?: string | null;
+  paystackCustomerCode?: string | null;
+  paystackSubscriptionCode?: string | null;
+  paystackPlanCode?: string | null;
+  currentPeriodEnd?: Date | null;
+  startedAt?: Date | null;
+  cancelledAt?: Date | null;
+}
+
 export interface SiteModules {
   store: boolean;
   portfolio: boolean;
@@ -69,6 +87,7 @@ export interface SiteAttributes extends Timestamps {
    * explains why, and builds the links for rendering.
    */
   socials: Record<string, string>;
+  subscription: SiteSubscription;
 }
 
 const siteSchema = new Schema<SiteAttributes>(
@@ -133,6 +152,20 @@ const siteSchema = new Schema<SiteAttributes>(
     theme: { type: Schema.Types.Mixed, default: {} },
     settings: { type: Schema.Types.Mixed, default: {} },
     socials: { type: Schema.Types.Mixed, default: {} },
+    subscription: {
+      status: {
+        type: String,
+        enum: ['none', 'pending', 'active', 'non_renewing', 'cancelled', 'attention'],
+        default: 'none',
+      },
+      pendingReference: { type: String, default: null, index: true, sparse: true },
+      paystackCustomerCode: { type: String, default: null },
+      paystackSubscriptionCode: { type: String, default: null, index: true, sparse: true },
+      paystackPlanCode: { type: String, default: null },
+      currentPeriodEnd: { type: Date, default: null },
+      startedAt: { type: Date, default: null },
+      cancelledAt: { type: Date, default: null },
+    },
   },
   { timestamps: true },
 );

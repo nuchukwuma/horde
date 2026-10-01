@@ -5,6 +5,9 @@ import HeroReel from '@/components/landing/HeroReel';
 import AdirePattern from '@/components/design/AdirePattern';
 import PlatformHeader from '@/components/platform/PlatformHeader';
 import PlatformFooter from '@/components/platform/PlatformFooter';
+import { TIERS, TIERS_ARE_PLACEHOLDERS } from '@/config/plans';
+import { PLANS } from '@/config/fees';
+import { formatNaira } from '@/lib/ui/format';
 
 /**
  * Landing page — ADIRE direction.
@@ -115,6 +118,31 @@ export default function Home() {
         </section>
 
         <section className="container section">
+          <h2 className="section__title facts__title">Free to start. Premium when you outgrow it.</h2>
+          <div className="tiers">
+            {Object.values(TIERS).map((tier) => (
+              <article key={tier.code} className="tier">
+                <h3 className="tier__name">{tier.label}</h3>
+                <p className="tier__price">
+                  {tier.priceKobo === 0 ? 'No monthly fee' : `${formatNaira(tier.priceKobo)} a month`}
+                  <span>, plus {PLANS[tier.code].feePercentBps / 100}% per sale</span>
+                </p>
+                <ul className="tier__list">
+                  <li>{tier.limits.products.toLocaleString('en-NG')} products, {tier.limits.imagesPerProduct} photos each</li>
+                  <li>{tier.limits.posts.toLocaleString('en-NG')} journal posts</li>
+                  <li>{tier.limits.projects.toLocaleString('en-NG')} portfolio projects</li>
+                  <li>Photos up to {Math.round(tier.limits.maxUploadBytes / 1024 / 1024)} MB</li>
+                </ul>
+              </article>
+            ))}
+          </div>
+          <p className="tiers__note">
+            Your own domain and a business email are available as add-ons, set up with you by our team.
+            {TIERS_ARE_PLACEHOLDERS ? ' Prices and limits are placeholders until launch.' : ''}
+          </p>
+        </section>
+
+        <section className="container section" style={{ paddingTop: 0 }}>
           <h2 className="section__title facts__title">What changes for your customers</h2>
           <ul className="facts">
             {FACTS.map((fact) => (

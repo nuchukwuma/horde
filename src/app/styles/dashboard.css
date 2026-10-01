@@ -301,3 +301,112 @@
   cursor: pointer;
   line-height: 1;
 }
+
+/* ---------- Plan and billing ---------- */
+
+.meters {
+  display: grid;
+  gap: 14px;
+}
+
+.meter__head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.meter__track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--surface-inset);
+  overflow: hidden;
+}
+
+.meter__fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform-origin: 0 50%;
+}
+
+.meter__fill.is-near {
+  background: var(--kola);
+}
+
+.plans {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  margin-top: 20px;
+}
+
+.plan {
+  padding: 22px;
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--border);
+  background: var(--surface-1);
+}
+
+.plan.is-current {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-2);
+}
+
+.plan__name {
+  font-size: 20px;
+}
+
+.plan__price {
+  margin: 6px 0 0;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.plan__price span {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.plan__pitch {
+  color: var(--text-secondary);
+  margin: 6px 0 14px;
+}
+
+.plan__limits {
+  margin: 0 0 16px;
+  display: grid;
+  gap: 6px;
+}
+
+.plan__limits > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.plan__limits dt {
+  color: var(--text-secondary);
+}
+
+.plan__limits dd {
+  margin: 0;
+  font-weight: 650;
+}
+
+.addons {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.billing-cancel {
+  display: grid;
+  gap: 8px;
+}

@@ -38,6 +38,12 @@ import { recordAudit } from '../audit';
 import { recordRefund, recordSettlement } from '../ledger/entries';
 import { refundedTotalForOrder } from '../ledger/balances';
 import { computeRefundSplit, readRefundPolicy } from '../payments/refundPolicy';
+import {
+  confirmPremiumPayment,
+  handleSubscriptionChange,
+  handleSubscriptionCreated,
+  isSubscriptionReference,
+} from '../billing/subscription';
 
 export type ProcessOutcome =
   | 'invalid_signature'
@@ -221,8 +227,28 @@ async function handleEvent(
   options: PaystackCallOptions,
 ): Promise<ProcessOutcome> {
   switch (kind) {
-    case 'charge_success':
+    case 'charge_success': {
+      // A Premium subscription payment uses our hmsub_ reference and has no
+      // Order; it upgrades a site instead. Everything else is a sale.
+      const reference = extractReference(event);
+      if (isSubscriptionReference(reference)) {
+        const outcome = await confirmPremiumPayment(reference as string, options);
+        return outcome === 'upgraded' || outcome === 'already_active'
+          ? 'processed'
+          : outcome === 'amount_mismatch'
+            ? 'amount_mismatch'
+            : 'ignored';
+      }
       return handleChargeSuccess(event, eventId, options);
+    }
+    case 'subscription_created':
+      return handleSubscriptionCreated(event.data);
+    case 'subscription_not_renewing':
+      return handleSubscriptionChange('not_renewing', event.data);
+    case 'subscription_disabled':
+      return handleSubscriptionChange('disabled', event.data);
+    case 'subscription_payment_failed':
+      return handleSubscriptionChange('payment_failed', event.data);
     case 'charge_failed':
       return transitionOrder(event, 'failed', ['pending']);
     case 'refund_processed':

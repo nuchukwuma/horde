@@ -29,6 +29,7 @@ import { runWithTenant, runWithoutTenantScope } from '../src/lib/tenant/context'
 import '../src/lib/db/models/index';
 import { describeUri } from './doctor';
 import { PLANS } from '../src/config/fees';
+import { TIERS } from '../src/config/plans';
 
 /** Plan fee terms come from src/config/fees.ts, the same file the landing page reads. */
 function planTerms(code: 'free' | 'pro') {
@@ -72,7 +73,7 @@ async function main(): Promise<void> {
           $set: {
             ...planTerms('free'),
             limits: {
-              products: 20,
+              products: TIERS.free.limits.products,
               staff: 1,
               storageMb: 200,
               customDomain: false,
@@ -91,7 +92,7 @@ async function main(): Promise<void> {
           $set: {
             ...planTerms('pro'),
             limits: {
-              products: null,
+              products: TIERS.pro.limits.products,
               staff: 10,
               storageMb: 5_000,
               customDomain: true,

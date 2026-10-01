@@ -164,7 +164,7 @@ describe('event classification', () => {
   });
 
   it('marks an unknown event as ignored rather than guessing', () => {
-    expect(classifyEvent('subscription.create')).toBe('ignored');
+    expect(classifyEvent('customeridentification.success')).toBe('ignored');
     expect(classifyEvent('something.brand.new')).toBe('ignored');
   });
 });

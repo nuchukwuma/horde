@@ -48,7 +48,9 @@ export default async function AddressPage({ params }) {
             Your own domain <span className="badge">Coming soon</span>
           </h2>
           <p className="secondary" style={{ margin: 0 }}>
-            Using an address like <strong>www.yourshop.com.ng</strong> is not available yet.
+            Connecting an address like <strong>www.yourshop.com.ng</strong> automatically is not
+            available yet. It can be set up by hand as an add-on —{' '}
+            <a href={`/dashboard/${siteId}/billing`}>see Plan and billing</a>.
           </p>
         </section>
       </main>

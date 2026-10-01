@@ -875,3 +875,56 @@
   border-color: #000;
   box-shadow: 6px 6px 0 #000;
 }
+
+/* ---------- Tiers ---------- */
+
+.tiers {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 760px) {
+  .tiers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.tier {
+  padding: 22px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-1);
+}
+
+.tier + .tier {
+  border-color: var(--accent);
+}
+
+.tier__name {
+  font-size: 20px;
+}
+
+.tier__price {
+  margin: 6px 0 12px;
+  font-weight: 650;
+}
+
+.tier__price span {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.tier__list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+}
+
+.tiers__note {
+  margin: 14px 0 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}

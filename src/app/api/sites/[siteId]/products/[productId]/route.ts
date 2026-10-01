@@ -28,7 +28,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     assertPermission(access, 'products:write');
 
     const body = updateProductSchema.parse(await request.json());
-    const product = await withSite(access.site, () => updateProduct(productId, body));
+    const product = await withSite(access.site, () => updateProduct(access.site, productId, body));
 
     return ok(product);
   } catch (error) {

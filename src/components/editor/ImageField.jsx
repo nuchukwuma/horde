@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { uploadImage } from './upload';
+import { TIERS } from '@/config/plans';
+
+const mb = (bytes) => `${Math.round(bytes / 1024 / 1024)} MB`;
 
 /**
  * A Puck custom field for one image: upload, preview, alt text, remove.
@@ -51,7 +54,7 @@ export default function ImageField({ value, onChange, siteId, label = 'Image' })
         {busy ? 'Uploading…' : value?.url ? 'Replace photo' : 'Upload photo'}
         <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onFile} disabled={busy} hidden />
       </label>
-      <p className="ed-hint">JPG, PNG or WebP, up to 5 MB. Stored at most 1600px wide.</p>
+      <p className="ed-hint">JPG, PNG or WebP. Up to {mb(TIERS.free.limits.maxUploadBytes)} on Free, {mb(TIERS.pro.limits.maxUploadBytes)} on Premium. Stored at most 1600px wide to save space.</p>
       {error ? (
         <p className="ed-error" role="alert">
           {error}

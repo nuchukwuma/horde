@@ -13,13 +13,13 @@
 
 import { Types } from 'mongoose';
 import { Product, type ProductAttributes } from '../db/models/Product';
-import { Plan } from '../db/models/Plan';
 import type { SiteDocument } from '../db/models/Site';
 import { nairaToKobo } from '../money/kobo';
 import { sanitizeRichText } from '../security/sanitizeHtml';
 import { slugifyOrFallback, uniqueSlug } from '../content/slug';
-import { ConflictError, NotFoundError, ValidationError } from '../errors';
-import { requireTenantId, runWithoutTenantScope } from '../tenant/context';
+import { NotFoundError, ValidationError } from '../errors';
+import { requireTenantId } from '../tenant/context';
+import { assertImageCount, assertQuota } from '../billing/quota';
 import type { CreateProductInput, UpdateProductInput } from '../validation/schemas';
 import { assertOwnProductImages } from './images';
 
@@ -98,28 +98,12 @@ function priceKoboFrom(priceNaira: string): number {
   return kobo;
 }
 
-/** Free plan caps listed products. Counted on create only; archiving frees a slot. */
-async function assertUnderProductLimit(site: SiteDocument): Promise<void> {
-  const plan = await runWithoutTenantScope(
-    'reading a Plan, which is platform-level configuration and not tenant-owned',
-    () => Plan.findOne({ code: site.planCode, active: true }).select('limits'),
-  );
-  const limit = plan?.limits?.products ?? null;
-  if (limit === null) return;
-
-  const count = await Product.countDocuments({ status: { $ne: 'archived' } });
-  if (count >= limit) {
-    throw new ConflictError(
-      `Your plan allows ${limit} products. Archive one, or upgrade, to add another.`,
-    );
-  }
-}
-
 export async function createProduct(
   site: SiteDocument,
   input: CreateProductInput,
 ): Promise<ProductView> {
-  await assertUnderProductLimit(site);
+  await assertQuota(site, 'products');
+  assertImageCount(site, input.images?.length ?? 0);
 
   const priceKobo = priceKoboFrom(input.priceNaira);
   const siteId = requireTenantId('Product');
@@ -149,6 +133,7 @@ export async function createProduct(
 }
 
 export async function updateProduct(
+  site: SiteDocument,
   productId: string,
   input: UpdateProductInput,
 ): Promise<ProductView> {
@@ -176,6 +161,7 @@ export async function updateProduct(
   if (input.trackInventory !== undefined) product.inventory.track = input.trackInventory;
   if (input.quantity !== undefined) product.inventory.quantity = input.quantity;
   if (input.images !== undefined) {
+    assertImageCount(site, input.images.length);
     product.set('images', assertOwnProductImages(input.images, requireTenantId('Product')));
   }
 

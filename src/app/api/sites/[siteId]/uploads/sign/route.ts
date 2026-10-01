@@ -12,6 +12,7 @@ import { ok, toErrorResponse } from '@/lib/http/respond';
 import { assertPermission, requireSiteAccess } from '@/lib/auth/guards';
 import { cloudinaryConfig, signProductUpload } from '@/lib/products/images';
 import { NotFoundError } from '@/lib/errors';
+import { limitsFor } from '@/lib/billing/quota';
 
 export const runtime = 'nodejs';
 
@@ -33,7 +34,12 @@ export async function POST(
 
     if (purpose === 'products') assertPermission(access, 'products:write');
 
-    return ok(signProductUpload(String(access.site._id), config, Date.now(), purpose), {
+    // The largest photo this store's plan accepts. Checked in the browser
+    // before uploading; whatever is uploaded is stored shrunk to at most
+    // 1600px by the signed transformation either way.
+    const maxBytes = limitsFor(access.site).maxUploadBytes;
+
+    return ok({ ...signProductUpload(String(access.site._id), config, Date.now(), purpose), maxBytes }, {
       headers: { 'Cache-Control': 'no-store' },
     });
   } catch (error) {
