@@ -27,6 +27,7 @@ import { hashPassword } from '../src/lib/auth/password';
 import { computeSplit } from '../src/lib/payments/computeSplit';
 import { runWithTenant, runWithoutTenantScope } from '../src/lib/tenant/context';
 import '../src/lib/db/models/index';
+import { describeUri } from './doctor';
 
 const SELLER_EMAIL = 'ade@example.com';
 const SELLER_PASSWORD = 'correct-horse-battery';
@@ -35,7 +36,9 @@ function assertLocal(uri: string): void {
   const isLocal = /127\.0\.0\.1|localhost/.test(uri);
   if (!isLocal && process.env.ALLOW_REMOTE_SEED !== 'true') {
     throw new Error(
-      `Refusing to seed ${uri}: it does not look local. Set ALLOW_REMOTE_SEED=true to override.`,
+      // Host and database only: the URI carries the password, and this message
+      // is exactly the kind that gets pasted into a chat or an issue.
+      `Refusing to seed ${describeUri(uri)}: it does not look local. Set ALLOW_REMOTE_SEED=true to override.`,
     );
   }
 }
@@ -303,7 +306,9 @@ async function main(): Promise<void> {
 
 main()
   .catch((error) => {
-    console.error('Seed failed:', error);
+    // Message only. A driver error can carry the connection string, and that
+    // carries the password (rule 5: secrets are never logged).
+    console.error('Seed failed:', error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   })
   .finally(async () => {

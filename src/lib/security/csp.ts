@@ -67,6 +67,30 @@ export interface CspOptions {
   isDev: boolean;
   /** False disables ad allowances even on platform hosts. */
   adsEnabled: boolean;
+  /**
+   * Per-request nonce for the framework's own inline scripts.
+   *
+   * WHY THIS EXISTS. The App Router streams its page data as inline
+   * `<script>self.__next_f.push(...)</script>` tags. Under a bare
+   * `script-src 'self'` the browser refuses every one of them, React never
+   * starts, and a production build serves a BLANK PAGE — on every host. The
+   * development branch below hid this, because it allows inline script.
+   *
+   * A nonce fixes it without allowing inline script in general: Next.js reads
+   * the nonce from this policy on the request and stamps it onto exactly the
+   * scripts it emits. Seller HTML is sanitised on write and cannot know a
+   * nonce minted per request, so an injected `<script>` still does not run.
+   */
+  nonce?: string;
+}
+
+/** 128 random bits, base64. Edge-safe: Web Crypto only. */
+export function generateNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
 }
 
 /** Platform-owned surfaces: no seller HTML is rendered on these. */
@@ -75,16 +99,31 @@ export function isPlatformHost(hostKind: CspHostKind): boolean {
 }
 
 export function buildCsp(options: CspOptions): string {
-  const { hostKind, isDev, adsEnabled } = options;
+  const { hostKind, isDev, adsEnabled, nonce } = options;
 
   // Ads only where no seller content renders, and only when configured.
   const ads = adsEnabled && isPlatformHost(hostKind);
 
   const scriptSrc = ["'self'"];
+
+  if (nonce) {
+    // 'strict-dynamic' lets a nonced script load the chunks it imports, which
+    // is how Next.js and the AdSense loader both work. Browsers that honour it
+    // then ignore 'self' and host allowlists, so the effective rule becomes
+    // "scripts the server vouched for this request, and what they load".
+    scriptSrc.push(`'nonce-${nonce}'`, "'strict-dynamic'");
+  }
   const frameSrc = ["'self'"];
   const imgSrc = ["'self'", 'data:', 'https://res.cloudinary.com'];
   const connectSrc = ["'self'", 'https://api.paystack.co'];
   const frameAncestors = ["'none'"];
+
+  if (hostKind === 'app') {
+    // Product photos go from the seller's browser straight to Cloudinary on a
+    // signed, single-folder upload (lib/products/images.ts). Only the
+    // dashboard host uploads; storefronts only ever display.
+    connectSrc.push('https://api.cloudinary.com');
+  }
 
   if (isDev) {
     // The dev server injects inline bootstrap scripts and React Refresh
@@ -95,8 +134,10 @@ export function buildCsp(options: CspOptions): string {
   }
 
   if (ads) {
-    // 'unsafe-inline' is required: the AdSense loader writes inline script.
-    // This is the whole reason ads are confined to platform hosts.
+    // 'unsafe-inline' is for browsers too old to understand nonces; any
+    // browser that does ignores it once a nonce is present. Ads stay confined
+    // to platform hosts regardless, because a tenant host must never carry
+    // even the fallback.
     scriptSrc.push("'unsafe-inline'", ...AD_SCRIPT_HOSTS);
     frameSrc.push(...AD_FRAME_HOSTS);
     imgSrc.push(...AD_IMG_HOSTS);

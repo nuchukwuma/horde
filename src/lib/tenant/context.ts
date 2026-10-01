@@ -33,7 +33,29 @@ export interface TenantContext extends Partial<TenantIdentity> {
   bypass?: TenantBypass;
 }
 
-const storage = new AsyncLocalStorage<TenantContext>();
+/**
+ * ONE store per process, held on globalThis.
+ *
+ * A module-level `new AsyncLocalStorage()` is only a singleton if the module
+ * is loaded once, and under Next.js it is not: route bundles can each carry
+ * their own copy of this file. Mongoose models, by contrast, are registered
+ * once per process (`mongoose.models.X ?? mongoose.model(...)`), so the
+ * tenant plugin on a model kept reading whichever copy of `storage` existed
+ * when the model was first registered — while a page from another bundle
+ * called runWithTenant on a different copy. The plugin saw no tenant and
+ * threw (fail-closed, so nothing leaked), and which pages broke depended on
+ * which route happened to load first. Keying the store on globalThis makes
+ * every copy of this module share it, the same way the models are shared.
+ */
+const STORAGE_KEY = Symbol.for('hordemart.tenant-context');
+
+type GlobalWithTenantStorage = typeof globalThis & {
+  [STORAGE_KEY]?: AsyncLocalStorage<TenantContext>;
+};
+
+const globalScope = globalThis as GlobalWithTenantStorage;
+const storage: AsyncLocalStorage<TenantContext> =
+  globalScope[STORAGE_KEY] ?? (globalScope[STORAGE_KEY] = new AsyncLocalStorage<TenantContext>());
 
 /**
  * Run `fn` with `tenant` as the ambient tenant. Every tenant-owned query inside
