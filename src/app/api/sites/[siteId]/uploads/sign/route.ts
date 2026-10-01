@@ -23,12 +23,17 @@ export async function POST(
     const { siteId } = await params;
     const session = await requireSession(request, 'platform');
     const access = await requireSiteAccess(session, siteId, ['owner', 'staff']);
-    assertPermission(access, 'products:write');
-
     const config = cloudinaryConfig();
     if (!config) throw new NotFoundError('Photo uploads');
 
-    return ok(signProductUpload(String(access.site._id), config), {
+    // Which of this site's folders the upload may land in. Design images
+    // (store banners, logos) need the settings permission rather than products.
+    const purpose = request.nextUrl.searchParams.get('purpose') === 'design' ? 'design' : 'products';
+    if (purpose === 'design') assertPermission(access, 'settings:write');
+
+    if (purpose === 'products') assertPermission(access, 'products:write');
+
+    return ok(signProductUpload(String(access.site._id), config, Date.now(), purpose), {
       headers: { 'Cache-Control': 'no-store' },
     });
   } catch (error) {

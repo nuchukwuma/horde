@@ -18,7 +18,8 @@
     "reconcile": "tsx --env-file=.env.local scripts/reconcile.ts",
     "seed": "tsx --env-file=.env.local scripts/seed.ts",
     "doctor": "tsx --env-file=.env.local scripts/doctor.ts",
-    "verify": "npm run typecheck && npm run lint && npm run test"
+    "verify": "npm run typecheck && npm run lint && npm run test",
+    "sync-indexes": "tsx --env-file=.env.local scripts/sync-indexes.ts"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "5.3.0",

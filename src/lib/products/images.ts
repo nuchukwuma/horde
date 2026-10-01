@@ -39,10 +39,26 @@ export function cloudinaryConfig(
   return { cloudName, apiKey, apiSecret };
 }
 
-/** Each site's uploads live in their own folder, which is what saves are checked against. */
-export function productImageFolder(siteId: string): string {
-  return `hordemart/${siteId}/products`;
+export type UploadPurpose = 'products' | 'design';
+
+/** Each site's uploads live in their own folders, which is what saves are checked against. */
+export function siteImageFolder(siteId: string, purpose: UploadPurpose): string {
+  return `hordemart/${siteId}/${purpose}`;
 }
+
+export function productImageFolder(siteId: string): string {
+  return siteImageFolder(siteId, 'products');
+}
+
+/**
+ * The longest side an uploaded image is stored at.
+ *
+ * Applied by Cloudinary as a signed *incoming* transformation, so the
+ * original is never kept: a 12 MB phone photo is stored as a ~1600px image.
+ * Because it is part of the signature, a browser cannot drop it.
+ */
+export const MAX_IMAGE_DIMENSION = 1600;
+export const INCOMING_TRANSFORMATION = `c_limit,w_${MAX_IMAGE_DIMENSION},h_${MAX_IMAGE_DIMENSION},q_auto:good`;
 
 /**
  * Cloudinary's request signature: SHA-1 of the sorted parameters, then the secret.
@@ -64,6 +80,8 @@ export interface SignedUpload {
   apiKey: string;
   timestamp: number;
   folder: string;
+  /** Must be sent back verbatim with the upload; it is part of the signature. */
+  transformation: string;
   signature: string;
   uploadUrl: string;
 }
@@ -78,16 +96,19 @@ export function signProductUpload(
   siteId: string,
   config: CloudinaryConfig,
   now = Date.now(),
+  purpose: UploadPurpose = 'products',
 ): SignedUpload {
   const timestamp = Math.floor(now / 1000);
-  const folder = productImageFolder(siteId);
-  const signature = signCloudinaryParams({ folder, timestamp }, config.apiSecret);
+  const folder = siteImageFolder(siteId, purpose);
+  const transformation = INCOMING_TRANSFORMATION;
+  const signature = signCloudinaryParams({ folder, timestamp, transformation }, config.apiSecret);
 
   return {
     cloudName: config.cloudName,
     apiKey: config.apiKey,
     timestamp,
     folder,
+    transformation,
     signature,
     uploadUrl: `https://api.cloudinary.com/v1_1/${config.cloudName}/image/upload`,
   };
@@ -112,12 +133,21 @@ export function assertOwnProductImages(
   siteId: string,
   config: CloudinaryConfig | null = cloudinaryConfig(),
 ): ProductImageInput[] {
+  return assertOwnImages(images, siteId, 'products', config);
+}
+
+export function assertOwnImages(
+  images: ProductImageInput[],
+  siteId: string,
+  purpose: UploadPurpose,
+  config: CloudinaryConfig | null = cloudinaryConfig(),
+): ProductImageInput[] {
   if (images.length === 0) return images;
   if (!config) {
     throw new ValidationError('Photo uploads are not configured on this server');
   }
 
-  const folder = `${productImageFolder(siteId)}/`;
+  const folder = `${siteImageFolder(siteId, purpose)}/`;
   const prefix = `https://res.cloudinary.com/${config.cloudName}/image/upload/`;
 
   return images.map((image) => {

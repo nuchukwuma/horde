@@ -9,6 +9,9 @@ import SocialLinks from '@/components/shop/SocialLinks';
 import ProductCard from '@/components/shop/ProductCard';
 import StoreMonogram from '@/components/shop/StoreMonogram';
 import ProductArt from '@/components/art/ProductArt';
+import { Render } from '@puckeditor/core/rsc';
+import { renderConfig } from '@/components/blocks/renderConfig';
+import { getPublishedDesign } from '@/lib/design/published';
 
 /**
  * Storefront home.
@@ -20,6 +23,22 @@ import ProductArt from '@/components/art/ProductArt';
 
 export default async function StorefrontHome({ params }) {
   const site = await requireStorefront(params);
+
+  // A published layout from the store editor replaces the default home.
+  const design = await getPublishedDesign(String(site._id), site.slug);
+  if (design && design.page.content.length > 0) {
+    const products = site.modules.store ? await withSite(site, () => listActiveProducts(9)) : [];
+    return (
+      <>
+        <Render
+          config={renderConfig}
+          data={design.page}
+          metadata={{ products, store: { name: site.name, slug: site.slug } }}
+        />
+        <SocialLinks links={buildSocialLinks(site.socials)} />
+      </>
+    );
+  }
 
   const { products, posts, projects } = await withSite(site, async () => ({
     products: site.modules.store ? await listActiveProducts(8) : [],

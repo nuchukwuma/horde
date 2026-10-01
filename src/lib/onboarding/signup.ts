@@ -20,6 +20,7 @@ import { Types } from 'mongoose';
 import { User } from '../db/models/User';
 import { Site, type SiteAttributes } from '../db/models/Site';
 import { Membership } from '../db/models/Membership';
+import { SlugHistory } from '../db/models/SlugHistory';
 import { hashPassword } from '../auth/password';
 import { ConflictError } from '../errors';
 import { recordAudit } from '../audit';
@@ -62,7 +63,11 @@ export async function isSlugAvailable(slug: string): Promise<boolean> {
     'checking Site slug availability before signup, which spans no single tenant',
     () => Site.findOne({ slug }).select('_id'),
   );
-  return existing === null;
+  if (existing) return false;
+  // An address a store used to have stays retired forever — see
+  // models/SlugHistory.ts for why reusing one would be a phishing kit.
+  const retired = await SlugHistory.exists({ slug });
+  return !retired;
 }
 
 export async function signUpSeller(input: SellerSignUpInput): Promise<SellerSignUpResult> {

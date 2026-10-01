@@ -1,0 +1,303 @@
+/* ==========================================================================
+   Store editor (components/editor). Sits on top of Puck's own UI.
+   ========================================================================== */
+
+.ed {
+  position: relative;
+  min-height: 100vh;
+}
+
+.ed-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ed-state {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+
+.ed-state.is-dirty {
+  color: var(--kola);
+}
+
+.ed-panel {
+  position: fixed;
+  top: 64px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 50;
+  width: min(380px, calc(100vw - 24px));
+  overflow-y: auto;
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-3);
+}
+
+.ed-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.ed-panel__title {
+  font-size: 20px;
+}
+
+.ed-group {
+  padding-block: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.ed-group__title {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin-bottom: 10px;
+}
+
+.ed-presets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ed-preset {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 10px 6px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface-1);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.ed-preset.is-on {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.ed-preset__swatches {
+  display: flex;
+}
+
+.ed-preset__swatches i {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 1px var(--border-strong);
+  margin-left: -5px;
+}
+
+.ed-color {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 96px;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+}
+
+.ed-color input[type='color'] {
+  width: 40px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+}
+
+.ed-color__label {
+  font-size: 14px;
+}
+
+.ed-color__hex {
+  min-height: 36px;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+}
+
+.ed-color.is-flagged .ed-color__label {
+  color: var(--critical);
+  font-weight: 650;
+}
+
+.ed-warnings {
+  margin: 10px 0 0;
+  padding: 10px 12px 10px 28px;
+  border-radius: var(--radius-sm);
+  background: var(--critical-wash);
+  font-size: 13px;
+}
+
+.ed-ok {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--good);
+  font-weight: 600;
+}
+
+.ed-fonts {
+  display: grid;
+  gap: 8px;
+}
+
+.ed-font {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+}
+
+.ed-font input {
+  position: absolute;
+  opacity: 0;
+}
+
+.ed-font.is-on {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.ed-font:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+}
+
+.ed-font__sample {
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.ed-font__name {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.ed-font__note {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.ed-segment {
+  display: flex;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.ed-segment label {
+  flex: 1;
+  position: relative;
+  text-align: center;
+  padding: 8px 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ed-segment label + label {
+  border-left: 1.5px solid var(--border-strong);
+}
+
+.ed-segment input {
+  position: absolute;
+  opacity: 0;
+}
+
+.ed-segment label.is-on {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.ed-image {
+  display: grid;
+  gap: 8px;
+}
+
+.ed-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ed-image__preview {
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.ed-input {
+  min-height: 38px;
+  font-size: 13.5px;
+}
+
+.ed-upload {
+  justify-self: start;
+  cursor: pointer;
+}
+
+.ed-hint {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.ed-error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--critical);
+  font-weight: 600;
+}
+
+.ed-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(560px, calc(100vw - 24px));
+  padding: 10px 12px 10px 16px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-3);
+  font-size: 14px;
+  background: var(--surface-ink);
+  color: #fff;
+}
+
+.ed-toast--error {
+  background: var(--critical);
+}
+
+.ed-toast a {
+  color: inherit;
+  font-weight: 700;
+}
+
+.ed-toast__close {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+}

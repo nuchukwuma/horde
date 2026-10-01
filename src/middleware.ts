@@ -11,6 +11,7 @@ import { resolveHost } from './lib/tenant/resolveHost';
 import {
   STOREFRONT_PATH_PREFIX,
   TENANT_CUSTOM_DOMAIN_HEADER,
+  TENANT_PATH_HEADER,
   TENANT_HOST_HEADER,
   TENANT_SLUG_HEADER,
 } from './lib/tenant/headers';
@@ -77,6 +78,7 @@ export function middleware(request: NextRequest): NextResponse {
   requestHeaders.delete(TENANT_SLUG_HEADER);
   requestHeaders.delete(TENANT_HOST_HEADER);
   requestHeaders.delete(TENANT_CUSTOM_DOMAIN_HEADER);
+  requestHeaders.delete(TENANT_PATH_HEADER);
 
   const resolved = resolveHost(request.headers.get('host'), { rootDomain, appHost });
   const policy = policyFor(resolved.kind, nonce);
@@ -110,6 +112,7 @@ export function middleware(request: NextRequest): NextResponse {
         pathname === '/robots.txt';
 
       if (!isSharedPath) {
+        requestHeaders.set(TENANT_PATH_HEADER, `${pathname}${request.nextUrl.search}`);
         const url = request.nextUrl.clone();
         url.pathname = `${STOREFRONT_PATH_PREFIX}/${slug}${pathname === '/' ? '' : pathname}`;
         return withCsp(

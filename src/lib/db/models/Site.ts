@@ -86,13 +86,15 @@ const siteSchema = new Schema<SiteAttributes>(
         message: (props: { value: string }) => `"${props.value}" is not an available subdomain`,
       },
     },
+    // No default: a store without a custom domain has NO value here, not
+    // null. The uniqueness index below only covers real domains. It used to
+    // be `unique + sparse` with `default: null`, and a sparse index skips
+    // missing fields but NOT nulls — so the first store took the one null
+    // slot and every later signup failed with a duplicate-key error.
     customDomain: {
       type: String,
-      default: null,
       lowercase: true,
       trim: true,
-      unique: true,
-      sparse: true,
     },
     ownerId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     name: { type: String, required: true, trim: true, maxlength: 120 },
@@ -133,6 +135,15 @@ const siteSchema = new Schema<SiteAttributes>(
     socials: { type: Schema.Types.Mixed, default: {} },
   },
   { timestamps: true },
+);
+
+siteSchema.index(
+  { customDomain: 1 },
+  {
+    unique: true,
+    name: 'customDomain_unique_when_set',
+    partialFilterExpression: { customDomain: { $type: 'string' } },
+  },
 );
 
 /**

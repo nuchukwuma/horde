@@ -1,0 +1,13 @@
+import { chromium } from 'playwright';
+const [,, url, out, w = '1360', h = '900', wait = '4500', full = 'true', scheme = 'light'] = process.argv;
+const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-proxy-server', '--host-resolver-rules=MAP *.hordemart.local 127.0.0.1, MAP hordemart.local 127.0.0.1'] });
+const ctx = await browser.newContext({ viewport: { width: +w, height: +h }, colorScheme: scheme, deviceScaleFactor: 1 });
+const page = await ctx.newPage();
+const errs = [];
+page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text().slice(0, 200)); });
+page.on('pageerror', (e) => errs.push('pageerror ' + e.message.slice(0, 200)));
+const res = await page.goto(url, { waitUntil: 'networkidle' });
+await page.waitForTimeout(+wait);
+await page.screenshot({ path: out, fullPage: full === 'true' });
+console.log(res.status(), url, errs.length ? errs.slice(0, 4) : 'no console errors');
+await browser.close();

@@ -16,6 +16,7 @@ export type LimitName =
   | 'auth:slug-check'
   | 'auth:verify-email'
   | 'auth:step-up'
+  | 'site:slug-change'
   | 'shop:signup'
   | 'shop:login'
   | 'chat:send'
@@ -46,6 +47,9 @@ const LIMITS: Record<LimitName, { tokens: number; window: `${number} ${'s' | 'm'
   // Keyed by user. A stolen session cookie must not become an unlimited
   // password-guessing oracle for the account behind it.
   'auth:step-up': { tokens: 8, window: '15 m' },
+  // A store's address is what its customers trust; changing it often is a
+  // fraud pattern, and every change breaks shoppers' sign-ins.
+  'site:slug-change': { tokens: 3, window: '720 h' },
   // Per storefront per client. Shopper signup is cheaper to abuse than seller
   // signup (no site is created) but it still writes a row and burns a hash.
   'shop:signup': { tokens: 10, window: '1 h' },

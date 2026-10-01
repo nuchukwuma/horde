@@ -6,6 +6,8 @@ import { sessionCookieName } from '@/lib/auth/cookies';
 import CartButton from '@/components/shop/CartButton';
 import StoreMonogram from '@/components/shop/StoreMonogram';
 import BrandMark from '@/components/art/BrandMark';
+import { getPublishedDesign } from '@/lib/design/published';
+import { themeToCssVars } from '@/lib/design/theme';
 
 /**
  * Storefront shell.
@@ -45,11 +47,21 @@ export default async function StorefrontLayout({ children, params }) {
   const site = await requireStorefront(params);
   const modules = site.modules;
 
+  // A published design wins over the older single-colour setting. Only the
+  // PUBLISHED version is ever read here; drafts stay in the editor.
+  const design = await getPublishedDesign(String(site._id), site.slug);
+  const style = design ? themeToCssVars(design.theme) : themeStyle(site.settings?.theme ?? site.theme);
+  const logo = design?.theme.logo ?? null;
+
   const token = (await cookies()).get(sessionCookieName('storefront'))?.value;
   const shopper = modules.store ? await validateCustomerSessionToken(token, site._id) : null;
 
   return (
-    <div className="shell storefront" style={themeStyle(site.settings?.theme ?? site.theme)}>
+    <div
+      className={`shell storefront${design ? ' storefront--themed' : ''}`}
+      style={style}
+      data-buttons={design?.theme.buttonStyle ?? 'solid'}
+    >
       <a className="skip-link" href="#main">
         Skip to content
       </a>
@@ -57,7 +69,12 @@ export default async function StorefrontLayout({ children, params }) {
       <header className="masthead store-head">
         <div className="container masthead__inner">
           <a className="store-brand" href="/">
-            <StoreMonogram name={site.name} />
+            {logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="store-brand__logo" src={logo.url} alt="" width={logo.width} height={logo.height} />
+            ) : (
+              <StoreMonogram name={site.name} />
+            )}
             <span className="store-brand__name">{site.name}</span>
           </a>
 

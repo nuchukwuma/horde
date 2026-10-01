@@ -13,6 +13,11 @@
 export const TENANT_SLUG_HEADER = 'x-hm-site-slug';
 export const TENANT_HOST_HEADER = 'x-hm-host-kind';
 export const TENANT_CUSTOM_DOMAIN_HEADER = 'x-hm-custom-domain';
+/**
+ * The path a tenant request asked for, before the storefront rewrite. Lets
+ * an old store address redirect to the same page on the new one.
+ */
+export const TENANT_PATH_HEADER = 'x-hm-path';
 
 /**
  * Where storefront pages live inside the app tree.
