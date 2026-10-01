@@ -7,7 +7,7 @@ import CartButton from '@/components/shop/CartButton';
 import StoreMonogram from '@/components/shop/StoreMonogram';
 import BrandMark from '@/components/art/BrandMark';
 import { getPublishedDesign } from '@/lib/design/published';
-import { themeToCssVars } from '@/lib/design/theme';
+import { themeAttributes, themeToCssVars } from '@/lib/design/theme';
 
 /**
  * Storefront shell.
@@ -60,7 +60,10 @@ export default async function StorefrontLayout({ children, params }) {
     <div
       className={`shell storefront${design ? ' storefront--themed' : ''}`}
       style={style}
-      data-buttons={design?.theme.buttonStyle ?? 'solid'}
+      // data-look / data-mode select the art direction and light/dark palette
+      // in storefront.css; stores without a published design keep the
+      // platform defaults.
+      {...(design ? themeAttributes(design.theme) : { 'data-buttons': 'solid' })}
     >
       <a className="skip-link" href="#main">
         Skip to content

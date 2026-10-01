@@ -101,6 +101,48 @@ export const sora = localFont({
   fallback: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
 });
 
+// Danfo look: painted-sign headlines, a body face designed for legibility.
+export const bigShoulders = localFont({
+  src: '../assets/fonts/big-shoulders-display-latin-wght-normal.woff2',
+  variable: '--font-big-shoulders',
+  weight: '100 900',
+  display: 'swap',
+  preload: false,
+  fallback: ['Impact', 'Arial Narrow', 'ui-sans-serif', 'sans-serif'],
+});
+
+export const atkinson = localFont({
+  src: [
+    { path: '../assets/fonts/atkinson-hyperlegible-latin-400-normal.woff2', weight: '400', style: 'normal' },
+    { path: '../assets/fonts/atkinson-hyperlegible-latin-700-normal.woff2', weight: '700', style: 'normal' },
+  ],
+  variable: '--font-atkinson',
+  display: 'swap',
+  preload: false,
+  fallback: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
+});
+
+// Credit Alert look: a plain grotesk, and a monospace for receipt figures.
+export const familjen = localFont({
+  src: '../assets/fonts/familjen-grotesk-latin-wght-normal.woff2',
+  variable: '--font-familjen',
+  weight: '400 700',
+  display: 'swap',
+  preload: false,
+  fallback: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
+});
+
+export const plexMono = localFont({
+  src: [
+    { path: '../assets/fonts/ibm-plex-mono-latin-400-normal.woff2', weight: '400', style: 'normal' },
+    { path: '../assets/fonts/ibm-plex-mono-latin-500-normal.woff2', weight: '500', style: 'normal' },
+  ],
+  variable: '--font-plex-mono',
+  display: 'swap',
+  preload: false,
+  fallback: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+});
+
 export const fontVariables = [
   unbounded,
   figtree,
@@ -111,6 +153,10 @@ export const fontVariables = [
   playfair,
   manrope,
   sora,
+  bigShoulders,
+  atkinson,
+  familjen,
+  plexMono,
 ]
   .map((font) => font.variable)
   .join(' ');

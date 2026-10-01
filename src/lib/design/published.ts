@@ -12,6 +12,7 @@
 import { unstable_cache } from 'next/cache';
 import { runWithTenant } from '../tenant/context';
 import { normalisePage, readPublishedDesign } from './service';
+import { normaliseTheme } from './theme';
 
 export function designTag(siteId: string): string {
   return `site-design:${siteId}`;
@@ -24,6 +25,7 @@ export async function getPublishedDesign(siteId: string, slug: string) {
     { tags: [designTag(siteId)], revalidate: 600 },
   )();
   // Normalised outside the cache as well, so an entry cached by older code
-  // can never hand the renderer a page without `root`.
-  return design ? { ...design, page: normalisePage(design.page) } : null;
+  // can never hand the renderer a page without `root`, or a theme without
+  // the look and mode fields added later.
+  return design ? { ...design, theme: normaliseTheme(design.theme), page: normalisePage(design.page) } : null;
 }

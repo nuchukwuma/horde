@@ -1502,3 +1502,467 @@
   font-size: 13px;
   color: var(--text-muted);
 }
+
+/* ==========================================================================
+   Store themes: palette → tokens, per light/dark mode.
+
+   The seller's two palettes arrive inline as raw colours (--th-* light,
+   --thd-* dark; lib/design/theme.ts). Everything else is derived here, from
+   whichever palette is active (--p-*). Derived tokens live in the
+   stylesheet, not inline, so that "auto" can switch on the visitor's phone
+   setting: an inline declaration would beat any @media rule.
+
+   The light block also re-asserts the platform's light secondary tokens
+   (status colours, illustration palette, shadows). Without it, a light store
+   viewed on a dark-mode phone inherited the platform's dark variants of those
+   from :root and showed night-time badges on a daytime page.
+   ========================================================================== */
+
+.storefront--themed {
+  --p-bg: var(--th-bg);
+  --p-surface: var(--th-surface);
+  --p-text: var(--th-text);
+  --p-accent: var(--th-accent);
+  --p-accent-ink: var(--th-accent-ink);
+
+  --surface-page: var(--p-bg);
+  --surface-1: var(--p-surface);
+  --surface-2: color-mix(in srgb, var(--p-text) 5%, var(--p-bg));
+  --surface-inset: color-mix(in srgb, var(--p-text) 9%, var(--p-bg));
+  --text-primary: var(--p-text);
+  --text-secondary: color-mix(in srgb, var(--p-text) 74%, var(--p-bg));
+  --text-muted: color-mix(in srgb, var(--p-text) 58%, var(--p-bg));
+  --text-inverse: var(--p-bg);
+  --border: color-mix(in srgb, var(--p-text) 12%, var(--p-bg));
+  --border-strong: color-mix(in srgb, var(--p-text) 24%, var(--p-bg));
+  --line: var(--p-text);
+  --accent: var(--p-accent);
+  --accent-ink: var(--p-accent-ink);
+  --accent-hover: color-mix(in srgb, var(--p-accent) 86%, var(--p-text));
+  --accent-wash: color-mix(in srgb, var(--p-accent) 14%, var(--p-bg));
+  --accent-deep: color-mix(in srgb, var(--p-accent) 70%, var(--p-text));
+
+  --kola: #b4472a;
+  --brass: #c99a2e;
+  --sun: #c99a2e;
+  --sun-wash: #f6edd6;
+  --palm: #b4472a;
+  --palm-wash: #f6e0d9;
+  --clay: #c2614a;
+  --leaf: #3d8a63;
+  --sky: #9fb0e8;
+  --wood: #a5713f;
+  --wood-dark: #6f4823;
+  --surface-ink: #141838;
+  --good: #12784a;
+  --warning: #8f6200;
+  --critical: #b3261e;
+  --good-wash: #e2f2e9;
+  --warning-wash: #fbf1d4;
+  --critical-wash: #fbe8e6;
+  --on-status: #ffffff;
+  --shadow-1: 0 1px 2px rgb(20 24 56 / 6%), 0 1px 1px rgb(20 24 56 / 4%);
+  --shadow-2: 0 12px 28px -14px rgb(20 24 56 / 28%), 0 2px 6px rgb(20 24 56 / 6%);
+  --shadow-3: 0 30px 60px -24px rgb(20 24 56 / 34%), 0 8px 18px rgb(20 24 56 / 8%);
+
+  color-scheme: light;
+  min-height: 100dvh;
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+/*
+ * Dark palette. Written twice — once for "dark", once for "auto" on a phone
+ * in dark mode — because a selector cannot be both inside and outside a
+ * media query. Only the five palette inputs and the secondary tokens change;
+ * every derived token above follows automatically.
+ */
+.storefront--themed[data-mode='dark'] {
+  --p-bg: var(--thd-bg);
+  --p-surface: var(--thd-surface);
+  --p-text: var(--thd-text);
+  --p-accent: var(--thd-accent);
+  --p-accent-ink: var(--thd-accent-ink);
+  --accent-hover: color-mix(in srgb, var(--p-accent) 86%, #ffffff);
+
+  --kola: #e07a5c;
+  --brass: #dcb350;
+  --sun: #dcb350;
+  --sun-wash: #2e2816;
+  --palm: #e07a5c;
+  --palm-wash: #35211b;
+  --clay: #e08a76;
+  --leaf: #5cba8a;
+  --sky: #5767b5;
+  --wood: #946337;
+  --wood-dark: #64411f;
+  --surface-ink: color-mix(in srgb, var(--p-bg) 70%, #000000);
+  --good: #4cb173;
+  --warning: #d3a53a;
+  --critical: #e57a72;
+  --good-wash: #16281f;
+  --warning-wash: #2c2515;
+  --critical-wash: #2e1b1d;
+  --on-status: #0b0d18;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-2: 0 12px 30px -12px rgb(0 0 0 / 60%), 0 2px 6px rgb(0 0 0 / 30%);
+  --shadow-3: 0 30px 60px -20px rgb(0 0 0 / 70%), 0 8px 18px rgb(0 0 0 / 30%);
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  .storefront--themed[data-mode='auto'] {
+    --p-bg: var(--thd-bg);
+    --p-surface: var(--thd-surface);
+    --p-text: var(--thd-text);
+    --p-accent: var(--thd-accent);
+    --p-accent-ink: var(--thd-accent-ink);
+    --accent-hover: color-mix(in srgb, var(--p-accent) 86%, #ffffff);
+
+    --kola: #e07a5c;
+    --brass: #dcb350;
+    --sun: #dcb350;
+    --sun-wash: #2e2816;
+    --palm: #e07a5c;
+    --palm-wash: #35211b;
+    --clay: #e08a76;
+    --leaf: #5cba8a;
+    --sky: #5767b5;
+    --wood: #946337;
+    --wood-dark: #64411f;
+    --surface-ink: color-mix(in srgb, var(--p-bg) 70%, #000000);
+    --good: #4cb173;
+    --warning: #d3a53a;
+    --critical: #e57a72;
+    --good-wash: #16281f;
+    --warning-wash: #2c2515;
+    --critical-wash: #2e1b1d;
+    --on-status: #0b0d18;
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 40%);
+    --shadow-2: 0 12px 30px -12px rgb(0 0 0 / 60%), 0 2px 6px rgb(0 0 0 / 30%);
+    --shadow-3: 0 30px 60px -20px rgb(0 0 0 / 70%), 0 8px 18px rgb(0 0 0 / 30%);
+
+    color-scheme: dark;
+  }
+}
+
+/* Status badges: white text failed on the lighter dark-mode greens and reds. */
+.storefront--themed .order__badge--paid,
+.storefront--themed .order__badge--failed {
+  color: var(--on-status);
+}
+
+/* ==========================================================================
+   Looks. Adire is the base stylesheet above; Danfo and Credit Alert dress
+   the same markup. Ornament colours that ARE the look (bus yellow, tar)
+   are fixed; everything a visitor reads uses the seller's checked palette.
+   ========================================================================== */
+
+.storefront {
+  --danfo-yellow: #f5c518;
+  --danfo-tar: #23211e;
+  --danfo-stripes: repeating-linear-gradient(
+    -45deg,
+    var(--danfo-yellow) 0 12px,
+    var(--danfo-tar) 12px 24px
+  );
+}
+
+/* --- Danfo: painted signs, stripes, chunky outlines ---------------------- */
+
+.storefront[data-look='danfo'] .store-head {
+  position: relative;
+  border-bottom: 0;
+}
+
+.storefront[data-look='danfo'] .store-head::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 -10px;
+  height: 10px;
+  background: var(--danfo-stripes);
+}
+
+.storefront[data-look='danfo'] :is(h1, h2, h3, .store-brand__name, .store-section__title, .blk-hero__title, .page-head__title) {
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 0.95;
+  font-weight: 800;
+}
+
+.storefront[data-look='danfo'] :is(.store-section__title, .blk-heading)::before {
+  content: '';
+  display: inline-block;
+  width: 0.9em;
+  height: 0.55em;
+  margin-right: 0.35em;
+  vertical-align: 0.08em;
+  background: var(--danfo-stripes);
+  border: 2px solid var(--danfo-tar);
+}
+
+.storefront[data-look='danfo'] .btn {
+  border: 2.5px solid var(--text-primary);
+  box-shadow: 3px 3px 0 var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 800;
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.storefront[data-look='danfo'] .btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--text-primary);
+}
+
+.storefront[data-look='danfo'] .btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--text-primary);
+}
+
+.storefront[data-look='danfo'] .product-card__media {
+  border: 2.5px solid var(--text-primary);
+}
+
+/* The price is a sticker on the windscreen. */
+.storefront[data-look='danfo'] .product-card__price > .money:first-child,
+.storefront[data-look='danfo'] .product__price > .money:first-child {
+  display: inline-block;
+  padding: 1px 8px;
+  background: var(--danfo-yellow);
+  color: var(--danfo-tar);
+  border: 2px solid var(--danfo-tar);
+  font-weight: 800;
+  transform: rotate(-1.5deg);
+}
+
+.storefront[data-look='danfo'] .blk-announce--accent {
+  background: var(--danfo-yellow);
+  color: var(--danfo-tar);
+  border-block: 3px solid var(--danfo-tar);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 800;
+}
+
+.storefront[data-look='danfo'] .store-footer {
+  position: relative;
+  border-top: 0;
+}
+
+.storefront[data-look='danfo'] .store-footer::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 8px;
+  background: var(--danfo-stripes);
+}
+
+/* --- Credit Alert: thermal paper, dashed rules, printed figures --------- */
+
+.storefront[data-look='receipt'] .money,
+.storefront[data-look='receipt'] .product__price,
+.storefront[data-look='receipt'] .cart__grand,
+.storefront[data-look='receipt'] .order__total {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.storefront[data-look='receipt'] .store-head {
+  border-bottom: 2px dashed var(--border-strong);
+}
+
+.storefront[data-look='receipt'] :is(.store-section__title, .blk-heading) {
+  padding-bottom: 10px;
+  border-bottom: 2px dashed var(--border-strong);
+}
+
+.storefront[data-look='receipt'] :is(h1, h2, h3) {
+  letter-spacing: -0.02em;
+}
+
+/* Each card is a slip torn off the roll: a zig-zag bottom edge. */
+.storefront[data-look='receipt'] .product-card {
+  padding: 10px 10px 20px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  --zig: 12px;
+  -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / var(--zig) 100%;
+  mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / var(--zig) 100%;
+}
+
+.storefront[data-look='receipt'] .product-card__media {
+  border-style: dashed;
+}
+
+.storefront[data-look='receipt'] .blk-announce--accent {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.storefront[data-look='receipt'] .blk-announce--accent::before {
+  content: 'ALERT  ';
+  font-weight: 600;
+  white-space: pre;
+}
+
+.storefront[data-look='receipt'] .btn {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+
+.storefront[data-look='receipt'] .store-footer {
+  border-top: 2px dashed var(--border-strong);
+  background: var(--surface-page);
+}
+
+/* --- Fallback art per look (components/design/LookArt.jsx) -------------- */
+
+/*
+ * The Danfo plate and the receipt are pictures to read, not textures: on
+ * phones they sit above the hero panel instead of behind it, and on wide
+ * screens beside it. (Adire cloth is a texture and stays behind.)
+ */
+:is(.blk-hero--art-danfo, .blk-hero--art-receipt) .blk-hero__media .look-art {
+  place-items: start center;
+  padding-top: 18px;
+}
+
+.blk-hero--art-danfo .blk-hero__media .look-art {
+  padding-top: 40px;
+}
+
+.blk-hero--art-danfo .blk-hero__inner {
+  padding-top: 150px;
+}
+
+.blk-hero--art-receipt .blk-hero__inner {
+  padding-top: 210px;
+}
+
+@media (min-width: 900px) {
+  :is(.blk-hero--art-danfo, .blk-hero--art-receipt) .blk-hero__media .look-art {
+    place-items: center end;
+    padding: 0 8% 0 0;
+  }
+
+  .blk-hero--art-danfo .look-art__plate {
+    max-width: 34%;
+  }
+
+  :is(.blk-hero--art-danfo, .blk-hero--art-receipt) .blk-hero__inner {
+    padding-top: 28px;
+  }
+}
+
+.look-art {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+.look-art--danfo {
+  background: var(--danfo-stripes);
+}
+
+.look-art__plate {
+  max-width: 86%;
+  padding: 0.25em 0.6em;
+  background: var(--danfo-yellow);
+  color: var(--danfo-tar);
+  border: 4px solid var(--danfo-tar);
+  box-shadow: 6px 6px 0 var(--danfo-tar);
+  font-family: var(--font-big-shoulders), Impact, sans-serif;
+  font-weight: 900;
+  font-size: clamp(22px, 5vw, 44px);
+  line-height: 1;
+  text-transform: uppercase;
+  text-align: center;
+  overflow-wrap: anywhere;
+  transform: rotate(-2deg);
+}
+
+.look-art--sm .look-art__plate {
+  font-size: 18px;
+  border-width: 3px;
+  box-shadow: 3px 3px 0 var(--danfo-tar);
+}
+
+.look-art--receipt {
+  background: color-mix(in srgb, var(--text-primary) 7%, var(--surface-page));
+  padding: 6%;
+}
+
+.look-art__slip {
+  width: min(100%, 300px);
+  padding: 16px 16px 26px;
+  background: var(--surface-1);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  box-shadow: var(--shadow-2);
+  transform: rotate(-1.5deg);
+  --zig: 12px;
+  -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / var(--zig) 100%;
+  mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / var(--zig) 100%;
+}
+
+.look-art__slip p {
+  margin: 0;
+}
+
+.look-art__slip-head,
+.look-art__slip-foot {
+  text-align: center;
+  font-weight: 500;
+}
+
+.look-art__slip-head {
+  padding-bottom: 8px;
+  margin-bottom: 8px !important;
+  border-bottom: 1.5px dashed var(--border-strong);
+}
+
+.look-art__slip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.look-art__slip-row span:last-child {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.look-art__slip-row:nth-child(4) span:last-child {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.look-art__slip-foot {
+  padding-top: 8px;
+  margin-top: 8px !important;
+  border-top: 1.5px dashed var(--border-strong);
+  color: var(--text-muted);
+}
+
+.look-art--sm .look-art__slip {
+  font-size: 9px;
+  padding: 10px 10px 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .storefront[data-look='danfo'] .btn {
+    transition: none;
+  }
+}

@@ -11,12 +11,13 @@
  * Cloudinary in this store's folder. Nothing here builds a URL from free text
  * except wa.me, which takes a digits-only phone number.
  *
- * Design: they follow the Adire direction — the hero falls back to a strip of
- * adire cloth dyed from the store's own name, in the store's accent colour,
+ * Design: without an uploaded image, a block draws art in the store's look
+ * (components/design/LookArt.jsx) — adire cloth dyed from the store's name,
+ * Danfo bus stripes, or a printed receipt — in the store's own colours,
  * rather than a stock gradient.
  */
 
-import AdirePattern from '@/components/design/AdirePattern';
+import LookArt from '@/components/design/LookArt';
 import ProductCard from '@/components/shop/ProductCard';
 
 /** Rich text is a sanitised string on the server, a live editor in Puck. */
@@ -30,6 +31,20 @@ function Rich({ value, className }) {
 
 function storeName(puck) {
   return puck?.metadata?.store?.name ?? 'Your store';
+}
+
+/** The store's look (Adire, Danfo, Credit Alert), for fallback art. */
+function storeLook(puck) {
+  return puck?.metadata?.store?.look ?? 'adire';
+}
+
+/**
+ * Text for a tile's fallback art. Adire seeds its pattern from store name +
+ * label (unchanged, so existing stores keep their cloth); the other looks
+ * print the label itself, which is what reads on a plate or a receipt.
+ */
+function artName(puck, label) {
+  return storeLook(puck) === 'adire' ? `${storeName(puck)} ${label}` : label || storeName(puck);
 }
 
 export function AnnouncementBar({ text, href, tone = 'accent' }) {
@@ -50,20 +65,13 @@ export function AnnouncementBar({ text, href, tone = 'accent' }) {
 
 export function Hero({ heading, subheading, image, ctaLabel, ctaHref, align = 'left', puck }) {
   return (
-    <section className={`blk-hero blk-hero--${align}${image ? ' blk-hero--image' : ''}`}>
+    <section className={`blk-hero blk-hero--${align}${image ? ' blk-hero--image' : ` blk-hero--art-${storeLook(puck)}`}`}>
       <div className="blk-hero__media" aria-hidden={image ? undefined : true}>
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={image.url} alt={image.alt ?? ''} width={image.width} height={image.height} />
         ) : (
-          <AdirePattern
-            name={storeName(puck)}
-            columns={10}
-            count={30}
-            ink="var(--accent)"
-            resist="var(--accent-ink)"
-            className="blk-hero__cloth"
-          />
+          <LookArt look={storeLook(puck)} name={storeName(puck)} size="lg" className="blk-hero__cloth" />
         )}
       </div>
       <div className="container blk-hero__inner">
@@ -118,14 +126,7 @@ export function CategoryGrid({ heading, tiles = [], puck }) {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={tile.image.url} alt="" loading="lazy" />
                 ) : (
-                  <AdirePattern
-                    name={`${storeName(puck)} ${tile.label}`}
-                    columns={3}
-                    count={6}
-                    ink="var(--accent)"
-                    resist="var(--accent-ink)"
-                    className="blk-cat__cloth"
-                  />
+                  <LookArt look={storeLook(puck)} name={artName(puck, tile.label)} size="sm" className="blk-cat__cloth" />
                 )}
               </span>
               <span className="blk-cat__label">{tile.label}</span>
@@ -167,7 +168,7 @@ export function ImageText({ heading, body, image, imageSide = 'left', puck }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={image.url} alt={image.alt ?? ''} loading="lazy" />
         ) : (
-          <AdirePattern name={`${storeName(puck)} ${heading}`} columns={4} count={12} ink="var(--accent)" resist="var(--accent-ink)" className="blk-split__cloth" />
+          <LookArt look={storeLook(puck)} name={artName(puck, heading)} size="md" className="blk-split__cloth" />
         )}
       </div>
       <div className="blk-split__text">

@@ -1,7 +1,7 @@
 'use client';
 
 import { BLOCK_COMPONENTS } from '@/components/blocks/Blocks';
-import { themeToCssVars } from '@/lib/design/theme';
+import { themeAttributes, themeToCssVars } from '@/lib/design/theme';
 import ImageField from './ImageField';
 
 /**
@@ -45,15 +45,16 @@ export function buildEditorConfig(siteId) {
       // No page-level fields: the store's name and theme come from elsewhere.
       fields: {},
       // The preview wears the theme being edited, passed in as metadata, so
-      // colour and font changes show in the canvas immediately.
+      // colour, font, look and mode changes show in the canvas immediately.
+      // For "match device" the seller chooses which half to preview
+      // (metadata.previewDark) rather than having it depend on their own
+      // phone or laptop setting.
       render: ({ children, puck }) => {
         const theme = puck?.metadata?.theme;
+        const attributes = theme ? themeAttributes(theme) : { 'data-buttons': 'solid' };
+        if (theme?.mode === 'auto') attributes['data-mode'] = puck?.metadata?.previewDark ? 'dark' : 'light';
         return (
-          <div
-            className="shell storefront storefront--themed"
-            style={theme ? themeToCssVars(theme) : undefined}
-            data-buttons={theme?.buttonStyle ?? 'solid'}
-          >
+          <div className="shell storefront storefront--themed" style={theme ? themeToCssVars(theme) : undefined} {...attributes}>
             {children}
           </div>
         );

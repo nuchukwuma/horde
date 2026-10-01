@@ -21,7 +21,7 @@ import { ConflictError, NotFoundError } from '../errors';
 import { requireTenantId } from '../tenant/context';
 import { assertOwnImages, cloudinaryConfig, type CloudinaryConfig } from '../products/images';
 import { recordAudit } from '../audit';
-import { themeSchema, type Theme } from './theme';
+import { normaliseTheme, themeSchema, type Theme } from './theme';
 import { pageImages, parsePageData, type PageData } from './blocks';
 import { PRESET_THEMES, presetPage } from './presets';
 
@@ -92,7 +92,7 @@ function toEditor(doc: SiteDesignAttributes | null, site: SiteDocument): EditorD
     JSON.stringify({ t: doc.draft.theme, p: doc.draft.page }) !==
       JSON.stringify({ t: doc.published.theme, p: doc.published.page });
   return {
-    draft: { theme: doc.draft.theme, page: normalisePage(doc.draft.page) },
+    draft: { theme: normaliseTheme(doc.draft.theme), page: normalisePage(doc.draft.page) },
     published,
     revision: doc.revision,
     hasUnpublishedChanges: changed,
@@ -188,5 +188,5 @@ export async function publishDesign(
 export async function readPublishedDesign(): Promise<{ theme: Theme; page: PageData; version: number } | null> {
   const doc = (await SiteDesign.findOne({}).select('published').lean()) as Pick<SiteDesignAttributes, 'published'> | null;
   if (!doc?.published) return null;
-  return { theme: doc.published.theme, page: normalisePage(doc.published.page), version: doc.published.version };
+  return { theme: normaliseTheme(doc.published.theme), page: normalisePage(doc.published.page), version: doc.published.version };
 }
