@@ -16,6 +16,7 @@ import { findSiteBySlug, TENANT_SLUG_HEADER } from '@/lib/tenant/loadSite';
 import { validateCustomerSessionToken } from '@/lib/auth/session';
 import { sessionCookieName } from '@/lib/auth/cookies';
 import { NotFoundError } from '@/lib/errors';
+import { siteOrigin } from '@/lib/seo/meta';
 
 export const runtime = 'nodejs';
 
@@ -55,7 +56,12 @@ export async function POST(request: NextRequest) {
       customerEmail: shopper?.customer.email ?? body.customerEmail,
       customerName: shopper?.customer.name ?? body.customerName,
       customerId: shopper?.customer._id ?? null,
-      callbackUrl: process.env.CHECKOUT_CALLBACK_URL,
+      // Back to THIS store's receipt page. It used to be one global
+      // CHECKOUT_CALLBACK_URL, which cannot be right for more than one store:
+      // every shopper would land on the same address whichever shop they paid.
+      // Built from the stored site, never from the request, so it cannot be
+      // pointed anywhere else. Paystack appends ?reference=… itself.
+      callbackUrl: `${siteOrigin(site)}/checkout/complete`,
     });
 
     return ok(result);

@@ -15,12 +15,16 @@ export type LimitName =
   | 'auth:signup'
   | 'auth:slug-check'
   | 'auth:verify-email'
+  | 'auth:step-up'
+  | 'site:slug-change'
   | 'shop:signup'
   | 'shop:login'
   | 'chat:send'
   | 'payout:verify'
   | 'payout:update'
-  | 'checkout:initialize';
+  | 'checkout:initialize'
+  | 'checkout:quote'
+  | 'checkout:confirm';
 
 /**
  * Tuned to the cost of the action, not to a single global number.
@@ -40,6 +44,12 @@ const LIMITS: Record<LimitName, { tokens: number; window: `${number} ${'s' | 'm'
   // who genuinely did not receive it can try a few times an hour; a script
   // cannot use us to flood an address.
   'auth:verify-email': { tokens: 6, window: '1 h' },
+  // Keyed by user. A stolen session cookie must not become an unlimited
+  // password-guessing oracle for the account behind it.
+  'auth:step-up': { tokens: 8, window: '15 m' },
+  // A store's address is what its customers trust; changing it often is a
+  // fraud pattern, and every change breaks shoppers' sign-ins.
+  'site:slug-change': { tokens: 3, window: '720 h' },
   // Per storefront per client. Shopper signup is cheaper to abuse than seller
   // signup (no site is created) but it still writes a row and burns a hash.
   'shop:signup': { tokens: 10, window: '1 h' },
@@ -50,6 +60,12 @@ const LIMITS: Record<LimitName, { tokens: number; window: `${number} ${'s' | 'm'
   'payout:verify': { tokens: 10, window: '1 h' },
   'payout:update': { tokens: 5, window: '24 h' },
   'checkout:initialize': { tokens: 20, window: '10 m' },
+  // A cart page re-prices on every quantity change, so this is loose; it is a
+  // read, and the limit is about cost.
+  'checkout:quote': { tokens: 240, window: '10 m' },
+  // Each call spends Paystack verify quota, so it is keyed per order reference:
+  // a shopper refreshing the receipt page is fine, a script hammering it is not.
+  'checkout:confirm': { tokens: 12, window: '10 m' },
 };
 
 let redis: Redis | null = null;

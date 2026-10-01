@@ -10,6 +10,7 @@ import { requireSession } from '@/lib/http/context';
 import { created, ok, toErrorResponse } from '@/lib/http/respond';
 import { assertPermission, requireSiteAccess } from '@/lib/auth/guards';
 import { withSite } from '@/lib/tenant/loadSite';
+import { assertQuota } from '@/lib/billing/quota';
 import { assertModuleAllowedByPlan, assertModuleEnabled } from '@/lib/content/modules';
 import { createPost } from '@/lib/content/posts';
 import { Post } from '@/lib/db/models/Post';
@@ -55,9 +56,10 @@ export async function POST(
 
     const body = createPostSchema.parse(await request.json());
 
-    const post = await withSite(access.site, () =>
-      createPost({ ...body, authorId: session.user._id }),
-    );
+    const post = await withSite(access.site, async () => {
+      await assertQuota(access.site, 'posts');
+      return createPost({ ...body, authorId: session.user._id });
+    });
 
     return created(post, `/api/sites/${siteId}/posts/${post._id}`);
   } catch (error) {

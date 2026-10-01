@@ -8,12 +8,13 @@
  * happened to be empty.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Types } from 'mongoose';
 import { Product } from '../../src/lib/db/models/Product';
 import { Order } from '../../src/lib/db/models/Order';
 import { LedgerEntry } from '../../src/lib/db/models/LedgerEntry';
 import { TenantScopeError } from '../../src/lib/errors';
+import { updateTouchesSiteId } from '../../src/lib/db/plugins/tenantScope';
 import {
   getTenantId,
   isScopeBypassed,
@@ -126,6 +127,27 @@ describe('AC-001 — a mismatched explicit siteId is rejected, never merged', ()
       ),
     ).rejects.toThrow(TenantScopeError);
   });
+
+  // Each of these got past the guard when it only looked at $set: an unset
+  // orphans the row out of every tenant, the others reparent it.
+  it.each([
+    ['$unset', { $unset: { siteId: 1 } }],
+    ['$setOnInsert', { $setOnInsert: { siteId: new Types.ObjectId() } }],
+    ['$rename away', { $rename: { siteId: 'formerSiteId' } }],
+    ['$rename onto', { $rename: { otherId: 'siteId' } }],
+    ['pipeline $set', [{ $set: { siteId: new Types.ObjectId() } }]],
+    ['pipeline $unset', [{ $unset: 'siteId' }]],
+    ['pipeline $replaceWith', [{ $replaceWith: { title: 'x' } }]],
+  ])('refuses an update that changes siteId via %s', async (_label, update) => {
+    await expect(
+      runWithTenant(tenantA, () => Product.updateOne({}, update as never)),
+    ).rejects.toThrow(TenantScopeError);
+  });
+
+  it('allows ordinary updates, including pipeline updates of other fields', () => {
+    expect(updateTouchesSiteId({ $set: { title: 'x' }, $inc: { 'inventory.quantity': -1 } })).toBe(false);
+    expect(updateTouchesSiteId([{ $set: { 'inventory.quantity': 3 } }])).toBe(false);
+  });
 });
 
 describe('AC-001 — estimatedDocumentCount is blocked outright', () => {
@@ -235,6 +257,22 @@ describe('siteId is stamped automatically', () => {
     await runWithTenant(tenantA, async () => {
       const doc = new Product({ title: 'Auto2', slug: 'auto2', priceKobo: 100 });
       await expect(doc.validate()).resolves.toBeUndefined();
+    });
+  });
+});
+
+describe('tenant context is one store per process', () => {
+  it('shares the scope with a second copy of the context module', async () => {
+    // Next.js can load this module more than once (a copy per route bundle)
+    // while Mongoose models are registered once per process. A scope opened
+    // through one copy must be visible through another, or a model's plugin
+    // reads an empty store and the query fails.
+    vi.resetModules();
+    const second = await import('../../src/lib/tenant/context');
+    expect(second.runWithTenant).not.toBe(runWithTenant);
+
+    await runWithTenant(tenantA, async () => {
+      expect(second.getTenantId()).toBe(tenantA.siteId);
     });
   });
 });

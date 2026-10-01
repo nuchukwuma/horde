@@ -7,6 +7,7 @@ import { requireSession } from '@/lib/http/context';
 import { created, ok, toErrorResponse } from '@/lib/http/respond';
 import { assertPermission, requireSiteAccess } from '@/lib/auth/guards';
 import { withSite } from '@/lib/tenant/loadSite';
+import { assertQuota } from '@/lib/billing/quota';
 import { assertModuleAllowedByPlan, assertModuleEnabled } from '@/lib/content/modules';
 import { createProject } from '@/lib/content/projects';
 import { Project } from '@/lib/db/models/Project';
@@ -52,7 +53,10 @@ export async function POST(
     await assertModuleAllowedByPlan(access.site, 'portfolio');
 
     const body = createProjectSchema.parse(await request.json());
-    const project = await withSite(access.site, () => createProject(body));
+    const project = await withSite(access.site, async () => {
+      await assertQuota(access.site, 'projects');
+      return createProject(body);
+    });
 
     return created(project, `/api/sites/${siteId}/projects/${project._id}`);
   } catch (error) {

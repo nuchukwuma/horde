@@ -18,8 +18,9 @@ import {
   type AuthenticatedSession,
 } from '../../src/lib/auth/session';
 import {
-  PLATFORM_SESSION_COOKIE,
+  PLATFORM_SESSION_COOKIE_SECURE,
   STOREFRONT_SESSION_COOKIE,
+  platformSessionCookieName,
   clearedCookieOptions,
   sessionCookieName,
   sessionCookieOptions,
@@ -147,9 +148,47 @@ describe('cookie scoping', () => {
     }
   });
 
-  it('uses the __Host- prefix for platform sessions', () => {
-    expect(sessionCookieName('platform')).toBe(PLATFORM_SESSION_COOKIE);
-    expect(PLATFORM_SESSION_COOKIE.startsWith('__Host-')).toBe(true);
+  /**
+   * The invariant, not the constant.
+   *
+   * The previous version of this test asserted the platform cookie always
+   * carries the __Host- prefix. It passed while the app was broken: a browser
+   * REJECTS a __Host- cookie that is not also Secure, so in development the
+   * session cookie was discarded, and signing up silently bounced back to the
+   * signup page with the account created and no session.
+   *
+   * What matters is that the prefix and Secure agree. Asserting the name alone
+   * could not catch a disagreement, which is exactly what it failed to catch.
+   */
+  it('uses the __Host- prefix exactly when the cookie is Secure', () => {
+    const secure = { NODE_ENV: 'production' } as NodeJS.ProcessEnv;
+    const insecure = { NODE_ENV: 'development' } as NodeJS.ProcessEnv;
+
+    expect(platformSessionCookieName(secure)).toBe(PLATFORM_SESSION_COOKIE_SECURE);
+    expect(platformSessionCookieName(secure).startsWith('__Host-')).toBe(true);
+    expect(sessionCookieOptions('platform', true).secure).toBe(true);
+
+    // Over plain http the prefix would make the browser throw the cookie away.
+    expect(platformSessionCookieName(insecure).startsWith('__Host-')).toBe(false);
+    expect(sessionCookieOptions('platform', false).secure).toBe(false);
+  });
+
+  it('never names a cookie __Host- without the attributes that prefix demands', () => {
+    for (const env of [{ NODE_ENV: 'production' }, { NODE_ENV: 'development' }, {}]) {
+      const name = platformSessionCookieName(env as NodeJS.ProcessEnv);
+      const options = sessionCookieOptions('platform', env.NODE_ENV === 'production');
+
+      if (name.startsWith('__Host-')) {
+        expect(options.secure, `${name} must be Secure`).toBe(true);
+        expect(options.path, `${name} must be Path=/`).toBe('/');
+        expect(options, `${name} must have no Domain`).not.toHaveProperty('domain');
+      }
+    }
+  });
+
+  it('still distinguishes the two scopes in development', () => {
+    const dev = { NODE_ENV: 'development' } as NodeJS.ProcessEnv;
+    expect(sessionCookieName('platform', dev)).not.toBe(sessionCookieName('storefront', dev));
   });
 
   it('satisfies what the __Host- prefix requires in production', () => {

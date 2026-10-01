@@ -27,6 +27,22 @@ import { hashPassword } from '../src/lib/auth/password';
 import { computeSplit } from '../src/lib/payments/computeSplit';
 import { runWithTenant, runWithoutTenantScope } from '../src/lib/tenant/context';
 import '../src/lib/db/models/index';
+import { describeUri } from './doctor';
+import { PLANS } from '../src/config/fees';
+import { TIERS } from '../src/config/plans';
+
+/** Plan fee terms come from src/config/fees.ts, the same file the landing page reads. */
+function planTerms(code: 'free' | 'pro') {
+  const plan = PLANS[code];
+  return {
+    name: plan.name,
+    feePercentBps: plan.feePercentBps,
+    feeFlatKobo: plan.feeFlatKobo,
+    feeCapKobo: plan.feeCapKobo,
+    vatOnPlatformFeeBps: plan.vatOnPlatformFeeBps,
+    paystackFeeBearer: plan.paystackFeeBearer,
+  };
+}
 
 const SELLER_EMAIL = 'ade@example.com';
 const SELLER_PASSWORD = 'correct-horse-battery';
@@ -35,7 +51,9 @@ function assertLocal(uri: string): void {
   const isLocal = /127\.0\.0\.1|localhost/.test(uri);
   if (!isLocal && process.env.ALLOW_REMOTE_SEED !== 'true') {
     throw new Error(
-      `Refusing to seed ${uri}: it does not look local. Set ALLOW_REMOTE_SEED=true to override.`,
+      // Host and database only: the URI carries the password, and this message
+      // is exactly the kind that gets pasted into a chat or an issue.
+      `Refusing to seed ${describeUri(uri)}: it does not look local. Set ALLOW_REMOTE_SEED=true to override.`,
     );
   }
 }
@@ -53,14 +71,9 @@ async function main(): Promise<void> {
         filter: { code: 'free' },
         update: {
           $set: {
-            name: 'Free',
-            feePercentBps: 700,
-            feeFlatKobo: 0,
-            feeCapKobo: null,
-            vatOnPlatformFeeBps: 0,
-            paystackFeeBearer: 'seller',
+            ...planTerms('free'),
             limits: {
-              products: 20,
+              products: TIERS.free.limits.products,
               staff: 1,
               storageMb: 200,
               customDomain: false,
@@ -77,14 +90,9 @@ async function main(): Promise<void> {
         filter: { code: 'pro' },
         update: {
           $set: {
-            name: 'Pro',
-            feePercentBps: 300,
-            feeFlatKobo: 5_000,
-            feeCapKobo: 200_000,
-            vatOnPlatformFeeBps: 0,
-            paystackFeeBearer: 'seller',
+            ...planTerms('pro'),
             limits: {
-              products: null,
+              products: TIERS.pro.limits.products,
               staff: 10,
               storageMb: 5_000,
               customDomain: true,
@@ -303,7 +311,9 @@ async function main(): Promise<void> {
 
 main()
   .catch((error) => {
-    console.error('Seed failed:', error);
+    // Message only. A driver error can carry the connection string, and that
+    // carries the password (rule 5: secrets are never logged).
+    console.error('Seed failed:', error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   })
   .finally(async () => {

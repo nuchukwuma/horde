@@ -40,6 +40,12 @@ export function siteOrigin(site: SiteIdentity, rootDomain = process.env.ROOT_DOM
   return `${protocol}://${site.slug}.${rootDomain}`;
 }
 
+/** HordeMart's own apex origin, for "made with" links and the like. */
+export function platformOrigin(rootDomain = process.env.ROOT_DOMAIN): string {
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+  return `${protocol}://${rootDomain ?? 'hordemart.com'}`;
+}
+
 /**
  * An absolute, self-consistent canonical URL.
  *

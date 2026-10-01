@@ -80,6 +80,10 @@ export default async function DashboardPage({ params }) {
             <a href={`/dashboard/${siteId}`} aria-current="page">
               Overview
             </a>
+            <a href={`/dashboard/${siteId}/design`}>Design</a>
+            <a href={`/dashboard/${siteId}/messages`}>Messages</a>
+            <a href={`/dashboard/${siteId}/address`}>Address</a>
+            <a href={`/dashboard/${siteId}/billing`}>Plan</a>
             <a href={storeUrl} target="_blank" rel="noopener noreferrer">
               View store ↗
             </a>

@@ -36,6 +36,10 @@ export type EventKind =
   | 'dispute_resolved'
   | 'transfer_success'
   | 'transfer_failed'
+  | 'subscription_created'
+  | 'subscription_not_renewing'
+  | 'subscription_disabled'
+  | 'subscription_payment_failed'
   | 'ignored';
 
 const EVENT_KINDS: Record<string, EventKind> = {
@@ -50,6 +54,11 @@ const EVENT_KINDS: Record<string, EventKind> = {
   'transfer.success': 'transfer_success',
   'transfer.failed': 'transfer_failed',
   'transfer.reversed': 'transfer_failed',
+  // Premium subscriptions (platform revenue; see lib/billing/subscription.ts).
+  'subscription.create': 'subscription_created',
+  'subscription.not_renew': 'subscription_not_renewing',
+  'subscription.disable': 'subscription_disabled',
+  'invoice.payment_failed': 'subscription_payment_failed',
 };
 
 /**

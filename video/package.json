@@ -1,0 +1,16 @@
+{
+  "name": "hordemart-hero-reel",
+  "private": true,
+  "description": "The landing page's 12-second hero reel, rendered with Remotion. Not part of the app bundle.",
+  "scripts": {
+    "studio": "remotion studio src/index.jsx",
+    "render": "node render.mjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.532",
+    "@remotion/fonts": "4.0.532",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.532"
+  }
+}

@@ -1,0 +1,536 @@
+/* ==========================================================================
+   Scenes: the market stall, the cart, and the little loops around them.
+
+   Rules, from motion-foundations and make-interfaces-feel-better:
+   - transform and opacity only; nothing animates layout.
+   - state changes are transitions (they retarget if the state changes again
+     mid-motion); keyframes are reserved for one-shot pops and gentle loops.
+   - every scene's final frame is the complete picture, so reduced motion
+     (base.css) loses no information.
+   ========================================================================== */
+
+.scene {
+  position: relative;
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(120% 80% at 80% 0%, color-mix(in srgb, var(--sun) 22%, transparent), transparent 60%),
+    var(--sky-tint, color-mix(in srgb, var(--sky) 38%, var(--surface-page)));
+  border: 2px solid var(--line);
+  box-shadow: 6px 6px 0 var(--line);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.scene--night {
+  --sky-tint: #1d2347;
+  background:
+    radial-gradient(90% 70% at 85% 10%, rgb(255 225 150 / 18%), transparent 60%),
+    linear-gradient(180deg, #161b3a 0%, #262c55 70%, #2f3560 100%);
+}
+
+.scene svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ---------- Stall ---------- */
+
+.stall {
+  overflow: visible;
+}
+
+.stall text {
+  font-family: var(--font-display);
+}
+
+.stall__part,
+.stall__seller,
+.stall__blueprint {
+  opacity: 0;
+  transform: translateY(18px) scale(0.94);
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  transition:
+    opacity 380ms var(--ease-out) var(--d, 0ms),
+    transform 720ms var(--ease-spring) var(--d, 0ms);
+}
+
+.stall__part.on,
+.stall__seller.on,
+.stall__blueprint.on {
+  opacity: 1;
+  transform: none;
+}
+
+.stall__blueprint-text {
+  font-size: 18px;
+  font-weight: 600;
+  fill: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.stall__awning {
+  transform-origin: 50% 0%;
+  transform: scaleY(0.2);
+}
+
+.stall__awning.on {
+  transform: none;
+}
+
+/* Stock drops from above and lands with a bounce, one item after another. */
+.stall__item,
+.stall__tag {
+  opacity: 0;
+  transform: translateY(-110px) rotate(-8deg);
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  transition:
+    opacity 160ms linear var(--d, 0ms),
+    transform 640ms var(--ease-spring) var(--d, 0ms);
+}
+
+.stall__tag {
+  transform: scale(0);
+  transform-origin: 0% 50%;
+}
+
+.stall__stock.on .stall__item,
+.stall__stock.on .stall__tag {
+  opacity: 1;
+  transform: none;
+}
+
+.stall__tag-text {
+  font-size: 13px;
+  font-weight: 800;
+  fill: #1b1a17;
+  font-family: var(--font-sans);
+}
+
+.stall__name {
+  font-weight: 800;
+  fill: #1b1a17;
+  letter-spacing: -0.02em;
+  opacity: 0;
+  transition: opacity 300ms var(--ease-out);
+}
+
+.stall__name.on {
+  opacity: 1;
+}
+
+/* The OPEN card flips over (a squash on X stands in for a 3D turn, which
+   SVG does not do reliably across browsers) and changes colour. */
+.stall__open-card {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+}
+
+.stall__open.is-open .stall__open-card {
+  animation: card-flip 700ms var(--ease-out) 1;
+}
+
+.stall__open-bg {
+  fill: var(--clay);
+  transition: fill 200ms linear 300ms;
+}
+
+.stall__open.is-open .stall__open-bg {
+  fill: var(--leaf);
+}
+
+.stall__open-text {
+  font-size: 16px;
+  font-weight: 800;
+  fill: #fffaf2;
+  letter-spacing: 0.08em;
+}
+
+@keyframes card-flip {
+  0% {
+    transform: scaleX(1);
+  }
+  45% {
+    transform: scaleX(0);
+  }
+  55% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+.stall__sparkles path {
+  opacity: 0;
+  transform: scale(0);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.stall__sparkles.on path {
+  animation: twinkle 2.4s var(--ease-out) infinite;
+  animation-delay: calc(var(--i) * 380ms);
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.1) rotate(25deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.9) rotate(45deg);
+  }
+}
+
+/* Seller: breathes always, swings the box while stocking, waves when open. */
+.stall__seller-body {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: breathe 3.6s ease-in-out infinite;
+}
+
+.stall__arm-left,
+.stall__arm-right {
+  transform-box: fill-box;
+}
+
+.stall__arm-left {
+  transform-origin: 90% 0%;
+}
+
+.stall__arm-right {
+  transform-origin: 0% 100%;
+}
+
+.stall__seller.is-stocking .stall__arm-left {
+  animation: toss 560ms var(--ease-out) infinite;
+}
+
+.stall__seller.is-waving .stall__arm-right {
+  animation: wave 1.6s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes toss {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  45% {
+    transform: rotate(16deg) translateY(-14px);
+  }
+}
+
+@keyframes wave {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0deg);
+  }
+  15% {
+    transform: rotate(-14deg);
+  }
+  30% {
+    transform: rotate(10deg);
+  }
+  45% {
+    transform: rotate(-8deg);
+  }
+}
+
+.stall__sun {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sun-pulse 6s ease-in-out infinite;
+}
+
+@keyframes sun-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.stall__cloud {
+  animation: drift 18s ease-in-out infinite alternate;
+}
+
+@keyframes drift {
+  from {
+    transform: translateX(-10px);
+  }
+  to {
+    transform: translateX(40px);
+  }
+}
+
+.stall__stars circle {
+  animation: star 3s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 400ms);
+}
+
+@keyframes star {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Lamp: dark until lit. */
+.stall__bulb {
+  fill: #6c6658;
+  transition: fill 300ms var(--ease-out);
+}
+
+.stall__glow {
+  opacity: 0;
+  transition: opacity 500ms var(--ease-out);
+}
+
+.stall--lit .stall__bulb {
+  fill: #ffd77a;
+}
+
+.stall--lit .stall__glow {
+  opacity: 1;
+}
+
+.stall--night .stall__wall {
+  fill: #232a52;
+}
+
+/* Shutter: rolls up into the awning. */
+.stall__shutter {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  transition: transform 1100ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.stall__shutter.is-open {
+  transform: scaleY(0.02);
+}
+
+.stall__shutter.is-shaking {
+  animation: shake 420ms ease-in-out 1;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+  75% {
+    transform: translateX(-3px);
+  }
+}
+
+.stall__chalk {
+  font-size: 30px;
+  font-weight: 700;
+  fill: #f6f1e7;
+  letter-spacing: 0.02em;
+  opacity: 0.9;
+}
+
+.stall__chalk--small {
+  font-size: 16px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+/* ---------- Overlays on a scene ---------- */
+
+.scene__toast {
+  position: absolute;
+  left: 4%;
+  top: 6%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 10px 10px;
+  background: var(--surface-1);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 3px 3px 0 var(--line);
+  font-size: 13.5px;
+  line-height: 1.25;
+  max-width: 62%;
+  opacity: 0;
+  transform: translateY(-10px) scale(0.9);
+  transition:
+    opacity 260ms var(--ease-out),
+    transform 520ms var(--ease-spring);
+  pointer-events: none;
+}
+
+.scene__toast.on {
+  opacity: 1;
+  transform: none;
+}
+
+.scene__toast-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  flex: none;
+}
+
+.scene__toast strong {
+  display: block;
+  font-size: 14px;
+}
+
+.scene__address {
+  position: absolute;
+  left: 50%;
+  bottom: 4%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 92%;
+  padding: 8px 14px;
+  background: var(--surface-1);
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  box-shadow: 3px 3px 0 var(--line);
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scene__address-slug {
+  color: var(--accent);
+  font-weight: 750;
+}
+
+.scene__controls {
+  position: absolute;
+  right: 3%;
+  top: 4%;
+  display: flex;
+  gap: 8px;
+}
+
+.scene__chip {
+  appearance: none;
+  border: 2px solid var(--line);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--line);
+  min-height: 36px;
+  transition-property: transform, box-shadow;
+  transition-duration: var(--dur-fast);
+}
+
+.scene__chip:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 var(--line);
+}
+
+/* ---------- Confetti (a one-shot burst) ---------- */
+
+.confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confetti i {
+  position: absolute;
+  top: -12px;
+  left: var(--x);
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--c);
+  opacity: 0;
+  animation: confetti-fall 1.6s var(--ease-out) var(--d) 1 both;
+}
+
+@keyframes confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(var(--fall, 260px)) translateX(var(--sway, 20px)) rotate(var(--spin, 540deg));
+  }
+}
+
+/* Small screens: the toast shrinks to one line so the sign stays visible. */
+@media (max-width: 560px) {
+  .scene__toast {
+    padding: 6px 10px 6px 6px;
+    gap: 7px;
+    border-radius: 12px;
+    font-size: 12px;
+    max-width: 58%;
+  }
+  .scene__toast strong {
+    font-size: 12px;
+  }
+  .scene__toast .muted {
+    display: none;
+  }
+  .scene__toast-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    font-size: 12px;
+  }
+  .scene__chip {
+    min-height: 30px;
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+  .scene__address {
+    font-size: 12px;
+    padding: 6px 11px;
+  }
+}

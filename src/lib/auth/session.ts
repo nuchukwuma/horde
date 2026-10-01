@@ -219,7 +219,7 @@ export function assertRecentlyAuthenticated(
   const age = Date.now() - session.reauthenticatedAt.getTime();
   if (age > maxAgeMs) {
     throw new StepUpRequiredError(
-      'Please confirm your password again to change payout details',
+      'Please confirm your password again to continue',
     );
   }
 }

@@ -9,46 +9,66 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { resolveHost } from './lib/tenant/resolveHost';
 import {
+  STOREFRONT_PATH_PREFIX,
   TENANT_CUSTOM_DOMAIN_HEADER,
+  TENANT_PATH_HEADER,
   TENANT_HOST_HEADER,
   TENANT_SLUG_HEADER,
 } from './lib/tenant/headers';
-import { adsenseClient, buildCsp } from './lib/security/csp';
+import { adsenseClient, buildCsp, generateNonce } from './lib/security/csp';
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 };
 
+type HostKind = 'apex' | 'app' | 'tenant' | 'custom-domain' | 'invalid';
+
 /**
- * Apply the host-appropriate CSP.
+ * The host-appropriate CSP, carrying this request's nonce.
  *
  * next.config.mjs still sets a strict policy as a static baseline, so a
  * request that somehow bypasses middleware gets the tenant-safe headers rather
  * than none. This overwrites it where the host is known — which is only here,
  * since next.config cannot see the Host header.
  */
-function withCsp(
-  response: NextResponse,
-  hostKind: 'apex' | 'app' | 'tenant' | 'custom-domain' | 'invalid',
-): NextResponse {
-  response.headers.set(
-    'Content-Security-Policy',
-    buildCsp({
-      hostKind,
-      isDev: process.env.NODE_ENV !== 'production',
-      adsEnabled: adsenseClient() !== null,
-    }),
-  );
+function policyFor(hostKind: HostKind, nonce: string): string {
+  return buildCsp({
+    hostKind,
+    isDev: process.env.NODE_ENV !== 'production',
+    adsEnabled: adsenseClient() !== null,
+    nonce,
+  });
+}
+
+function withCsp(response: NextResponse, policy: string): NextResponse {
+  response.headers.set('Content-Security-Policy', policy);
   return response;
+}
+
+/**
+ * The internal storefront tree, addressed directly.
+ *
+ * Only a rewrite from a tenant host may reach it. Requested by path on the
+ * apex or app host it would render seller content on a platform origin — the
+ * one place seller HTML must never appear.
+ */
+function isInternalStorefrontPath(pathname: string): boolean {
+  const lower = pathname.toLowerCase();
+  return lower === STOREFRONT_PATH_PREFIX || lower.startsWith(`${STOREFRONT_PATH_PREFIX}/`);
 }
 
 export function middleware(request: NextRequest): NextResponse {
   const rootDomain = process.env.ROOT_DOMAIN;
   const appHost = process.env.APP_HOST;
 
+  const nonce = generateNonce();
+
   if (!rootDomain || !appHost) {
     // Misconfiguration must not silently degrade into "everything is the apex".
-    return withCsp(new NextResponse('Server misconfigured', { status: 500 }), 'invalid');
+    return withCsp(
+      new NextResponse('Server misconfigured', { status: 500 }),
+      policyFor('invalid', nonce),
+    );
   }
 
   const requestHeaders = new Headers(request.headers);
@@ -58,12 +78,23 @@ export function middleware(request: NextRequest): NextResponse {
   requestHeaders.delete(TENANT_SLUG_HEADER);
   requestHeaders.delete(TENANT_HOST_HEADER);
   requestHeaders.delete(TENANT_CUSTOM_DOMAIN_HEADER);
+  requestHeaders.delete(TENANT_PATH_HEADER);
 
   const resolved = resolveHost(request.headers.get('host'), { rootDomain, appHost });
+  const policy = policyFor(resolved.kind, nonce);
+
+  // Next.js reads the nonce from the request's own CSP header and stamps it on
+  // every script it emits. Without this line the response header names a nonce
+  // that no script carries, and the page is blank.
+  requestHeaders.set('Content-Security-Policy', policy);
+
+  if (resolved.kind !== 'tenant' && isInternalStorefrontPath(request.nextUrl.pathname)) {
+    return withCsp(new NextResponse('Not found', { status: 404 }), policy);
+  }
 
   switch (resolved.kind) {
     case 'invalid':
-      return withCsp(new NextResponse('Unknown host', { status: 404 }), 'invalid');
+      return withCsp(new NextResponse('Unknown host', { status: 404 }), policy);
 
     case 'tenant': {
       const slug = resolved.slug as string;
@@ -81,11 +112,12 @@ export function middleware(request: NextRequest): NextResponse {
         pathname === '/robots.txt';
 
       if (!isSharedPath) {
+        requestHeaders.set(TENANT_PATH_HEADER, `${pathname}${request.nextUrl.search}`);
         const url = request.nextUrl.clone();
-        url.pathname = `/_sites/${slug}${pathname === '/' ? '' : pathname}`;
+        url.pathname = `${STOREFRONT_PATH_PREFIX}/${slug}${pathname === '/' ? '' : pathname}`;
         return withCsp(
           NextResponse.rewrite(url, { request: { headers: requestHeaders } }),
-          'tenant',
+          policy,
         );
       }
       break;
@@ -102,8 +134,5 @@ export function middleware(request: NextRequest): NextResponse {
       break;
   }
 
-  return withCsp(
-    NextResponse.next({ request: { headers: requestHeaders } }),
-    resolved.kind,
-  );
+  return withCsp(NextResponse.next({ request: { headers: requestHeaders } }), policy);
 }

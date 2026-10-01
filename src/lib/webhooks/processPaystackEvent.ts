@@ -20,6 +20,7 @@ import { createHash } from 'node:crypto';
 import { WebhookEvent } from '../db/models/WebhookEvent';
 import { Order, type OrderAttributes, type OrderStatus } from '../db/models/Order';
 import { LedgerEntry } from '../db/models/LedgerEntry';
+import { Product } from '../db/models/Product';
 import { Types } from 'mongoose';
 import { verifyPaystackSignature } from '../paystack/webhookSignature';
 import { verifyTransaction } from '../paystack/transactions';
@@ -37,6 +38,12 @@ import { recordAudit } from '../audit';
 import { recordRefund, recordSettlement } from '../ledger/entries';
 import { refundedTotalForOrder } from '../ledger/balances';
 import { computeRefundSplit, readRefundPolicy } from '../payments/refundPolicy';
+import {
+  confirmPremiumPayment,
+  handleSubscriptionChange,
+  handleSubscriptionCreated,
+  isSubscriptionReference,
+} from '../billing/subscription';
 
 export type ProcessOutcome =
   | 'invalid_signature'
@@ -220,8 +227,28 @@ async function handleEvent(
   options: PaystackCallOptions,
 ): Promise<ProcessOutcome> {
   switch (kind) {
-    case 'charge_success':
+    case 'charge_success': {
+      // A Premium subscription payment uses our hmsub_ reference and has no
+      // Order; it upgrades a site instead. Everything else is a sale.
+      const reference = extractReference(event);
+      if (isSubscriptionReference(reference)) {
+        const outcome = await confirmPremiumPayment(reference as string, options);
+        return outcome === 'upgraded' || outcome === 'already_active'
+          ? 'processed'
+          : outcome === 'amount_mismatch'
+            ? 'amount_mismatch'
+            : 'ignored';
+      }
       return handleChargeSuccess(event, eventId, options);
+    }
+    case 'subscription_created':
+      return handleSubscriptionCreated(event.data);
+    case 'subscription_not_renewing':
+      return handleSubscriptionChange('not_renewing', event.data);
+    case 'subscription_disabled':
+      return handleSubscriptionChange('disabled', event.data);
+    case 'subscription_payment_failed':
+      return handleSubscriptionChange('payment_failed', event.data);
     case 'charge_failed':
       return transitionOrder(event, 'failed', ['pending']);
     case 'refund_processed':
@@ -256,6 +283,33 @@ async function handleChargeSuccess(
 ): Promise<ProcessOutcome> {
   const reference = extractReference(event);
   if (!reference) return 'order_not_found';
+  return confirmChargeByReference(reference, { eventId }, options);
+}
+
+export interface ConfirmContext {
+  /** Present when a webhook triggered this; absent for the shopper's return. */
+  eventId?: string;
+}
+
+/**
+ * Mark an order paid if — and only if — Paystack's verify endpoint says so.
+ *
+ * Two callers, one rule. The webhook is the normal path. The storefront's
+ * return page is the second: Paystack redirects the shopper back the moment
+ * they pay, often before the webhook lands, and on a development machine the
+ * webhook cannot reach localhost at all — so without this the shopper would
+ * stare at "pending" for an order they have paid for.
+ *
+ * Calling it twice is safe, in either order. The transition is guarded on
+ * `status: 'pending'`, and only the call that actually moves the order writes
+ * the ledger entry and takes the stock.
+ */
+export async function confirmChargeByReference(
+  reference: string,
+  context: ConfirmContext = {},
+  options: PaystackCallOptions = {},
+): Promise<ProcessOutcome> {
+  const eventId = context.eventId ?? null;
 
   const order = await findOrderByReference(reference);
   if (!order) return 'order_not_found';
@@ -324,9 +378,55 @@ async function handleChargeSuccess(
       status: 'pending', // Settled when Paystack reports settlement, in Phase 5.
       paystack: { reference, transactionId: String(verified.id) },
     });
+
+    await takeStock(order);
   });
 
   return 'processed';
+}
+
+/**
+ * Reduce tracked stock by what was just paid for.
+ *
+ * Happens on payment, not at checkout: an abandoned Paystack page must not
+ * eat inventory. The price of that choice is that two shoppers can both pay
+ * for the last item; the clamp below keeps stock from going negative, and the
+ * seller refunds one of them. Selling the last unit twice occasionally is a
+ * better failure than a cart that reserves stock nobody pays for.
+ *
+ * Two plain updates rather than one pipeline update, so this works on every
+ * MongoDB-compatible server a contributor might run locally.
+ */
+async function takeStock(order: OrderAttributes): Promise<void> {
+  for (const item of order.items) {
+    try {
+      const taken = await Product.updateOne(
+        {
+          _id: item.productId,
+          'inventory.track': true,
+          'inventory.quantity': { $gte: item.quantity },
+        },
+        { $inc: { 'inventory.quantity': -item.quantity } },
+      );
+
+      if (taken.matchedCount === 0) {
+        await Product.updateOne(
+          { _id: item.productId, 'inventory.track': true },
+          { $set: { 'inventory.quantity': 0 } },
+        );
+      }
+    } catch (error) {
+      // The payment and its ledger entry are already recorded, which is what
+      // matters. A stock miscount is visible and fixable by the seller; a
+      // webhook that fails after money has moved and is retried into the
+      // "already paid" branch would lose the stock update anyway.
+      console.error(
+        'Stock update failed for order',
+        String(order._id),
+        error instanceof Error ? error.message : 'unknown error',
+      );
+    }
+  }
 }
 
 /**

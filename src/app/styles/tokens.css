@@ -1,0 +1,210 @@
+/**
+ * HordeMart design tokens — ADIRE direction.
+ *
+ * Adire is Yoruba resist-dyed cloth: indigo on undyed cotton, patterned by
+ * what the dye could not reach. The platform borrows exactly that: an indigo
+ * that carries the interface, a near-white "starch" ground, a pale indigo
+ * wash for quiet surfaces, and two earth accents — kola red and brass — used
+ * sparingly for emphasis and illustration.
+ *
+ *   Indigo        #22307A   brand, buttons, links, focus
+ *   Starch White  #FCFCF8   page ground
+ *   Indigo Wash   #DCE1F5   quiet surfaces, selected states
+ *   Kola          #B4472A   the one warm accent (prices, highlights)
+ *   Brass         #C99A2E   illustration and small marks only
+ *
+ * Status colours stay reserved; data-viz series stay the validated pair.
+ * Money is always tabular (see .money).
+ *
+ * The old illustration names (--sun, --palm, --indigo, --clay…) are kept so
+ * the scenes and product art recolour themselves without code changes.
+ */
+
+
+:root {
+  color-scheme: light;
+
+  --surface-page: #fcfcf8;
+  --surface-1: #ffffff;
+  --surface-2: #f1f2f8;
+  --surface-inset: #e6e9f4;
+  --surface-ink: #141838;
+
+  --text-primary: #161a33;
+  --text-secondary: #4a4f6a;
+  --text-muted: #7a7f98;
+  --text-inverse: #fcfcf8;
+
+  --border: #dfe2ee;
+  --border-strong: #c3c8dc;
+
+  --accent: #22307a;
+  --accent-hover: #1a2563;
+  --accent-ink: #ffffff;
+  --accent-wash: #dce1f5;
+
+  --kola: #b4472a;
+  --brass: #c99a2e;
+
+  /* Illustration palette (scenes, product art), mapped onto Adire. */
+  --sun: #c99a2e;
+  --sun-wash: #f6edd6;
+  --palm: #b4472a;
+  --palm-wash: #f6e0d9;
+  --indigo: #22307a;
+  --indigo-wash: #dce1f5;
+  --clay: #c2614a;
+  --leaf: #3d8a63;
+  --sky: #9fb0e8;
+  --skin-1: #7a4b30;
+  --skin-2: #b9805a;
+  --wood: #a5713f;
+  --wood-dark: #6f4823;
+  --line: #141838;
+
+  --good: #12784a;
+  --warning: #8f6200;
+  --critical: #b3261e;
+  --success: var(--good);
+  --good-wash: #e2f2e9;
+  --warning-wash: #fbf1d4;
+  --critical-wash: #fbe8e6;
+
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --grid: #e4e7f1;
+
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  --shadow-1: 0 1px 2px rgb(20 24 56 / 6%), 0 1px 1px rgb(20 24 56 / 4%);
+  --shadow-2: 0 12px 28px -14px rgb(20 24 56 / 28%), 0 2px 6px rgb(20 24 56 / 6%);
+  --shadow-3: 0 30px 60px -24px rgb(20 24 56 / 34%), 0 8px 18px rgb(20 24 56 / 8%);
+  --shadow-press: 0 2px 0 rgb(20 24 56 / 85%);
+
+  --font-display: var(--font-unbounded), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 160ms;
+  --dur: 260ms;
+}
+
+/* Dark mode: indigo at night. Same hues, lifted to hold contrast. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --surface-page: #0f1229;
+    --surface-1: #161a36;
+    --surface-2: #1d2244;
+    --surface-inset: #262c52;
+    --surface-ink: #080a1a;
+
+    --text-primary: #eef0fb;
+    --text-secondary: #b9bdd6;
+    --text-muted: #868ba8;
+    --text-inverse: #0f1229;
+
+    --border: #2b315a;
+    --border-strong: #3c4374;
+
+    --accent: #9aa8f2;
+    --accent-hover: #b3bef6;
+    --accent-ink: #10143a;
+    --accent-wash: #232a5a;
+
+    --kola: #e07a5c;
+    --brass: #dcb350;
+
+    --sun: #dcb350;
+    --sun-wash: #2e2816;
+    --palm: #e07a5c;
+    --palm-wash: #35211b;
+    --indigo: #7d8ce0;
+    --indigo-wash: #222953;
+    --clay: #e08a76;
+    --leaf: #5cba8a;
+    --sky: #5767b5;
+    --wood: #946337;
+    --wood-dark: #64411f;
+    --line: #070918;
+
+    --good: #4cb173;
+    --warning: #d3a53a;
+    --critical: #e57a72;
+    --good-wash: #16281f;
+    --warning-wash: #2c2515;
+    --critical-wash: #2e1b1d;
+
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --grid: #262c52;
+
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 40%);
+    --shadow-2: 0 12px 30px -12px rgb(0 0 0 / 60%), 0 2px 6px rgb(0 0 0 / 30%);
+    --shadow-3: 0 30px 60px -20px rgb(0 0 0 / 70%), 0 8px 18px rgb(0 0 0 / 30%);
+    --shadow-press: 0 2px 0 rgb(0 0 0 / 70%);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --surface-page: #0f1229;
+  --surface-1: #161a36;
+  --surface-2: #1d2244;
+  --surface-inset: #262c52;
+  --surface-ink: #080a1a;
+
+  --text-primary: #eef0fb;
+  --text-secondary: #b9bdd6;
+  --text-muted: #868ba8;
+  --text-inverse: #0f1229;
+
+  --border: #2b315a;
+  --border-strong: #3c4374;
+
+  --accent: #9aa8f2;
+  --accent-hover: #b3bef6;
+  --accent-ink: #10143a;
+  --accent-wash: #232a5a;
+
+  --kola: #e07a5c;
+  --brass: #dcb350;
+
+  --sun: #dcb350;
+  --sun-wash: #2e2816;
+  --palm: #e07a5c;
+  --palm-wash: #35211b;
+  --indigo: #7d8ce0;
+  --indigo-wash: #222953;
+  --clay: #e08a76;
+  --leaf: #5cba8a;
+  --sky: #5767b5;
+  --wood: #946337;
+  --wood-dark: #64411f;
+  --line: #070918;
+
+  --good: #4cb173;
+  --warning: #d3a53a;
+  --critical: #e57a72;
+  --good-wash: #16281f;
+  --warning-wash: #2c2515;
+  --critical-wash: #2e1b1d;
+
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --grid: #262c52;
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-2: 0 12px 30px -12px rgb(0 0 0 / 60%), 0 2px 6px rgb(0 0 0 / 30%);
+  --shadow-3: 0 30px 60px -20px rgb(0 0 0 / 70%), 0 8px 18px rgb(0 0 0 / 30%);
+  --shadow-press: 0 2px 0 rgb(0 0 0 / 70%);
+}

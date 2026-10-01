@@ -60,3 +60,9 @@ export type { ProjectAttributes } from './Project';
 
 export { AuditLog } from './AuditLog';
 export type { AuditLogAttributes, AuditAction } from './AuditLog';
+
+export { SiteDesign } from './SiteDesign';
+export type { SiteDesignAttributes, DesignVersion } from './SiteDesign';
+
+export { SlugHistory } from './SlugHistory';
+export type { SlugHistoryAttributes } from './SlugHistory';

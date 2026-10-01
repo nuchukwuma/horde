@@ -39,6 +39,53 @@ function toObjectId(siteId: string): Types.ObjectId {
   return new Types.ObjectId(siteId);
 }
 
+/** True when `path` is siteId itself or a path inside it (`siteId.x`). */
+function isSiteIdPath(path: string): boolean {
+  return path === 'siteId' || path.startsWith('siteId.');
+}
+
+function objectNamesSiteId(value: unknown): boolean {
+  if (!value || typeof value !== 'object') return false;
+  if (Array.isArray(value)) {
+    // `$unset: ['siteId']` in a pipeline stage.
+    return value.some((entry) => typeof entry === 'string' && isSiteIdPath(entry));
+  }
+  return Object.keys(value).some(isSiteIdPath);
+}
+
+/**
+ * Whether an update document or pipeline could change, remove or replace
+ * siteId. Exported for the plugin's own tests.
+ */
+export function updateTouchesSiteId(update: unknown): boolean {
+  if (!update || typeof update !== 'object') return false;
+
+  if (Array.isArray(update)) {
+    return update.some((stage) => {
+      if (!stage || typeof stage !== 'object') return false;
+      return Object.entries(stage as Record<string, unknown>).some(([operator, body]) => {
+        if (operator === '$replaceRoot' || operator === '$replaceWith') return true;
+        if (operator === '$unset' && typeof body === 'string') return isSiteIdPath(body);
+        return objectNamesSiteId(body);
+      });
+    });
+  }
+
+  return Object.entries(update as Record<string, unknown>).some(([key, body]) => {
+    // A bare field in a replacement document or an operator-less update.
+    if (!key.startsWith('$')) return isSiteIdPath(key);
+    if (key === '$rename') {
+      // Renaming another field ONTO siteId is as bad as renaming siteId away.
+      const renames = body as Record<string, unknown> | undefined;
+      if (!renames || typeof renames !== 'object') return false;
+      return Object.entries(renames).some(
+        ([from, to]) => isSiteIdPath(from) || (typeof to === 'string' && isSiteIdPath(to)),
+      );
+    }
+    return objectNamesSiteId(body);
+  });
+}
+
 export function tenantScopePlugin(schema: Schema, options: TenantScopeOptions): void {
   const { modelName } = options;
 
@@ -74,20 +121,22 @@ export function tenantScopePlugin(schema: Schema, options: TenantScopeOptions): 
 
   function guardUpdatePayload(this: Query<unknown, unknown>): void {
     const update = this.getUpdate();
-    if (!update || Array.isArray(update)) return;
-
-    const record = update as Record<string, unknown>;
-    const direct = record.siteId;
-    const set = record.$set as Record<string, unknown> | undefined;
-    const candidates = [direct, set?.siteId].filter((value) => value !== undefined && value !== null);
-
-    if (candidates.length === 0) return;
+    if (!update) return;
 
     // siteId is `immutable: true`, but Mongoose only enforces that on documents,
     // not on raw update operators — so reparenting has to be blocked here too.
-    throw new TenantScopeError(
-      `${modelName} update attempted to modify siteId; documents cannot move between tenants`,
-    );
+    //
+    // Every operator is checked, not only $set. `$unset: { siteId: 1 }` orphans
+    // a document out of every tenant, `$rename` moves the value away, and
+    // `$setOnInsert` reparents on an upsert. A pipeline update (an array of
+    // stages) can do all of that in `$set`/`$addFields`/`$unset`/`$project`,
+    // and `$replaceRoot`/`$replaceWith` swap the whole document — so those two
+    // are refused outright rather than inspected.
+    if (updateTouchesSiteId(update)) {
+      throw new TenantScopeError(
+        `${modelName} update attempted to modify siteId; documents cannot move between tenants`,
+      );
+    }
   }
 
   schema.pre(FILTERED_OPERATIONS, scopeQuery);

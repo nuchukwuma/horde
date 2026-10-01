@@ -17,31 +17,18 @@ export default function SocialLinks({ links, heading = 'Find us' }) {
   if (!links || links.length === 0) return null;
 
   return (
-    <section className="container" style={{ paddingBottom: 56 }}>
-      <h2 className="section-title">{heading}</h2>
-      <ul
-        style={{
-          listStyle: 'none',
-          padding: 0,
-          margin: 0,
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 10,
-        }}
-      >
+    <section className="container section-sm">
+      <h2 className="store-section__title" style={{ marginBottom: 16 }}>
+        {heading}
+      </h2>
+      <ul className="socials">
         {links.map((link) => (
           <li key={link.platform}>
-            <a
-              className="btn"
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              style={{ textDecoration: 'none' }}
-            >
+            <a className="social" href={link.href} target="_blank" rel="noopener noreferrer nofollow">
               {/* The platform name is announced too, so the handle alone is not
                   the only thing a screen reader hears. */}
-              <span style={{ fontWeight: 600 }}>{link.label}</span>
-              <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>{link.text}</span>
+              <span className="social__label">{link.label}</span>
+              <span className="social__handle">{link.text}</span>
             </a>
           </li>
         ))}
