@@ -93,6 +93,21 @@ export default async function StorefrontLayout({ children, params }) {
             ) : null}
           </nav>
 
+          {/* On phones the menu's "Sign in" / "Messages" text link is hidden to
+              make room, which left customers no way into their account from
+              the header. This icon takes its place there. */}
+          {modules.store ? (
+            <a
+              className="store-head__account"
+              href={shopper ? '/account/messages' : '/account/login'}
+              aria-label={shopper ? 'Your messages' : 'Sign in'}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" strokeWidth="2" />
+                <path d="M4 21c1.2-4 4.3-6 8-6s6.8 2 8 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </a>
+          ) : null}
           {modules.store ? <CartButton /> : null}
         </div>
       </header>

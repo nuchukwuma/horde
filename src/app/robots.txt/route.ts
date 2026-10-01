@@ -9,7 +9,8 @@
 import type { NextRequest } from 'next/server';
 import { requirePublicSite } from '@/lib/http/context';
 import { toErrorResponse } from '@/lib/http/respond';
-import { buildRobots } from '@/lib/seo/sitemap';
+import { buildPlatformRobots, buildRobots } from '@/lib/seo/sitemap';
+import { TENANT_HOST_HEADER } from '@/lib/tenant/headers';
 
 /**
  * Per-tenant, so it cannot be prerendered: the response depends on the Host
@@ -23,6 +24,16 @@ export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
+    // HordeMart's own hosts: the marketing site is indexable, the app host
+    // (sign-in, dashboards) is not. Middleware set this header from the Host.
+    const hostKind = request.headers.get(TENANT_HOST_HEADER);
+    if (hostKind === 'apex' || hostKind === 'app') {
+      return new Response(buildPlatformRobots(hostKind), {
+        status: 200,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=3600' },
+      });
+    }
+
     const site = await requirePublicSite(request);
 
     // Only gate on payout for a store. A portfolio or blog has nothing to sell

@@ -7,6 +7,8 @@ import { requireSiteAccess } from '@/lib/auth/guards';
 import { listConversations } from '@/lib/chat/conversations';
 import { formatDateTime } from '@/lib/ui/format';
 import SellerInbox from '@/components/chat/SellerInbox';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import { siteOrigin } from '@/lib/seo/meta';
 
 /**
  * Seller's message inbox.
@@ -37,19 +39,7 @@ export default async function MessagesPage({ params }) {
 
   return (
     <div className="shell">
-      <header className="masthead">
-        <div className="container masthead__inner">
-          <a className="brand" href="/">
-            HordeMart
-          </a>
-          <nav className="nav" aria-label="Dashboard">
-            <a href={`/dashboard/${siteId}`}>Overview</a>
-            <a href={`/dashboard/${siteId}/messages`} aria-current="page">
-              Messages
-            </a>
-          </nav>
-        </div>
-      </header>
+      <DashboardHeader siteId={siteId} current="messages" storeUrl={siteOrigin(site)} />
 
       <main className="container" style={{ paddingBlock: '28px 64px', maxWidth: 760 }}>
         <h1 style={{ fontSize: 22, marginBottom: 18 }}>Messages</h1>

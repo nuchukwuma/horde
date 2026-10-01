@@ -6,6 +6,7 @@ import { isModuleEnabled } from '@/lib/content/modules';
 import { validateCustomerSessionToken } from '@/lib/auth/session';
 import { sessionCookieName } from '@/lib/auth/cookies';
 import ChatThread from '@/components/chat/ChatThread';
+import SignOutButton from '@/components/auth/SignOutButton';
 
 /**
  * A shopper's conversation with this store.
@@ -31,7 +32,10 @@ export default async function ShopMessagesPage({ params }) {
 
   return (
     <div className="container container--narrow" style={{ maxWidth: 620, paddingBlock: '48px 64px' }}>
-      <h1 style={{ fontSize: 28, marginBottom: 6 }}>Messages</h1>
+      <div className="row row--between" style={{ alignItems: 'baseline', flexWrap: 'wrap', gap: 12 }}>
+        <h1 style={{ fontSize: 28, marginBottom: 6 }}>Messages</h1>
+        {session ? <SignOutButton endpoint="/api/shop/account/logout" redirectTo="/" /> : null}
+      </div>
       <p style={{ color: 'var(--text-secondary)', marginTop: 0, marginBottom: 28 }}>
         Ask {site.name} about an order, sizing, delivery — anything.
       </p>

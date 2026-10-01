@@ -11,6 +11,7 @@ import RevenueChart from '@/components/charts/RevenueChart';
 import { formatNaira, formatDateTime } from '@/lib/ui/format';
 import { siteOrigin } from '@/lib/seo/meta';
 import StoreLink from '@/components/dashboard/StoreLink';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
 
 /**
  * Seller dashboard.
@@ -71,25 +72,7 @@ export default async function DashboardPage({ params }) {
         Skip to content
       </a>
 
-      <header className="masthead">
-        <div className="container masthead__inner">
-          <a className="brand" href="/">
-            HordeMart
-          </a>
-          <nav className="nav" aria-label="Dashboard">
-            <a href={`/dashboard/${siteId}`} aria-current="page">
-              Overview
-            </a>
-            <a href={`/dashboard/${siteId}/design`}>Design</a>
-            <a href={`/dashboard/${siteId}/messages`}>Messages</a>
-            <a href={`/dashboard/${siteId}/address`}>Address</a>
-            <a href={`/dashboard/${siteId}/billing`}>Plan</a>
-            <a href={storeUrl} target="_blank" rel="noopener noreferrer">
-              View store ↗
-            </a>
-          </nav>
-        </div>
-      </header>
+      <DashboardHeader siteId={siteId} current="overview" storeUrl={storeUrl} />
 
       <main id="main" className="container" style={{ paddingBlock: '28px 64px' }}>
         <div className="row row--between" style={{ marginBottom: 20, flexWrap: 'wrap' }}>

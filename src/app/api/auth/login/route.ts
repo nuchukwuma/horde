@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       // Spend comparable time so response timing does not reveal which
       // addresses exist.
       await fakeVerifyPassword();
-      throw new AuthenticationError('Invalid email or password');
+      throw new AuthenticationError('Invalid email or password', 'That email and password don’t match an account. Check them and try again.');
     }
 
     const valid = await verifyPassword(user.passwordHash ?? '', password);
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
         ip: requestIp(request),
         userAgent: requestUserAgent(request),
       });
-      throw new AuthenticationError('Invalid email or password');
+      throw new AuthenticationError('Invalid email or password', 'That email and password don’t match an account. Check them and try again.');
     }
 
     const { token } = await createSession({
@@ -71,7 +71,9 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       data: {
         userId: String(user._id),
-        redirectTo: membership ? `/dashboard/${membership.siteId}` : '/',
+        // No store yet: /dashboard explains and offers to open one (it used
+        // to send these accounts to the marketing page with no word why).
+        redirectTo: membership ? `/dashboard/${membership.siteId}` : '/dashboard',
       },
     });
 

@@ -999,3 +999,29 @@ table.data th.num {
     scroll-behavior: auto !important;
   }
 }
+
+/* 404 pages (app/not-found.jsx, storefront/[slug]/not-found.jsx). */
+.not-found {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.not-found__inner {
+  padding-block: 72px 96px;
+  text-align: center;
+}
+
+.not-found__code {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+.not-found__text {
+  max-width: 42ch;
+  margin: 8px auto 24px;
+  color: var(--text-secondary);
+}

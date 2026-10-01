@@ -31,8 +31,13 @@ export class ValidationError extends AppError {
 }
 
 export class AuthenticationError extends AppError {
-  constructor(message = 'Authentication required') {
-    super(401, 'unauthenticated', message, { publicMessage: 'Authentication required' });
+  /**
+   * `publicMessage` defaults to the generic "Authentication required". Pass
+   * one only where the client needs more — a failed sign-in, which must say
+   * the details were wrong without saying which one.
+   */
+  constructor(message = 'Authentication required', publicMessage = 'Authentication required') {
+    super(401, 'unauthenticated', message, { publicMessage });
   }
 }
 
