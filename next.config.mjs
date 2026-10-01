@@ -46,7 +46,7 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  serverExternalPackages: ['mongoose', '@node-rs/argon2'],
+  serverExternalPackages: ['mongoose', '@node-rs/argon2', 'isomorphic-dompurify'],
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },

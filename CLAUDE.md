@@ -94,7 +94,8 @@ Plain JSX for UI components and pages. `allowJs` is on, `checkJs` is off.
 ## Commands
 
 ```bash
-npm run dev         # Next.js dev server
+npm run dev         # Next.js dev server (Turbopack)
+npm run dev:webpack # Same, on webpack — fallback if Turbopack misbehaves
 npm test            # Unit suite; integration suites skip without a database
 npm run typecheck   # tsc --noEmit
 npm run verify      # typecheck + lint + test — run before every commit
