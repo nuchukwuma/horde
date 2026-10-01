@@ -27,6 +27,9 @@ export type AuditAction =
   | 'site.settings.changed'
   | 'user.login'
   | 'user.login.failed'
+  /** A signed-in seller re-confirmed their password before a sensitive action. */
+  | 'user.step_up'
+  | 'user.step_up.failed'
   | 'user.password.changed'
   | 'membership.granted'
   | 'membership.revoked'

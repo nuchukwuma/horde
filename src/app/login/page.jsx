@@ -1,12 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import PlatformHeader from '@/components/platform/PlatformHeader';
+import StallScene from '@/components/scenes/StallScene';
 
 /**
  * Sign in.
  *
- * Plain and small on purpose: a login form is a place people want to leave
- * quickly, and anything decorative here is in the way.
+ * The scene is a stall after hours: shutter down, lamp off. Start typing and
+ * the lamp comes on; a wrong password rattles the shutter; the right one
+ * rolls it up on a fully stocked shop before the dashboard loads. It is the
+ * sign-in form's three states drawn as a picture — and all three are also
+ * said in words, so the picture is never the only signal.
  */
 
 export default function LoginPage() {
@@ -14,6 +19,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [shutter, setShutter] = useState('closed');
 
   async function onSubmit(event) {
     event.preventDefault();
@@ -31,97 +37,104 @@ export default function LoginPage() {
 
       if (!response.ok) {
         setError(body?.error?.message ?? 'Could not sign in');
+        setShutter('shake');
+        setTimeout(() => setShutter('closed'), 450);
+        setBusy(false);
         return;
       }
 
-      window.location.href = body.data.redirectTo;
+      setShutter('open');
+      setTimeout(() => {
+        window.location.href = body.data.redirectTo;
+      }, 900);
     } catch {
       setError('Could not reach the server. Check your connection and try again.');
-    } finally {
       setBusy(false);
     }
   }
 
+  const scene = (
+    <div className="scene scene--night">
+      <StallScene name="Welcome back" stage={5} mood="night" shutter={shutter} lamp={email.length > 0 || shutter === 'open'} />
+    </div>
+  );
+
   return (
     <div className="shell">
-      <header className="masthead">
-        <div className="container masthead__inner">
-          <a className="brand" href="/">
-            HordeMart
-          </a>
+      <PlatformHeader current="login" />
+
+      <main className="auth" id="main">
+        <div className="auth__panel">
+          <div className="auth__form-wrap">
+            <div className="auth__art-mobile">{scene}</div>
+
+            <h1 className="auth__title">Welcome back</h1>
+            <p className="auth__lede">Sign in to open up your shop, check sales and reply to customers.</p>
+
+            <form onSubmit={onSubmit}>
+              {/* Errors are announced, not just coloured. */}
+              {error ? (
+                <div className="alert alert--error" role="alert" style={{ marginBottom: 18 }}>
+                  <span className="alert__icon" aria-hidden="true">!</span>
+                  <span>{error}</span>
+                </div>
+              ) : null}
+
+              <div className="field">
+                <label className="label" htmlFor="email">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  className="input"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                />
+              </div>
+
+              <div className="field">
+                <label className="label" htmlFor="password">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  className="input"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                />
+              </div>
+
+              <button className="btn btn--primary btn--lg btn--block" type="submit" disabled={busy} style={{ marginTop: 22 }}>
+                {busy ? (
+                  <>
+                    <span className="btn__spinner" aria-hidden="true" />
+                    {shutter === 'open' ? 'Opening up…' : 'Signing in…'}
+                  </>
+                ) : (
+                  'Sign in'
+                )}
+              </button>
+
+              <p className="auth__switch">
+                New to HordeMart? <a href="/signup">Open a shop — it&rsquo;s free</a>
+              </p>
+            </form>
+          </div>
         </div>
-      </header>
 
-      <main className="container" style={{ maxWidth: 420, paddingBlock: '64px' }}>
-        <h1 style={{ fontSize: 26, marginBottom: 6 }}>Sign in</h1>
-        <p style={{ color: 'var(--text-secondary)', marginTop: 0, marginBottom: 28 }}>
-          Manage your store, portfolio and journal.
-        </p>
-
-        <form onSubmit={onSubmit} className="stack" style={{ '--stack-gap': '16px' }}>
-          {/* Errors are announced, not just coloured. */}
-          {error ? (
-            <div className="card" role="alert" style={{ borderColor: 'var(--critical)' }}>
-              {error}
-            </div>
-          ) : null}
-
-          <div>
-            <label htmlFor="email" style={labelStyle}>
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              style={inputStyle}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" style={labelStyle}>
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              style={inputStyle}
-            />
-          </div>
-
-          <button className="btn btn--primary" type="submit" disabled={busy}>
-            {busy ? 'Signing in…' : 'Sign in'}
-          </button>
-        </form>
+        <aside className="auth__art auth__art--night" aria-hidden="true">
+          {scene}
+          <p className="auth__caption">Your stall is just as you left it.</p>
+        </aside>
       </main>
     </div>
   );
 }
-
-const labelStyle = {
-  display: 'block',
-  fontSize: 13,
-  fontWeight: 600,
-  marginBottom: 6,
-};
-
-const inputStyle = {
-  width: '100%',
-  font: 'inherit',
-  fontSize: 15,
-  padding: '10px 12px',
-  borderRadius: 'var(--radius-sm)',
-  border: '1px solid var(--border-strong)',
-  background: 'var(--surface-1)',
-  color: 'var(--text-primary)',
-  minHeight: 42,
-};

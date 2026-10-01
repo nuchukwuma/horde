@@ -1,0 +1,205 @@
+/**
+ * HordeMart design tokens.
+ *
+ * DIRECTION: market day.
+ *
+ * The product is a Lagos market stall made into a website, so the palette is
+ * the market's: warm paper, a deep commerce green, adire indigo, palm-oil
+ * orange and a sun yellow. The green carries the interface — buttons, links,
+ * focus. The other four are for illustration and small highlights only, so
+ * the UI never turns into a fruit salad.
+ *
+ * Status colours are reserved and never reused for decoration. Series colours
+ * are the validated data-viz pair from the original system; do not hand-pick
+ * new ones for charts.
+ *
+ * Money is always set in tabular figures (see .money) so columns of naira
+ * line up digit for digit. Misaligned money reads as untrustworthy, and trust
+ * is the whole product.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces, in elevation order. Warm, not grey: this is paper, not a form. */
+  --surface-page: #fbf7f0;
+  --surface-1: #ffffff;
+  --surface-2: #f5efe4;
+  --surface-inset: #efe6d6;
+  --surface-ink: #1b1a17;
+
+  /* Ink. */
+  --text-primary: #1b1a17;
+  --text-secondary: #57524a;
+  --text-muted: #857e72;
+  --text-inverse: #fffaf2;
+
+  --border: #e6ddcd;
+  --border-strong: #cfc4b0;
+
+  /* Brand. Overridden per storefront by the seller's own accent. */
+  --accent: #0f6b4a;
+  --accent-hover: #0c5a3e;
+  --accent-ink: #ffffff;
+  --accent-wash: #e3f1e9;
+
+  /* Market colours — illustration and highlight only. */
+  --sun: #f4b93e;
+  --sun-wash: #fdf1d6;
+  --palm: #e8772e;
+  --palm-wash: #fde6d6;
+  --indigo: #2b3a8c;
+  --indigo-wash: #e3e6f6;
+  --clay: #d9677a;
+  --leaf: #4caf7a;
+  --sky: #9fd0ee;
+  --skin-1: #8a5a3c;
+  --skin-2: #c58a5e;
+  --wood: #b0763f;
+  --wood-dark: #7d4f27;
+  --line: #1b1a17;
+
+  /* Status — reserved, never decoration. */
+  --good: #0f7a42;
+  --warning: #9a6700;
+  --critical: #b3261e;
+  --success: var(--good);
+  --good-wash: #e3f3e8;
+  --warning-wash: #fdf3d7;
+  --critical-wash: #fbe9e7;
+
+  /* Data-viz series (validated light steps). */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --grid: #e9e1d3;
+
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 32px;
+
+  --shadow-1: 0 1px 2px rgb(40 30 10 / 6%), 0 1px 1px rgb(40 30 10 / 4%);
+  --shadow-2: 0 10px 30px -12px rgb(40 30 10 / 22%), 0 2px 6px rgb(40 30 10 / 6%);
+  --shadow-3: 0 30px 60px -20px rgb(40 30 10 / 30%), 0 8px 18px rgb(40 30 10 / 8%);
+  /* The "sticker" press: a hard ink edge under chunky buttons. */
+  --shadow-press: 0 2px 0 rgb(27 26 23 / 85%);
+
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, sans-serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 160ms;
+  --dur: 260ms;
+}
+
+/* Dark mode: a market at night. Same hues, lifted to hold contrast. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --surface-page: #14130f;
+    --surface-1: #1c1b16;
+    --surface-2: #25231d;
+    --surface-inset: #2e2b23;
+    --surface-ink: #0c0b09;
+
+    --text-primary: #f6f1e7;
+    --text-secondary: #c9c1b2;
+    --text-muted: #978f80;
+    --text-inverse: #14130f;
+
+    --border: #34312a;
+    --border-strong: #4a463c;
+
+    --accent: #45b588;
+    --accent-hover: #5cc79a;
+    --accent-ink: #0b1d15;
+    --accent-wash: #173126;
+
+    --sun: #f2bf55;
+    --sun-wash: #2f2716;
+    --palm: #f08a47;
+    --palm-wash: #34221a;
+    --indigo: #7d8ce0;
+    --indigo-wash: #1e2236;
+    --clay: #e58595;
+    --leaf: #5cc28c;
+    --sky: #5d8fb0;
+    --wood: #9c6a3a;
+    --wood-dark: #6b4523;
+    --line: #0c0b09;
+
+    --good: #4cb173;
+    --warning: #d3a53a;
+    --critical: #e57a72;
+    --good-wash: #16281c;
+    --warning-wash: #2c2515;
+    --critical-wash: #2e1b19;
+
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --grid: #2f2c25;
+
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 40%);
+    --shadow-2: 0 12px 30px -12px rgb(0 0 0 / 60%), 0 2px 6px rgb(0 0 0 / 30%);
+    --shadow-3: 0 30px 60px -20px rgb(0 0 0 / 70%), 0 8px 18px rgb(0 0 0 / 30%);
+    --shadow-press: 0 2px 0 rgb(0 0 0 / 70%);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --surface-page: #14130f;
+  --surface-1: #1c1b16;
+  --surface-2: #25231d;
+  --surface-inset: #2e2b23;
+  --surface-ink: #0c0b09;
+
+  --text-primary: #f6f1e7;
+  --text-secondary: #c9c1b2;
+  --text-muted: #978f80;
+  --text-inverse: #14130f;
+
+  --border: #34312a;
+  --border-strong: #4a463c;
+
+  --accent: #45b588;
+  --accent-hover: #5cc79a;
+  --accent-ink: #0b1d15;
+  --accent-wash: #173126;
+
+  --sun: #f2bf55;
+  --sun-wash: #2f2716;
+  --palm: #f08a47;
+  --palm-wash: #34221a;
+  --indigo: #7d8ce0;
+  --indigo-wash: #1e2236;
+  --clay: #e58595;
+  --leaf: #5cc28c;
+  --sky: #5d8fb0;
+  --wood: #9c6a3a;
+  --wood-dark: #6b4523;
+  --line: #0c0b09;
+
+  --good: #4cb173;
+  --warning: #d3a53a;
+  --critical: #e57a72;
+  --good-wash: #16281c;
+  --warning-wash: #2c2515;
+  --critical-wash: #2e1b19;
+
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --grid: #2f2c25;
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-2: 0 12px 30px -12px rgb(0 0 0 / 60%), 0 2px 6px rgb(0 0 0 / 30%);
+  --shadow-3: 0 30px 60px -20px rgb(0 0 0 / 70%), 0 8px 18px rgb(0 0 0 / 30%);
+  --shadow-press: 0 2px 0 rgb(0 0 0 / 70%);
+}

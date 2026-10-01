@@ -124,14 +124,73 @@ export const stepUpSchema = z.object({
   password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
 });
 
+/** Naira typed by a seller, as a string: a JSON number has already been a float. */
+const nairaAmountSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{1,9}(\.\d{1,2})?$/, 'Enter an amount like 2500 or 2500.50');
+
+/**
+ * A product photo the seller uploaded to OUR Cloudinary account.
+ *
+ * Shape only. Whether the URL is really on our cloud, and inside this site's
+ * folder, is checked by lib/products/images.ts against server configuration —
+ * a regex here cannot know which cloud is ours.
+ */
+export const productImageSchema = z.object({
+  cloudinaryPublicId: z.string().trim().min(1).max(300),
+  url: z.string().url().startsWith('https://').max(2_000),
+  width: z.number().int().positive().max(20_000).optional(),
+  height: z.number().int().positive().max(20_000).optional(),
+  alt: z.string().trim().max(300).optional(),
+});
+
+/**
+ * Creating a product.
+ *
+ * The slug is not accepted: it is derived from the title server-side and made
+ * unique within the store, so a seller never meets a "slug taken" error for
+ * something they did not knowingly choose.
+ */
 export const createProductSchema = z.object({
-  title: z.string().trim().min(1).max(200),
-  slug: z.string().trim().toLowerCase().min(1).max(200),
+  title: z.string().trim().min(1, 'Give the product a name').max(200),
   descriptionHtml: z.string().max(50_000).optional(),
-  // Naira as a string: a JSON number would already have passed through a float.
-  priceNaira: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Enter an amount like 2500 or 2500.00'),
+  priceNaira: nairaAmountSchema,
+  compareAtPriceNaira: nairaAmountSchema.nullable().optional(),
   sku: z.string().trim().max(64).optional(),
-  status: z.enum(['draft', 'active', 'archived']).default('draft'),
+  status: z.enum(['draft', 'active', 'archived']).default('active'),
+  trackInventory: z.boolean().default(false),
+  quantity: z.number().int().min(0).max(1_000_000).default(0),
+  images: z.array(productImageSchema).max(8).default([]),
+});
+
+export const updateProductSchema = createProductSchema.partial();
+
+/**
+ * Pricing a cart for display.
+ *
+ * Same shape as checkout's items, and the answer comes from the same database
+ * read, so the total a shopper sees is the total they are charged.
+ */
+export const cartQuoteSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        productId: z.string().regex(/^[a-f0-9]{24}$/i, 'Invalid product id'),
+        quantity: z.number().int().min(1).max(999),
+      }),
+    )
+    .max(100, 'Too many items in one order'),
+});
+
+/** Store branding a seller can set. Validated hex only; nothing else reaches a style. */
+export const siteBrandingSchema = z.object({
+  tagline: z.string().trim().max(160).optional(),
+  accent: z
+    .string()
+    .trim()
+    .regex(/^#[0-9a-f]{6}$/i, 'Pick a colour')
+    .optional(),
 });
 
 /**
@@ -215,3 +274,4 @@ export type SignInInput = z.infer<typeof signInSchema>;
 export type CreateSiteInput = z.infer<typeof createSiteSchema>;
 export type PayoutDetailsInput = z.infer<typeof payoutDetailsSchema>;
 export type CreateProductInput = z.infer<typeof createProductSchema>;
+export type UpdateProductInput = z.infer<typeof updateProductSchema>;

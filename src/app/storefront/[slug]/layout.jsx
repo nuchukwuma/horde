@@ -1,7 +1,11 @@
-import { notFound } from 'next/navigation';
-import { findSiteBySlug } from '@/lib/tenant/loadSite';
-import { ensureDatabase } from '@/lib/http/context';
-import { siteOrigin } from '@/lib/seo/meta';
+import { cookies } from 'next/headers';
+import { requireStorefront } from '@/lib/tenant/storefront';
+import { platformOrigin, siteOrigin } from '@/lib/seo/meta';
+import { validateCustomerSessionToken } from '@/lib/auth/session';
+import { sessionCookieName } from '@/lib/auth/cookies';
+import CartButton from '@/components/shop/CartButton';
+import StoreMonogram from '@/components/shop/StoreMonogram';
+import BrandMark from '@/components/art/BrandMark';
 
 /**
  * Storefront shell.
@@ -13,13 +17,14 @@ import { siteOrigin } from '@/lib/seo/meta';
  */
 
 export async function generateMetadata({ params }) {
-  const { slug } = await params;
-  await ensureDatabase();
-  const site = await findSiteBySlug(slug);
-  if (!site) return {};
+  const site = await requireStorefront(params);
 
   return {
     title: { default: site.name, template: `%s | ${site.name}` },
+    description:
+      typeof site.settings?.tagline === 'string' && site.settings.tagline
+        ? site.settings.tagline
+        : `Shop ${site.name} online. Pay securely by card, transfer or USSD.`,
     metadataBase: new URL(siteOrigin(site)),
   };
 }
@@ -29,7 +34,6 @@ function themeStyle(theme) {
   const style = {};
   if (typeof theme?.accent === 'string' && /^#[0-9a-f]{6}$/i.test(theme.accent)) {
     style['--accent'] = theme.accent;
-    style['--accent-hover'] = theme.accent;
   }
   if (typeof theme?.accentInk === 'string' && /^#[0-9a-f]{6}$/i.test(theme.accentInk)) {
     style['--accent-ink'] = theme.accentInk;
@@ -38,41 +42,54 @@ function themeStyle(theme) {
 }
 
 export default async function StorefrontLayout({ children, params }) {
-  const { slug } = await params;
-  await ensureDatabase();
-
-  const site = await findSiteBySlug(slug);
-  if (!site || site.status !== 'active') notFound();
-
+  const site = await requireStorefront(params);
   const modules = site.modules;
 
+  const token = (await cookies()).get(sessionCookieName('storefront'))?.value;
+  const shopper = modules.store ? await validateCustomerSessionToken(token, site._id) : null;
+
   return (
-    <div className="shell" style={themeStyle(site.settings?.theme ?? site.theme)}>
+    <div className="shell storefront" style={themeStyle(site.settings?.theme ?? site.theme)}>
       <a className="skip-link" href="#main">
         Skip to content
       </a>
 
-      <header className="masthead">
+      <header className="masthead store-head">
         <div className="container masthead__inner">
-          <a className="brand" href="/">
-            {site.name}
+          <a className="store-brand" href="/">
+            <StoreMonogram name={site.name} />
+            <span className="store-brand__name">{site.name}</span>
           </a>
-          <nav className="nav" aria-label="Primary">
+
+          <nav className="nav store-nav" aria-label="Primary">
             {modules.store ? <a href="/shop">Shop</a> : null}
             {modules.portfolio ? <a href="/work">Work</a> : null}
             {modules.blog ? <a href="/blog">Journal</a> : null}
+            {modules.store ? (
+              <a className="store-nav__account" href={shopper ? '/account/messages' : '/account/login'}>
+                {shopper ? 'Messages' : 'Sign in'}
+              </a>
+            ) : null}
           </nav>
+
+          {modules.store ? <CartButton /> : null}
         </div>
       </header>
 
       <main id="main">{children}</main>
 
-      <footer className="footer">
-        <div className="container row row--between" style={{ flexWrap: 'wrap', gap: 8 }}>
-          <span>
-            © {new Date().getFullYear()} {site.name}
-          </span>
-          <span>Powered by HordeMart</span>
+      <footer className="footer store-footer">
+        <div className="container store-footer__inner">
+          <div>
+            <p className="store-footer__name">{site.name}</p>
+            <p className="muted" style={{ margin: '4px 0 0' }}>
+              © {new Date().getFullYear()} · Payments secured by Paystack
+            </p>
+          </div>
+          <a className="store-footer__powered" href={platformOrigin()} rel="noopener">
+            <BrandMark className="store-footer__mark" />
+            Made with HordeMart
+          </a>
         </div>
       </footer>
     </div>
