@@ -15,6 +15,7 @@
 import { z } from 'zod';
 import { contrastRatio } from '../ui/contrast';
 import { FONT_PAIRS, FONT_PAIR_IDS, type FontPairId } from './fonts';
+import { LOOKS, LOOK_IDS, MODE_IDS } from './looks';
 
 /** WCAG AA for body text. */
 export const MIN_TEXT_CONTRAST = 4.5;
@@ -71,56 +72,135 @@ export function contrastProblems(colors: ThemeColors) {
 export const themeSchema = z
   .object({
     preset: z.enum(['fashion', 'food', 'electronics', 'custom']),
+    /** Which art direction dresses the store (lib/design/looks.ts). */
+    style: z.enum(LOOK_IDS).default('adire'),
+    /** Light, dark, or follow the visitor's phone ("auto"). */
+    mode: z.enum(MODE_IDS).default('light'),
     colors: colorsSchema,
+    /** Used when mode is dark or auto. Defaults to the look's dark palette. */
+    darkColors: colorsSchema.optional(),
     fontPair: z.enum(FONT_PAIR_IDS),
     radius: z.enum(['none', 'soft', 'round']),
     buttonStyle: z.enum(['solid', 'outline', 'pill']),
     logo: designImageSchema.nullable(),
   })
   .strict()
+  .transform((theme) => ({ ...theme, darkColors: theme.darkColors ?? { ...LOOKS[theme.style].dark } }))
   .superRefine((theme, ctx) => {
-    for (const problem of contrastProblems(theme.colors)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['colors', problem.field],
-        message: `${problem.message} (contrast ${problem.ratio}:1, needs ${problem.min}:1)`,
-      });
+    // Both palettes a visitor can actually see must be readable. The dark
+    // set is only checked when it can be shown; a light-only store is never
+    // refused over colours nobody will see.
+    const sets = theme.mode === 'light' ? (['colors'] as const) : (['colors', 'darkColors'] as const);
+    for (const key of sets) {
+      for (const problem of contrastProblems(theme[key])) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [key, problem.field],
+          message: `${key === 'darkColors' ? 'Dark mode: ' : ''}${problem.message} (contrast ${problem.ratio}:1, needs ${problem.min}:1)`,
+        });
+      }
     }
   });
 
 export type Theme = z.infer<typeof themeSchema>;
+
+/** A theme as a client may send it: look, mode and dark colours optional. */
+export type ThemeInput = z.input<typeof themeSchema>;
+
+/**
+ * Fill in fields that themes saved before looks and dark mode lack, so older
+ * drafts and published designs render exactly as they did: Adire, light.
+ * Valid input comes back fully parsed; anything else keeps its stored values
+ * with only the missing fields defaulted (it was validated when it was saved).
+ */
+export function normaliseTheme(raw: unknown): Theme {
+  const parsed = themeSchema.safeParse(raw);
+  if (parsed.success) return parsed.data;
+  const stored = (raw ?? {}) as Partial<Theme>;
+  const style = stored.style && stored.style in LOOKS ? stored.style : 'adire';
+  return {
+    ...(stored as Theme),
+    style,
+    mode: stored.mode ?? 'light',
+    darkColors: stored.darkColors ?? { ...LOOKS[style].dark },
+  };
+}
 
 const RADIUS = { none: '2px', soft: '12px', round: '22px' } as const;
 
 /**
  * Theme → CSS custom properties for the storefront wrapper.
  *
+ * Only the seller's raw palette goes inline (--th-* for light, --thd-* for
+ * dark); every derived token — card tints, borders, muted text — is computed
+ * from those in storefront.css, per mode. That split is what lets "auto"
+ * switch with the visitor's phone: an inline declaration would beat any
+ * @media rule in the stylesheet, so the inline layer must not set the
+ * derived tokens itself.
+ *
  * Only validated values reach here (hex colours, enum keys mapped to fixed
  * strings), so nothing in the output was typed freely by a seller.
  */
 export function themeToCssVars(theme: Theme): Record<string, string> {
   const { colors } = theme;
-  const pair = FONT_PAIRS[theme.fontPair as FontPairId] ?? FONT_PAIRS.adire;
+  const pair = (FONT_PAIRS[theme.fontPair as FontPairId] ?? FONT_PAIRS.adire) as (typeof FONT_PAIRS)[FontPairId] & { mono?: string };
   const radius = RADIUS[theme.radius];
 
-  return {
-    '--surface-page': colors.background,
-    '--surface-1': colors.surface,
-    '--surface-2': `color-mix(in srgb, ${colors.text} 5%, ${colors.background})`,
-    '--surface-inset': `color-mix(in srgb, ${colors.text} 9%, ${colors.background})`,
-    '--text-primary': colors.text,
-    '--text-secondary': `color-mix(in srgb, ${colors.text} 74%, ${colors.background})`,
-    '--text-muted': `color-mix(in srgb, ${colors.text} 58%, ${colors.background})`,
-    '--border': `color-mix(in srgb, ${colors.text} 12%, ${colors.background})`,
-    '--border-strong': `color-mix(in srgb, ${colors.text} 24%, ${colors.background})`,
-    '--line': colors.text,
-    '--accent': colors.accent,
-    '--accent-ink': colors.accentText,
+  const vars: Record<string, string> = {
+    '--th-bg': colors.background,
+    '--th-surface': colors.surface,
+    '--th-text': colors.text,
+    '--th-accent': colors.accent,
+    '--th-accent-ink': colors.accentText,
     '--font-display': `var(${pair.display}), ui-sans-serif, system-ui, sans-serif`,
     '--font-sans': `var(${pair.body}), ui-sans-serif, system-ui, sans-serif`,
     '--radius-sm': theme.radius === 'none' ? '2px' : theme.radius === 'soft' ? '8px' : '14px',
     '--radius': radius,
     '--radius-lg': theme.radius === 'none' ? '2px' : theme.radius === 'soft' ? '18px' : '28px',
-    colorScheme: 'light',
+  };
+  if (pair.mono) vars['--font-mono'] = `var(${pair.mono}), ui-monospace, SFMono-Regular, Menlo, monospace`;
+
+  if ((theme.mode ?? 'light') !== 'light') {
+    const dark = theme.darkColors ?? LOOKS[theme.style ?? 'adire'].dark;
+    vars['--thd-bg'] = dark.background;
+    vars['--thd-surface'] = dark.surface;
+    vars['--thd-text'] = dark.text;
+    vars['--thd-accent'] = dark.accent;
+    vars['--thd-accent-ink'] = dark.accentText;
+  }
+  return vars;
+}
+
+/** The data-* attributes the storefront CSS keys its looks and modes on. */
+export function themeAttributes(theme: Theme): Record<string, string> {
+  return {
+    'data-look': theme.style ?? 'adire',
+    'data-mode': theme.mode ?? 'light',
+    'data-buttons': theme.buttonStyle,
+  };
+}
+
+/** Every contrast problem a visitor could see: light always, dark when shown. */
+export function themeContrastProblems(theme: Pick<Theme, 'colors' | 'darkColors' | 'mode'>) {
+  const light = contrastProblems(theme.colors).map((problem) => ({ ...problem, set: 'colors' as const }));
+  if ((theme.mode ?? 'light') === 'light' || !theme.darkColors) return light;
+  return [...light, ...contrastProblems(theme.darkColors).map((problem) => ({ ...problem, set: 'darkColors' as const }))];
+}
+
+/**
+ * Dress a theme in a look: its palettes, font pair, corners and buttons.
+ * Keeps what is the seller's own regardless of look — logo and light/dark mode.
+ */
+export function withLook(theme: Theme, look: keyof typeof LOOKS): Theme {
+  const chosen = LOOKS[look];
+  return {
+    ...theme,
+    preset: 'custom',
+    style: look,
+    colors: { ...chosen.light },
+    darkColors: { ...chosen.dark },
+    fontPair: chosen.fontPair,
+    radius: chosen.radius,
+    buttonStyle: chosen.buttonStyle,
   };
 }

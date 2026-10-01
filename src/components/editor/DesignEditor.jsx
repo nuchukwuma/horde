@@ -7,7 +7,7 @@ import { Puck } from '@puckeditor/core';
 import '@puckeditor/core/no-external.css';
 import { buildEditorConfig } from './editorConfig';
 import ThemePanel from './ThemePanel';
-import { contrastProblems } from '@/lib/design/theme';
+import { themeContrastProblems, withLook } from '@/lib/design/theme';
 import { PRESET_THEMES, presetPage } from '@/lib/design/presets';
 
 /**
@@ -47,7 +47,8 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
 
   const config = useMemo(() => buildEditorConfig(siteId), [siteId]);
   const dirty = snapshot(theme, page) !== saved;
-  const unreadable = contrastProblems(theme.colors).length > 0;
+  const unreadable = themeContrastProblems(theme).length > 0;
+  const [previewDark, setPreviewDark] = useState(false);
 
   // Warn before leaving with unsaved changes.
   useEffect(() => {
@@ -124,13 +125,19 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
     );
     if (!ok) return;
     const fresh = presetPage(preset, storeName);
-    setTheme({ ...PRESET_THEMES[preset], logo: theme.logo });
+    // The look (Adire, Danfo, Credit Alert) and light/dark mode are kept: a
+    // reset restores the starting layout and colours within the chosen look.
+    const base = { ...PRESET_THEMES[preset], logo: theme.logo, mode: theme.mode };
+    setTheme(theme.style && theme.style !== 'adire' ? { ...withLook(base, theme.style), preset } : base);
     setPage(fresh);
     pageRef.current = fresh;
     setPuckKey((key) => key + 1); // Puck takes `data` once; remount to load the preset.
   }
 
-  const metadata = useMemo(() => ({ theme, products, store: { name: storeName } }), [theme, products, storeName]);
+  const metadata = useMemo(
+    () => ({ theme, products, previewDark, store: { name: storeName, look: theme.style ?? 'adire' } }),
+    [theme, products, previewDark, storeName],
+  );
 
   return (
     <div className="ed">
@@ -165,7 +172,16 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
         }}
       />
 
-      {brandOpen ? <ThemePanel theme={theme} onChange={setTheme} siteId={siteId} onClose={() => setBrandOpen(false)} /> : null}
+      {brandOpen ? (
+        <ThemePanel
+          theme={theme}
+          onChange={setTheme}
+          siteId={siteId}
+          onClose={() => setBrandOpen(false)}
+          previewDark={previewDark}
+          onPreviewDark={setPreviewDark}
+        />
+      ) : null}
 
       {status ? (
         <div className={`ed-toast ed-toast--${status.tone}`} role={status.tone === 'error' ? 'alert' : 'status'}>

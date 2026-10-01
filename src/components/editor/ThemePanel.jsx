@@ -1,12 +1,14 @@
 'use client';
 
 import { FONT_PAIRS } from '@/lib/design/fonts';
-import { contrastProblems } from '@/lib/design/theme';
+import { contrastProblems, withLook } from '@/lib/design/theme';
+import { LOOKS } from '@/lib/design/looks';
 import { PRESET_THEMES } from '@/lib/design/presets';
 import ImageField from './ImageField';
 
 /**
- * Brand settings: preset, colours, fonts, corners, buttons, logo.
+ * Brand settings: look, light/dark mode, preset, colours, fonts, corners,
+ * buttons, logo.
  *
  * Contrast is checked as the seller picks. A colour that makes text
  * unreadable is flagged immediately and the editor will not save it — and
@@ -24,9 +26,57 @@ const COLOR_FIELDS = [
 
 const PRESET_LABELS = { fashion: 'Fashion', food: 'Food', electronics: 'Electronics' };
 
-export default function ThemePanel({ theme, onChange, siteId, onClose }) {
-  const problems = contrastProblems(theme.colors);
+const MODES = [
+  ['light', 'Light'],
+  ['dark', 'Dark'],
+  ['auto', 'Match phone'],
+];
+
+/** One palette's pickers and its readability verdict. */
+function ColorSet({ title, colors, onColor, idPrefix }) {
+  const problems = contrastProblems(colors);
   const flagged = new Set(problems.flatMap((problem) => [problem.field, problem.against]));
+  return (
+    <>
+      {title ? <h4 className="ed-subtitle">{title}</h4> : null}
+      {COLOR_FIELDS.map(([key, label]) => (
+        <div key={key} className={`ed-color${flagged.has(key) ? ' is-flagged' : ''}`}>
+          <input
+            type="color"
+            aria-label={`${idPrefix}${label}`}
+            value={colors[key]}
+            onChange={(event) => onColor(key, event.target.value)}
+          />
+          <span className="ed-color__label">{label}</span>
+          <input
+            className="input ed-color__hex"
+            aria-label={`${idPrefix}${label}, hex value`}
+            defaultValue={colors[key]}
+            key={colors[key]}
+            maxLength={7}
+            onBlur={(event) => onColor(key, event.target.value.trim())}
+          />
+        </div>
+      ))}
+      {problems.length > 0 ? (
+        <ul className="ed-warnings" role="alert">
+          {problems.map((problem) => (
+            <li key={`${problem.field}-${problem.against}`}>
+              {problem.message}: contrast {problem.ratio}:1, needs at least {problem.min}:1.
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="ed-ok">✓ Every colour pair is readable.</p>
+      )}
+    </>
+  );
+}
+
+export default function ThemePanel({ theme, onChange, siteId, onClose, previewDark = false, onPreviewDark }) {
+  const look = theme.style ?? 'adire';
+  const mode = theme.mode ?? 'light';
+  const darkColors = theme.darkColors ?? LOOKS[look].dark;
 
   function set(patch) {
     onChange({ ...theme, ...patch, preset: patch.preset ?? 'custom' });
@@ -35,6 +85,11 @@ export default function ThemePanel({ theme, onChange, siteId, onClose }) {
   function setColor(key, value) {
     if (!/^#[0-9a-f]{6}$/i.test(value)) return;
     set({ colors: { ...theme.colors, [key]: value.toLowerCase() } });
+  }
+
+  function setDarkColor(key, value) {
+    if (!/^#[0-9a-f]{6}$/i.test(value)) return;
+    set({ darkColors: { ...darkColors, [key]: value.toLowerCase() } });
   }
 
   return (
@@ -47,6 +102,62 @@ export default function ThemePanel({ theme, onChange, siteId, onClose }) {
       </div>
 
       <section className="ed-group">
+        <h3 className="ed-group__title">Look</h3>
+        <div className="ed-looks">
+          {Object.entries(LOOKS).map(([id, option]) => (
+            <button
+              key={id}
+              type="button"
+              className={`ed-look ed-look--${id}${look === id ? ' is-on' : ''}`}
+              aria-pressed={look === id}
+              onClick={() => onChange(withLook({ ...theme, darkColors }, id))}
+            >
+              <span className="ed-look__art" aria-hidden="true" style={{ '--a': option.light.accent, '--b': option.light.background, '--c': option.light.text }} />
+              <span className="ed-look__name" style={{ fontFamily: `var(${FONT_PAIRS[option.fontPair].display})` }}>
+                {option.label}
+              </span>
+              <span className="ed-look__note">{option.note}</span>
+            </button>
+          ))}
+        </div>
+        <p className="ed-hint">Choosing a look sets its colours and fonts. You can change any of them below.</p>
+      </section>
+
+      <section className="ed-group">
+        <h3 className="ed-group__title">Light or dark</h3>
+        <div className="ed-segment">
+          {MODES.map(([value, label]) => (
+            <label key={value} className={mode === value ? 'is-on' : ''}>
+              <input
+                type="radio"
+                name="mode"
+                value={value}
+                checked={mode === value}
+                onChange={() => onChange({ ...theme, darkColors, mode: value })}
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+        {mode === 'auto' ? (
+          <>
+            <p className="ed-hint">Visitors see light or dark depending on their phone’s setting.</p>
+            <div className="ed-segment ed-segment--small" aria-label="Preview">
+              {[
+                [false, 'Preview light'],
+                [true, 'Preview dark'],
+              ].map(([value, label]) => (
+                <label key={label} className={previewDark === value ? 'is-on' : ''}>
+                  <input type="radio" name="previewDark" checked={previewDark === value} onChange={() => onPreviewDark?.(value)} />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </>
+        ) : null}
+      </section>
+
+      <section className="ed-group">
         <h3 className="ed-group__title">Start from a preset</h3>
         <div className="ed-presets">
           {Object.entries(PRESET_THEMES).map(([id, preset]) => (
@@ -54,7 +165,7 @@ export default function ThemePanel({ theme, onChange, siteId, onClose }) {
               key={id}
               type="button"
               className={`ed-preset${theme.preset === id ? ' is-on' : ''}`}
-              onClick={() => onChange({ ...preset, logo: theme.logo })}
+              onClick={() => onChange({ ...preset, style: look, mode, logo: theme.logo })}
             >
               <span className="ed-preset__swatches" aria-hidden="true">
                 <i style={{ background: preset.colors.background }} />
@@ -69,35 +180,11 @@ export default function ThemePanel({ theme, onChange, siteId, onClose }) {
 
       <section className="ed-group">
         <h3 className="ed-group__title">Colours</h3>
-        {COLOR_FIELDS.map(([key, label]) => (
-          <div key={key} className={`ed-color${flagged.has(key) ? ' is-flagged' : ''}`}>
-            <input
-              type="color"
-              aria-label={label}
-              value={theme.colors[key]}
-              onChange={(event) => setColor(key, event.target.value)}
-            />
-            <span className="ed-color__label">{label}</span>
-            <input
-              className="input ed-color__hex"
-              aria-label={`${label}, hex value`}
-              defaultValue={theme.colors[key]}
-              key={theme.colors[key]}
-              maxLength={7}
-              onBlur={(event) => setColor(key, event.target.value.trim())}
-            />
-          </div>
-        ))}
-        {problems.length > 0 ? (
-          <ul className="ed-warnings" role="alert">
-            {problems.map((problem) => (
-              <li key={`${problem.field}-${problem.against}`}>
-                {problem.message}: contrast {problem.ratio}:1, needs at least {problem.min}:1.
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="ed-ok">✓ Every colour pair is readable.</p>
+        {mode === 'dark' ? null : (
+          <ColorSet title={mode === 'auto' ? 'Light' : null} colors={theme.colors} onColor={setColor} idPrefix="" />
+        )}
+        {mode === 'light' ? null : (
+          <ColorSet title={mode === 'auto' ? 'Dark' : null} colors={darkColors} onColor={setDarkColor} idPrefix="Dark: " />
         )}
       </section>
 

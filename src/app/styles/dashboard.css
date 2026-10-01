@@ -102,6 +102,88 @@
   margin-left: -5px;
 }
 
+/* Look picker: three cards, each with a tiny swatch of its ornament. */
+.ed-looks {
+  display: grid;
+  gap: 8px;
+}
+
+.ed-look {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ed-look.is-on {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.ed-look__art {
+  grid-row: span 2;
+  width: 52px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border-strong);
+  background:
+    radial-gradient(circle at 30% 35%, var(--b) 0 4px, transparent 5px) 0 0 / 13px 13px,
+    var(--a);
+}
+
+.ed-look--danfo .ed-look__art {
+  background: repeating-linear-gradient(-45deg, #f5c518 0 6px, #23211e 6px 12px);
+}
+
+.ed-look--receipt .ed-look__art {
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 7px, color-mix(in srgb, var(--c) 30%, transparent) 7px 8px),
+    var(--b);
+}
+
+.ed-look__name {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.ed-look__note {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.ed-hint {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.ed-subtitle {
+  margin: 12px 0 6px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.ed-segment--small {
+  margin-top: 8px;
+}
+
+.ed-segment--small label {
+  padding: 6px;
+  font-size: 12.5px;
+}
+
 .ed-color {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr) 96px;

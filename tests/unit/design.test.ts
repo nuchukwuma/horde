@@ -7,7 +7,17 @@
 
 import { describe, expect, it } from 'vitest';
 import { Types } from 'mongoose';
-import { themeSchema, themeToCssVars, contrastProblems, type Theme } from '../../src/lib/design/theme';
+import {
+  contrastProblems,
+  normaliseTheme,
+  themeAttributes,
+  themeSchema,
+  themeToCssVars,
+  withLook,
+  type Theme,
+} from '../../src/lib/design/theme';
+import { LOOKS, LOOK_IDS } from '../../src/lib/design/looks';
+import { FONT_PAIRS } from '../../src/lib/design/fonts';
 import { MAX_PAGE_BYTES, parsePageData, sanitizeBlockRichText, type PageData } from '../../src/lib/design/blocks';
 import { PRESET_THEMES, presetPage } from '../../src/lib/design/presets';
 import { promoteDraft, validateDraft } from '../../src/lib/design/service';
@@ -62,8 +72,80 @@ describe('theme tokens', () => {
   it('turns a theme into CSS variables made only of hex values and fixed strings', () => {
     const vars = themeToCssVars(themeSchema.parse(fashion));
     for (const value of Object.values(vars)) {
-      expect(value).toMatch(/^(#[0-9a-f]{6}|color-mix\(in srgb, #[0-9a-f]{6} \d+%, #[0-9a-f]{6}\)|var\(--font-[a-z-]+\), ui-sans-serif, system-ui, sans-serif|\d+px|light)$/);
+      expect(value).toMatch(SAFE_CSS_VALUE);
     }
+  });
+});
+
+/** Values themeToCssVars may emit: hex colours, our own font stacks, lengths. */
+const SAFE_CSS_VALUE =
+  /^(#[0-9a-f]{6}|var\(--font-[a-z-]+\), (ui-sans-serif, system-ui, sans-serif|ui-monospace, SFMono-Regular, Menlo, monospace)|\d+px)$/;
+
+describe('looks and dark mode', () => {
+  it.each(LOOK_IDS)('the %s look has readable light and dark palettes and a real font pair', (id) => {
+    const look = LOOKS[id];
+    expect(contrastProblems(look.light)).toEqual([]);
+    expect(contrastProblems(look.dark)).toEqual([]);
+    expect(FONT_PAIRS[look.fontPair]).toBeDefined();
+    const theme = withLook(fashion, id);
+    expect(() => themeSchema.parse({ ...theme, mode: 'auto' })).not.toThrow();
+  });
+
+  it.each(Object.keys(PRESET_THEMES))('the %s preset’s dark palette is readable', (id) => {
+    const theme = PRESET_THEMES[id as keyof typeof PRESET_THEMES];
+    expect(contrastProblems(theme.darkColors)).toEqual([]);
+    expect(() => themeSchema.parse({ ...theme, mode: 'dark' })).not.toThrow();
+  });
+
+  it('reads a theme saved before looks existed as Adire, light — how it looked then', () => {
+    const legacy = Object.fromEntries(
+      Object.entries(fashion).filter(([key]) => !['style', 'mode', 'darkColors'].includes(key)),
+    );
+    const parsed = themeSchema.parse(legacy);
+    expect(parsed.style).toBe('adire');
+    expect(parsed.mode).toBe('light');
+    expect(parsed.darkColors).toEqual(LOOKS.adire.dark);
+    expect(normaliseTheme(legacy)).toMatchObject({ style: 'adire', mode: 'light' });
+    expect(themeAttributes(parsed)).toMatchObject({ 'data-look': 'adire', 'data-mode': 'light' });
+  });
+
+  it('refuses unreadable dark colours when dark can be shown, and ignores them when it cannot', () => {
+    const badDark = { ...fashion.darkColors, text: '#2a2a2a' };
+    for (const mode of ['dark', 'auto'] as const) {
+      const result = themeSchema.safeParse({ ...fashion, mode, darkColors: badDark });
+      expect(result.success, mode).toBe(false);
+      expect(result.error?.issues[0]?.path).toEqual(['darkColors', 'text']);
+      expect(result.error?.issues[0]?.message).toMatch(/^Dark mode: /);
+    }
+    expect(themeSchema.safeParse({ ...fashion, mode: 'light', darkColors: badDark }).success).toBe(true);
+  });
+
+  it('refuses an unknown look or mode, and non-hex dark colours', () => {
+    expect(themeSchema.safeParse({ ...fashion, style: 'brutalist' }).success).toBe(false);
+    expect(themeSchema.safeParse({ ...fashion, mode: 'sepia' }).success).toBe(false);
+    const injected = { ...fashion, mode: 'dark', darkColors: { ...fashion.darkColors, accent: '#000;background:url(x)' } };
+    expect(themeSchema.safeParse(injected).success).toBe(false);
+  });
+
+  it('emits dark variables only when dark can be shown, all of them safe values', () => {
+    const light = themeToCssVars(themeSchema.parse(fashion));
+    expect(Object.keys(light).some((key) => key.startsWith('--thd-'))).toBe(false);
+
+    const receipt = themeSchema.parse({ ...withLook(fashion, 'receipt'), mode: 'auto' });
+    const vars = themeToCssVars(receipt);
+    expect(vars['--thd-bg']).toBe(LOOKS.receipt.dark.background);
+    expect(vars['--font-mono']).toContain('--font-plex-mono');
+    for (const [key, value] of Object.entries(vars)) {
+      expect(value, key).toMatch(SAFE_CSS_VALUE);
+    }
+  });
+
+  it('a look changes palette and fonts but keeps the seller’s logo and mode', () => {
+    const logo = { cloudinaryPublicId: 'hordemart/sites/x/design/logo', url: 'https://res.cloudinary.com/hordemart/image/upload/logo.png' };
+    const dressed = withLook({ ...fashion, logo, mode: 'auto' }, 'danfo');
+    expect(dressed).toMatchObject({ style: 'danfo', mode: 'auto', logo, fontPair: 'danfo', preset: 'custom' });
+    expect(dressed.colors).toEqual(LOOKS.danfo.light);
+    expect(dressed.darkColors).toEqual(LOOKS.danfo.dark);
   });
 });
 

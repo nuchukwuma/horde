@@ -33,7 +33,7 @@ export default async function StorefrontHome({ params }) {
         <Render
           config={renderConfig}
           data={design.page}
-          metadata={{ products, store: { name: site.name, slug: site.slug } }}
+          metadata={{ products, store: { name: site.name, slug: site.slug, look: design.theme.style ?? 'adire' } }}
         />
         <SocialLinks links={buildSocialLinks(site.socials)} />
       </>

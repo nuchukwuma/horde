@@ -2,7 +2,9 @@
  * Starting points: fashion, food, electronics.
  *
  * Each preset is a full theme AND a starter page, so "reset to preset" gives a
- * seller a complete, readable store in one click. Every preset passes the
+ * seller a complete, readable store in one click. Presets are about content
+ * and colour; the look (Adire, Danfo, Credit Alert) and the light/dark mode
+ * are chosen separately, and choosing a preset in the editor keeps them. Every preset passes the
  * same validation a seller's own save does (tests/unit/design.test.ts).
  */
 
@@ -14,6 +16,8 @@ export type PresetId = 'fashion' | 'food' | 'electronics';
 export const PRESET_THEMES: Record<PresetId, Theme> = {
   fashion: {
     preset: 'fashion',
+    style: 'adire',
+    mode: 'light',
     colors: {
       background: '#fbf9f6',
       surface: '#ffffff',
@@ -21,6 +25,7 @@ export const PRESET_THEMES: Record<PresetId, Theme> = {
       accent: '#22307a',
       accentText: '#ffffff',
     },
+    darkColors: { background: '#14121a', surface: '#1d1a25', text: '#f3eff8', accent: '#a9b3f0', accentText: '#141838' },
     fontPair: 'boutique',
     radius: 'soft',
     buttonStyle: 'pill',
@@ -28,6 +33,8 @@ export const PRESET_THEMES: Record<PresetId, Theme> = {
   },
   food: {
     preset: 'food',
+    style: 'adire',
+    mode: 'light',
     colors: {
       background: '#fff8f1',
       surface: '#ffffff',
@@ -35,6 +42,7 @@ export const PRESET_THEMES: Record<PresetId, Theme> = {
       accent: '#b4472a',
       accentText: '#ffffff',
     },
+    darkColors: { background: '#1a120e', surface: '#241915', text: '#fbeee4', accent: '#f08a6a', accentText: '#2a120a' },
     fontPair: 'friendly',
     radius: 'round',
     buttonStyle: 'solid',
@@ -42,6 +50,8 @@ export const PRESET_THEMES: Record<PresetId, Theme> = {
   },
   electronics: {
     preset: 'electronics',
+    style: 'adire',
+    mode: 'light',
     colors: {
       background: '#f5f7fa',
       surface: '#ffffff',
@@ -49,6 +59,7 @@ export const PRESET_THEMES: Record<PresetId, Theme> = {
       accent: '#0e5e6f',
       accentText: '#ffffff',
     },
+    darkColors: { background: '#0b121c', surface: '#121b28', text: '#e8eef6', accent: '#4fc3d6', accentText: '#062028' },
     fontPair: 'tech',
     radius: 'none',
     buttonStyle: 'solid',

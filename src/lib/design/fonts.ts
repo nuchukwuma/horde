@@ -13,6 +13,8 @@ export interface FontPair {
   note: string;
   display: string;
   body: string;
+  /** Figures that should read as printed (Credit Alert's receipt). */
+  mono?: string;
   serif?: boolean;
 }
 
@@ -54,6 +56,19 @@ export const FONT_PAIRS = {
     note: 'Round and warm, for food and kids.',
     display: '--font-sora',
     body: '--font-manrope',
+  },
+  danfo: {
+    label: 'Big Shoulders + Atkinson',
+    note: 'Painted-sign capitals, very easy to read.',
+    display: '--font-big-shoulders',
+    body: '--font-atkinson',
+  },
+  receipt: {
+    label: 'Familjen + Plex Mono',
+    note: 'Plain and exact; prices print like a receipt.',
+    display: '--font-familjen',
+    body: '--font-familjen',
+    mono: '--font-plex-mono',
   },
 } as const satisfies Record<string, FontPair>;
 
