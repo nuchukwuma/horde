@@ -3,6 +3,7 @@
 import { BLOCK_COMPONENTS } from '@/components/blocks/Blocks';
 import { themeAttributes, themeToCssVars } from '@/lib/design/theme';
 import ImageField from './ImageField';
+import StoreBrand from '@/components/shop/StoreBrand';
 
 /**
  * Puck config for the EDITOR: the storefront's own block components, plus
@@ -55,6 +56,23 @@ export function buildEditorConfig(siteId) {
         if (theme?.mode === 'auto') attributes['data-mode'] = puck?.metadata?.previewDark ? 'dark' : 'light';
         return (
           <div className="shell storefront storefront--themed" style={theme ? themeToCssVars(theme) : undefined} {...attributes}>
+            {/* The store's header, so logo, size and name show while designing.
+                Not editable here, and its links go nowhere in the preview. */}
+            <header className="masthead store-head ed-preview-head" aria-label="Store header preview">
+              <div className="container masthead__inner">
+                <StoreBrand
+                  name={puck?.metadata?.store?.name ?? 'Your store'}
+                  theme={theme}
+                  mode={attributes['data-mode'] ?? 'light'}
+                  href={null}
+                />
+                <nav className="nav store-nav" aria-hidden="true">
+                  <span>Shop</span>
+                  <span>Work</span>
+                  <span>Journal</span>
+                </nav>
+              </div>
+            </header>
             {children}
           </div>
         );

@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { Types } from 'mongoose';
 import {
   contrastProblems,
+  logoIconUrl,
   normaliseTheme,
   themeAttributes,
   themeSchema,
@@ -18,6 +19,9 @@ import {
 } from '../../src/lib/design/theme';
 import { LOOKS, LOOK_IDS } from '../../src/lib/design/looks';
 import { FONT_PAIRS } from '../../src/lib/design/fonts';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import StoreBrand from '../../src/components/shop/StoreBrand';
 import { MAX_PAGE_BYTES, parsePageData, sanitizeBlockRichText, type PageData } from '../../src/lib/design/blocks';
 import { PRESET_THEMES, presetPage } from '../../src/lib/design/presets';
 import { promoteDraft, validateDraft } from '../../src/lib/design/service';
@@ -146,6 +150,61 @@ describe('looks and dark mode', () => {
     expect(dressed).toMatchObject({ style: 'danfo', mode: 'auto', logo, fontPair: 'danfo', preset: 'custom' });
     expect(dressed.colors).toEqual(LOOKS.danfo.light);
     expect(dressed.darkColors).toEqual(LOOKS.danfo.dark);
+  });
+});
+
+describe('store logo', () => {
+  const ownId = `${siteImageFolder(siteId, 'design')}/logo`;
+  const logo = { cloudinaryPublicId: ownId, url: `https://res.cloudinary.com/hordemart/image/upload/v1/${ownId}.png`, width: 400, height: 120 };
+  const logoDark = { ...logo, cloudinaryPublicId: `${ownId}-dark`, url: `https://res.cloudinary.com/hordemart/image/upload/v1/${ownId}-dark.png` };
+  const brand = (theme: Partial<Theme> | null, mode?: string) =>
+    renderToStaticMarkup(createElement(StoreBrand, { name: 'Ade Textiles', theme, ...(mode ? { mode } : {}) }));
+
+  it('defaults the new logo settings, so designs saved earlier are unchanged', () => {
+    const parsed = themeSchema.parse({ ...fashion, logoDark: undefined, logoSize: undefined, showName: undefined });
+    expect(parsed).toMatchObject({ logoDark: null, logoSize: 'md', showName: true });
+    expect(themeAttributes(parsed)['data-logo-size']).toBe('md');
+  });
+
+  it('refuses an unknown size, a non-boolean name switch, and a dark logo from elsewhere', () => {
+    expect(themeSchema.safeParse({ ...fashion, logoSize: 'xl' }).success).toBe(false);
+    expect(themeSchema.safeParse({ ...fashion, showName: 'no' }).success).toBe(false);
+    const foreign = { ...logo, url: 'https://evil.example/logo.png' };
+    expect(() => validateDraft({ theme: { ...fashion, logo, logoDark: foreign }, page: page([]) }, siteId, cloud)).toThrow();
+    expect(() => validateDraft({ theme: { ...fashion, logo, logoDark }, page: page([]) }, siteId, cloud)).not.toThrow();
+  });
+
+  it('shows initials and the name when there is no logo, whatever the name switch says', () => {
+    const html = brand({ ...fashion, logo: null, showName: false });
+    expect(html).toContain('class="monogram"');
+    expect(html).toContain('<span class="store-brand__name">Ade Textiles</span>');
+    expect(html).not.toContain('<img');
+  });
+
+  it('keeps the store name for screen readers when the logo already spells it', () => {
+    const html = brand({ ...fashion, logo, showName: false, logoSize: 'lg' });
+    expect(html).toContain('store-brand--logo-lg');
+    expect(html).toContain('alt=""');
+    expect(html).toContain('<span class="visually-hidden">Ade Textiles</span>');
+  });
+
+  it('picks the logo for the mode showing; "match phone" lets the browser download only one', () => {
+    const theme = { ...fashion, logo, logoDark };
+    expect(brand(theme, 'light')).toContain(logo.url);
+    expect(brand(theme, 'light')).not.toContain(logoDark.url);
+    expect(brand(theme, 'dark')).toContain(logoDark.url);
+    expect(brand(theme, 'dark')).not.toContain(logo.url);
+    expect(brand({ ...theme, logoDark: null }, 'dark')).toContain(logo.url);
+    const auto = brand(theme, 'auto');
+    expect(auto).toContain(`<source srcSet="${logoDark.url}" media="(prefers-color-scheme: dark)"/>`);
+    expect(auto).toContain(`src="${logo.url}"`);
+  });
+
+  it('builds a small tab icon on our own cloud, and falls back to the upload without one', () => {
+    expect(logoIconUrl(logo, 'hordemart')).toBe(`https://res.cloudinary.com/hordemart/image/upload/c_fit,w_96,h_96,f_png/${ownId}`);
+    expect(logoIconUrl(logo, null)).toBe(logo.url);
+    expect(logoIconUrl(logo, 'evil.example/x')).toBe(logo.url);
+    expect(logoIconUrl(null, 'hordemart')).toBeNull();
   });
 });
 

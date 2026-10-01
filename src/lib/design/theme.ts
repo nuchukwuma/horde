@@ -83,6 +83,12 @@ export const themeSchema = z
     radius: z.enum(['none', 'soft', 'round']),
     buttonStyle: z.enum(['solid', 'outline', 'pill']),
     logo: designImageSchema.nullable(),
+    /** Optional version for dark backgrounds; the main logo is used if unset. */
+    logoDark: designImageSchema.nullable().default(null),
+    /** Header height of the logo: 30, 40 or 52px (see storefront.css). */
+    logoSize: z.enum(['sm', 'md', 'lg']).default('md'),
+    /** Off when the logo already spells out the store's name. */
+    showName: z.boolean().default(true),
   })
   .strict()
   .transform((theme) => ({ ...theme, darkColors: theme.darkColors ?? { ...LOOKS[theme.style].dark } }))
@@ -123,6 +129,9 @@ export function normaliseTheme(raw: unknown): Theme {
     style,
     mode: stored.mode ?? 'light',
     darkColors: stored.darkColors ?? { ...LOOKS[style].dark },
+    logoDark: stored.logoDark ?? null,
+    logoSize: stored.logoSize ?? 'md',
+    showName: stored.showName ?? true,
   };
 }
 
@@ -177,6 +186,7 @@ export function themeAttributes(theme: Theme): Record<string, string> {
     'data-look': theme.style ?? 'adire',
     'data-mode': theme.mode ?? 'light',
     'data-buttons': theme.buttonStyle,
+    'data-logo-size': theme.logoSize ?? 'md',
   };
 }
 
@@ -189,7 +199,7 @@ export function themeContrastProblems(theme: Pick<Theme, 'colors' | 'darkColors'
 
 /**
  * Dress a theme in a look: its palettes, font pair, corners and buttons.
- * Keeps what is the seller's own regardless of look — logo and light/dark mode.
+ * Keeps what is the seller's own regardless of look — logos and light/dark mode.
  */
 export function withLook(theme: Theme, look: keyof typeof LOOKS): Theme {
   const chosen = LOOKS[look];
@@ -203,4 +213,18 @@ export function withLook(theme: Theme, look: keyof typeof LOOKS): Theme {
     radius: chosen.radius,
     buttonStyle: chosen.buttonStyle,
   };
+}
+
+/**
+ * A small square-ish version of the logo for the browser tab, built with a
+ * Cloudinary delivery transformation (fit inside 96×96, as PNG) instead of
+ * sending the full upload. The public id was checked to be in this store's
+ * own folder when the design was saved; without a cloud name the original
+ * URL is used as-is.
+ */
+export function logoIconUrl(logo: DesignImage | null | undefined, cloudName: string | null | undefined): string | null {
+  if (!logo) return null;
+  if (!cloudName || !/^[a-z0-9_-]{1,64}$/i.test(cloudName)) return logo.url;
+  const publicId = logo.cloudinaryPublicId.split('/').map(encodeURIComponent).join('/');
+  return `https://res.cloudinary.com/${cloudName}/image/upload/c_fit,w_96,h_96,f_png/${publicId}`;
 }

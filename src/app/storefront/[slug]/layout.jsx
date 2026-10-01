@@ -4,10 +4,11 @@ import { platformOrigin, siteOrigin } from '@/lib/seo/meta';
 import { validateCustomerSessionToken } from '@/lib/auth/session';
 import { sessionCookieName } from '@/lib/auth/cookies';
 import CartButton from '@/components/shop/CartButton';
-import StoreMonogram from '@/components/shop/StoreMonogram';
+import StoreBrand from '@/components/shop/StoreBrand';
 import BrandMark from '@/components/art/BrandMark';
 import { getPublishedDesign } from '@/lib/design/published';
-import { themeAttributes, themeToCssVars } from '@/lib/design/theme';
+import { logoIconUrl, themeAttributes, themeToCssVars } from '@/lib/design/theme';
+import { cloudinaryConfig } from '@/lib/products/images';
 
 /**
  * Storefront shell.
@@ -20,8 +21,12 @@ import { themeAttributes, themeToCssVars } from '@/lib/design/theme';
 
 export async function generateMetadata({ params }) {
   const site = await requireStorefront(params);
+  // The seller's logo becomes the store's browser-tab icon once published.
+  const design = await getPublishedDesign(String(site._id), site.slug);
+  const icon = logoIconUrl(design?.theme.logo, cloudinaryConfig()?.cloudName);
 
   return {
+    ...(icon ? { icons: { icon: [{ url: icon }], apple: [{ url: icon }] } } : {}),
     title: { default: site.name, template: `%s | ${site.name}` },
     description:
       typeof site.settings?.tagline === 'string' && site.settings.tagline
@@ -51,7 +56,6 @@ export default async function StorefrontLayout({ children, params }) {
   // PUBLISHED version is ever read here; drafts stay in the editor.
   const design = await getPublishedDesign(String(site._id), site.slug);
   const style = design ? themeToCssVars(design.theme) : themeStyle(site.settings?.theme ?? site.theme);
-  const logo = design?.theme.logo ?? null;
 
   const token = (await cookies()).get(sessionCookieName('storefront'))?.value;
   const shopper = modules.store ? await validateCustomerSessionToken(token, site._id) : null;
@@ -71,15 +75,7 @@ export default async function StorefrontLayout({ children, params }) {
 
       <header className="masthead store-head">
         <div className="container masthead__inner">
-          <a className="store-brand" href="/">
-            {logo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="store-brand__logo" src={logo.url} alt="" width={logo.width} height={logo.height} />
-            ) : (
-              <StoreMonogram name={site.name} />
-            )}
-            <span className="store-brand__name">{site.name}</span>
-          </a>
+          <StoreBrand name={site.name} theme={design?.theme ?? null} />
 
           <nav className="nav store-nav" aria-label="Primary">
             {modules.store ? <a href="/shop">Shop</a> : null}

@@ -325,6 +325,45 @@
   border-radius: var(--radius-sm);
 }
 
+/* Logos are shown whole, on a checkerboard so transparency is visible. */
+.ed-image--logo .ed-image__preview {
+  max-height: 96px;
+  padding: 10px;
+  object-fit: contain;
+  background: repeating-conic-gradient(var(--surface-2) 0 25%, var(--surface-1) 0 50%) 0 0 / 16px 16px;
+  border: 1px solid var(--border);
+}
+
+.ed-image--on-dark {
+  margin-top: 16px;
+}
+
+.ed-image--on-dark .ed-image__preview {
+  background: repeating-conic-gradient(#1d2033 0 25%, #14172a 0 50%) 0 0 / 16px 16px;
+  border-color: #2b315a;
+}
+
+.ed-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ed-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+/* The store header in the editor preview is for looking at, not clicking. */
+.ed-preview-head {
+  pointer-events: none;
+}
+
 .ed-input {
   min-height: 38px;
   font-size: 13.5px;
