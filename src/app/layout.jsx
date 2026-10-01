@@ -1,5 +1,5 @@
 import { connection } from 'next/server';
-import { display } from './fonts';
+import { fontVariables } from './fonts';
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/scenes.css';
@@ -31,7 +31,7 @@ export default async function RootLayout({ children }) {
   await connection();
 
   return (
-    <html lang="en-NG" className={display.variable}>
+    <html lang="en-NG" className={fontVariables}>
       <body>{children}</body>
     </html>
   );

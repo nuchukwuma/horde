@@ -1,94 +1,93 @@
 /**
- * HordeMart design tokens.
+ * HordeMart design tokens — ADIRE direction.
  *
- * DIRECTION: market day.
+ * Adire is Yoruba resist-dyed cloth: indigo on undyed cotton, patterned by
+ * what the dye could not reach. The platform borrows exactly that: an indigo
+ * that carries the interface, a near-white "starch" ground, a pale indigo
+ * wash for quiet surfaces, and two earth accents — kola red and brass — used
+ * sparingly for emphasis and illustration.
  *
- * The product is a Lagos market stall made into a website, so the palette is
- * the market's: warm paper, a deep commerce green, adire indigo, palm-oil
- * orange and a sun yellow. The green carries the interface — buttons, links,
- * focus. The other four are for illustration and small highlights only, so
- * the UI never turns into a fruit salad.
+ *   Indigo        #22307A   brand, buttons, links, focus
+ *   Starch White  #FCFCF8   page ground
+ *   Indigo Wash   #DCE1F5   quiet surfaces, selected states
+ *   Kola          #B4472A   the one warm accent (prices, highlights)
+ *   Brass         #C99A2E   illustration and small marks only
  *
- * Status colours are reserved and never reused for decoration. Series colours
- * are the validated data-viz pair from the original system; do not hand-pick
- * new ones for charts.
+ * Status colours stay reserved; data-viz series stay the validated pair.
+ * Money is always tabular (see .money).
  *
- * Money is always set in tabular figures (see .money) so columns of naira
- * line up digit for digit. Misaligned money reads as untrustworthy, and trust
- * is the whole product.
+ * The old illustration names (--sun, --palm, --indigo, --clay…) are kept so
+ * the scenes and product art recolour themselves without code changes.
  */
+
 
 :root {
   color-scheme: light;
 
-  /* Surfaces, in elevation order. Warm, not grey: this is paper, not a form. */
-  --surface-page: #fbf7f0;
+  --surface-page: #fcfcf8;
   --surface-1: #ffffff;
-  --surface-2: #f5efe4;
-  --surface-inset: #efe6d6;
-  --surface-ink: #1b1a17;
+  --surface-2: #f1f2f8;
+  --surface-inset: #e6e9f4;
+  --surface-ink: #141838;
 
-  /* Ink. */
-  --text-primary: #1b1a17;
-  --text-secondary: #57524a;
-  --text-muted: #857e72;
-  --text-inverse: #fffaf2;
+  --text-primary: #161a33;
+  --text-secondary: #4a4f6a;
+  --text-muted: #7a7f98;
+  --text-inverse: #fcfcf8;
 
-  --border: #e6ddcd;
-  --border-strong: #cfc4b0;
+  --border: #dfe2ee;
+  --border-strong: #c3c8dc;
 
-  /* Brand. Overridden per storefront by the seller's own accent. */
-  --accent: #0f6b4a;
-  --accent-hover: #0c5a3e;
+  --accent: #22307a;
+  --accent-hover: #1a2563;
   --accent-ink: #ffffff;
-  --accent-wash: #e3f1e9;
+  --accent-wash: #dce1f5;
 
-  /* Market colours — illustration and highlight only. */
-  --sun: #f4b93e;
-  --sun-wash: #fdf1d6;
-  --palm: #e8772e;
-  --palm-wash: #fde6d6;
-  --indigo: #2b3a8c;
-  --indigo-wash: #e3e6f6;
-  --clay: #d9677a;
-  --leaf: #4caf7a;
-  --sky: #9fd0ee;
-  --skin-1: #8a5a3c;
-  --skin-2: #c58a5e;
-  --wood: #b0763f;
-  --wood-dark: #7d4f27;
-  --line: #1b1a17;
+  --kola: #b4472a;
+  --brass: #c99a2e;
 
-  /* Status — reserved, never decoration. */
-  --good: #0f7a42;
-  --warning: #9a6700;
+  /* Illustration palette (scenes, product art), mapped onto Adire. */
+  --sun: #c99a2e;
+  --sun-wash: #f6edd6;
+  --palm: #b4472a;
+  --palm-wash: #f6e0d9;
+  --indigo: #22307a;
+  --indigo-wash: #dce1f5;
+  --clay: #c2614a;
+  --leaf: #3d8a63;
+  --sky: #9fb0e8;
+  --skin-1: #7a4b30;
+  --skin-2: #b9805a;
+  --wood: #a5713f;
+  --wood-dark: #6f4823;
+  --line: #141838;
+
+  --good: #12784a;
+  --warning: #8f6200;
   --critical: #b3261e;
   --success: var(--good);
-  --good-wash: #e3f3e8;
-  --warning-wash: #fdf3d7;
-  --critical-wash: #fbe9e7;
+  --good-wash: #e2f2e9;
+  --warning-wash: #fbf1d4;
+  --critical-wash: #fbe8e6;
 
-  /* Data-viz series (validated light steps). */
   --series-1: #2a78d6;
   --series-2: #eb6834;
-  --grid: #e9e1d3;
+  --grid: #e4e7f1;
 
   --radius-xs: 6px;
   --radius-sm: 10px;
   --radius: 14px;
-  --radius-lg: 22px;
-  --radius-xl: 32px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
 
-  --shadow-1: 0 1px 2px rgb(40 30 10 / 6%), 0 1px 1px rgb(40 30 10 / 4%);
-  --shadow-2: 0 10px 30px -12px rgb(40 30 10 / 22%), 0 2px 6px rgb(40 30 10 / 6%);
-  --shadow-3: 0 30px 60px -20px rgb(40 30 10 / 30%), 0 8px 18px rgb(40 30 10 / 8%);
-  /* The "sticker" press: a hard ink edge under chunky buttons. */
-  --shadow-press: 0 2px 0 rgb(27 26 23 / 85%);
+  --shadow-1: 0 1px 2px rgb(20 24 56 / 6%), 0 1px 1px rgb(20 24 56 / 4%);
+  --shadow-2: 0 12px 28px -14px rgb(20 24 56 / 28%), 0 2px 6px rgb(20 24 56 / 6%);
+  --shadow-3: 0 30px 60px -24px rgb(20 24 56 / 34%), 0 8px 18px rgb(20 24 56 / 8%);
+  --shadow-press: 0 2px 0 rgb(20 24 56 / 85%);
 
-  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
-    Roboto, sans-serif;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
-    Arial, sans-serif;
+  --font-display: var(--font-unbounded), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -97,53 +96,56 @@
   --dur: 260ms;
 }
 
-/* Dark mode: a market at night. Same hues, lifted to hold contrast. */
+/* Dark mode: indigo at night. Same hues, lifted to hold contrast. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
 
-    --surface-page: #14130f;
-    --surface-1: #1c1b16;
-    --surface-2: #25231d;
-    --surface-inset: #2e2b23;
-    --surface-ink: #0c0b09;
+    --surface-page: #0f1229;
+    --surface-1: #161a36;
+    --surface-2: #1d2244;
+    --surface-inset: #262c52;
+    --surface-ink: #080a1a;
 
-    --text-primary: #f6f1e7;
-    --text-secondary: #c9c1b2;
-    --text-muted: #978f80;
-    --text-inverse: #14130f;
+    --text-primary: #eef0fb;
+    --text-secondary: #b9bdd6;
+    --text-muted: #868ba8;
+    --text-inverse: #0f1229;
 
-    --border: #34312a;
-    --border-strong: #4a463c;
+    --border: #2b315a;
+    --border-strong: #3c4374;
 
-    --accent: #45b588;
-    --accent-hover: #5cc79a;
-    --accent-ink: #0b1d15;
-    --accent-wash: #173126;
+    --accent: #9aa8f2;
+    --accent-hover: #b3bef6;
+    --accent-ink: #10143a;
+    --accent-wash: #232a5a;
 
-    --sun: #f2bf55;
-    --sun-wash: #2f2716;
-    --palm: #f08a47;
-    --palm-wash: #34221a;
+    --kola: #e07a5c;
+    --brass: #dcb350;
+
+    --sun: #dcb350;
+    --sun-wash: #2e2816;
+    --palm: #e07a5c;
+    --palm-wash: #35211b;
     --indigo: #7d8ce0;
-    --indigo-wash: #1e2236;
-    --clay: #e58595;
-    --leaf: #5cc28c;
-    --sky: #5d8fb0;
-    --wood: #9c6a3a;
-    --wood-dark: #6b4523;
-    --line: #0c0b09;
+    --indigo-wash: #222953;
+    --clay: #e08a76;
+    --leaf: #5cba8a;
+    --sky: #5767b5;
+    --wood: #946337;
+    --wood-dark: #64411f;
+    --line: #070918;
 
     --good: #4cb173;
     --warning: #d3a53a;
     --critical: #e57a72;
-    --good-wash: #16281c;
+    --good-wash: #16281f;
     --warning-wash: #2c2515;
-    --critical-wash: #2e1b19;
+    --critical-wash: #2e1b1d;
 
     --series-1: #3987e5;
     --series-2: #d95926;
-    --grid: #2f2c25;
+    --grid: #262c52;
 
     --shadow-1: 0 1px 2px rgb(0 0 0 / 40%);
     --shadow-2: 0 12px 30px -12px rgb(0 0 0 / 60%), 0 2px 6px rgb(0 0 0 / 30%);
@@ -155,48 +157,51 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --surface-page: #14130f;
-  --surface-1: #1c1b16;
-  --surface-2: #25231d;
-  --surface-inset: #2e2b23;
-  --surface-ink: #0c0b09;
+  --surface-page: #0f1229;
+  --surface-1: #161a36;
+  --surface-2: #1d2244;
+  --surface-inset: #262c52;
+  --surface-ink: #080a1a;
 
-  --text-primary: #f6f1e7;
-  --text-secondary: #c9c1b2;
-  --text-muted: #978f80;
-  --text-inverse: #14130f;
+  --text-primary: #eef0fb;
+  --text-secondary: #b9bdd6;
+  --text-muted: #868ba8;
+  --text-inverse: #0f1229;
 
-  --border: #34312a;
-  --border-strong: #4a463c;
+  --border: #2b315a;
+  --border-strong: #3c4374;
 
-  --accent: #45b588;
-  --accent-hover: #5cc79a;
-  --accent-ink: #0b1d15;
-  --accent-wash: #173126;
+  --accent: #9aa8f2;
+  --accent-hover: #b3bef6;
+  --accent-ink: #10143a;
+  --accent-wash: #232a5a;
 
-  --sun: #f2bf55;
-  --sun-wash: #2f2716;
-  --palm: #f08a47;
-  --palm-wash: #34221a;
+  --kola: #e07a5c;
+  --brass: #dcb350;
+
+  --sun: #dcb350;
+  --sun-wash: #2e2816;
+  --palm: #e07a5c;
+  --palm-wash: #35211b;
   --indigo: #7d8ce0;
-  --indigo-wash: #1e2236;
-  --clay: #e58595;
-  --leaf: #5cc28c;
-  --sky: #5d8fb0;
-  --wood: #9c6a3a;
-  --wood-dark: #6b4523;
-  --line: #0c0b09;
+  --indigo-wash: #222953;
+  --clay: #e08a76;
+  --leaf: #5cba8a;
+  --sky: #5767b5;
+  --wood: #946337;
+  --wood-dark: #64411f;
+  --line: #070918;
 
   --good: #4cb173;
   --warning: #d3a53a;
   --critical: #e57a72;
-  --good-wash: #16281c;
+  --good-wash: #16281f;
   --warning-wash: #2c2515;
-  --critical-wash: #2e1b19;
+  --critical-wash: #2e1b1d;
 
   --series-1: #3987e5;
   --series-2: #d95926;
-  --grid: #2f2c25;
+  --grid: #262c52;
 
   --shadow-1: 0 1px 2px rgb(0 0 0 / 40%);
   --shadow-2: 0 12px 30px -12px rgb(0 0 0 / 60%), 0 2px 6px rgb(0 0 0 / 30%);

@@ -19,6 +19,7 @@ import {
   subtractKobo,
 } from '../money/kobo';
 import { AppError } from '../errors';
+import { PAYMENT_FEE } from '../../config/fees';
 
 /** The plan's fee terms, as snapshotted onto an Order at creation. */
 export interface FeeTerms {
@@ -82,12 +83,8 @@ export interface PaystackFeeModel {
   capKobo: number;
 }
 
-export const DEFAULT_PAYSTACK_FEES: PaystackFeeModel = {
-  percentBps: 150,
-  flatKobo: 10_000,
-  flatWaiverBelowKobo: 250_000,
-  capKobo: 200_000,
-};
+/** From src/config/fees.ts — placeholder values until confirmed. */
+export const DEFAULT_PAYSTACK_FEES: PaystackFeeModel = { ...PAYMENT_FEE };
 
 export function estimatePaystackFee(
   grossKobo: number,

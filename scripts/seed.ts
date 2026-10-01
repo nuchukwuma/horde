@@ -28,6 +28,20 @@ import { computeSplit } from '../src/lib/payments/computeSplit';
 import { runWithTenant, runWithoutTenantScope } from '../src/lib/tenant/context';
 import '../src/lib/db/models/index';
 import { describeUri } from './doctor';
+import { PLANS } from '../src/config/fees';
+
+/** Plan fee terms come from src/config/fees.ts, the same file the landing page reads. */
+function planTerms(code: 'free' | 'pro') {
+  const plan = PLANS[code];
+  return {
+    name: plan.name,
+    feePercentBps: plan.feePercentBps,
+    feeFlatKobo: plan.feeFlatKobo,
+    feeCapKobo: plan.feeCapKobo,
+    vatOnPlatformFeeBps: plan.vatOnPlatformFeeBps,
+    paystackFeeBearer: plan.paystackFeeBearer,
+  };
+}
 
 const SELLER_EMAIL = 'ade@example.com';
 const SELLER_PASSWORD = 'correct-horse-battery';
@@ -56,12 +70,7 @@ async function main(): Promise<void> {
         filter: { code: 'free' },
         update: {
           $set: {
-            name: 'Free',
-            feePercentBps: 700,
-            feeFlatKobo: 0,
-            feeCapKobo: null,
-            vatOnPlatformFeeBps: 0,
-            paystackFeeBearer: 'seller',
+            ...planTerms('free'),
             limits: {
               products: 20,
               staff: 1,
@@ -80,12 +89,7 @@ async function main(): Promise<void> {
         filter: { code: 'pro' },
         update: {
           $set: {
-            name: 'Pro',
-            feePercentBps: 300,
-            feeFlatKobo: 5_000,
-            feeCapKobo: 200_000,
-            vatOnPlatformFeeBps: 0,
-            paystackFeeBearer: 'seller',
+            ...planTerms('pro'),
             limits: {
               products: null,
               staff: 10,

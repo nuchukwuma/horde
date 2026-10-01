@@ -259,6 +259,20 @@ svg {
   }
 }
 
+@media (max-width: 400px) {
+  .brand {
+    font-size: 15px;
+  }
+  .nav .btn {
+    padding: 6px 10px;
+    font-size: 13px;
+    min-height: 38px;
+  }
+  .nav a {
+    padding-inline: 7px;
+  }
+}
+
 .footer {
   margin-top: auto;
   border-top: 1px solid var(--border);

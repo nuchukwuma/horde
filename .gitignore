@@ -23,3 +23,7 @@ next-env.d.ts
 
 # Vitest JSON report, written by CI for the failure-summary step.
 test-report.json
+
+# Remotion project (video/) has its own dependencies and render output.
+video/node_modules/
+video/out/

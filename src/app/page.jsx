@@ -1,80 +1,60 @@
 import AdSlot from '@/components/ads/AdSlot';
-import HeroPlayground from '@/components/landing/HeroPlayground';
-import CartDemo from '@/components/landing/CartDemo';
-import { PaidLoop, ShareLoop, StockLoop } from '@/components/landing/StepLoops';
+import LaunchDemo from '@/components/landing/LaunchDemo';
+import PayoutCalculator from '@/components/landing/PayoutCalculator';
+import HeroReel from '@/components/landing/HeroReel';
+import AdirePattern from '@/components/design/AdirePattern';
 import PlatformHeader from '@/components/platform/PlatformHeader';
 import PlatformFooter from '@/components/platform/PlatformFooter';
-import ProductArt from '@/components/art/ProductArt';
-import { computeSplit } from '@/lib/payments/computeSplit';
-import { formatNaira } from '@/lib/ui/format';
 
 /**
- * Apex landing page.
+ * Landing page — ADIRE direction.
  *
- * DESIGN NOTE
+ * Adire cloth is pattern made by resisting dye; this page treats a shop the
+ * same way, as something with its own pattern. The hero is the product
+ * itself: type a name, choose what you sell, and a phone shows the store your
+ * customers would get, with a strip of adire dyed from your name.
  *
- * The job of this page is to take a seller who trades through WhatsApp
- * statuses and Instagram DMs from "what is this" to "that is my shop" in one
- * screen. So the product is the first thing on it, and it is something you
- * play with rather than read about: type a name and a market stall gets built
- * and stocked with that name on its sign. Further down, the visitor becomes
- * the customer and fills a basket, and sees exactly where each naira goes.
+ * Motion budget: one orchestrated GSAP sequence in the hero, then only motion
+ * that answers input (the cloth re-stamps as you type, stock swaps with the
+ * category, calculator figures count to their new values). No section fades
+ * up on scroll. Everything below the hero is static HTML until reached, and
+ * the reel loads only near the viewport — never on Data Saver or reduced
+ * motion.
  *
- * The money figures are NOT written into this file. They come from
- * computeSplit — the function that prices real checkouts — so the page cannot
- * drift from what the platform actually charges.
- *
- * Deliberately NOT applied to the dashboard, which is a daily tool and gets a
- * calmer version of the same visual language.
+ * Copy rule: say concretely what happens to a Nigerian seller's customers and
+ * money. No "seamless", no "elevate", no "unlock".
  */
 
 export const metadata = {
-  title: 'HordeMart — your own shop, on your own address',
+  title: 'HordeMart — a shop on your own address, paid into your bank',
   description:
-    'Nigerian sellers get a store, portfolio or blog on their own subdomain. Customers pay on your storefront, Paystack splits the payment, and your share settles straight to your bank.',
+    'Open a store at yourshop.hordemart.com. Customers pay in naira by card, bank transfer or USSD through Paystack, and your share is paid straight into your bank account.',
 };
 
-/** The Free plan's published terms. Mirrors scripts/seed.ts. */
-const FREE_PLAN = {
-  feePercentBps: 700,
-  feeFlatKobo: 0,
-  feeCapKobo: null,
-  vatOnPlatformFeeBps: 0,
-  paystackFeeBearer: 'seller',
-};
-
-const EXAMPLE_SALE_KOBO = 1_000_000; // ₦10,000
-
-const MODULES = [
+const FACTS = [
   {
-    name: 'Store',
-    body: 'Products, a basket, and checkout by card, transfer or USSD. Every order gets a number and a receipt.',
-    art: 'Ankara fabric bundle',
+    title: 'One link for WhatsApp, Instagram and X',
+    body: 'Put your address in your WhatsApp status and bio. It opens as a real shop, with prices, photos and a pay button — not a chat that starts with “how much?”.',
   },
   {
-    name: 'Portfolio',
-    body: 'For people hired on what they have made: tailors, photographers, makeup artists, builders.',
-    art: 'Photo book prints',
+    title: 'Paid into your own account',
+    body: 'Paystack splits each payment as it arrives: your share goes to the bank account you verified, ours goes to us. HordeMart never holds your money.',
   },
   {
-    name: 'Journal',
-    body: 'Write and be found. Each post gets its own address that WhatsApp previews properly.',
-    art: 'Notebook journal',
+    title: 'Delivery stays your way',
+    body: 'Use your dispatch rider, a logistics company or pickup, as you do now. Buyers message you from your shop, and the conversation stays with the order.',
   },
   {
-    name: 'Messages',
-    body: 'Customers ask before they buy, and the replies stay with your shop instead of across three apps.',
-    art: 'Phone chat',
+    title: 'A receipt for every sale',
+    body: 'Each order gets a number and an emailed receipt — the thing a bank alert screenshot never gave either of you when something went wrong.',
   },
 ];
 
 export default function Home() {
   const rootDomain = (process.env.ROOT_DOMAIN ?? 'hordemart.com').split(':')[0];
-  const split = computeSplit(EXAMPLE_SALE_KOBO, FREE_PLAN);
-  const pct = (part) => `${((part / split.gross) * 100).toFixed(1)}%`;
 
   return (
-    <div className="shell">
+    <div className="shell adire-site">
       <a className="skip-link" href="#main">
         Skip to content
       </a>
@@ -82,188 +62,90 @@ export default function Home() {
       <PlatformHeader />
 
       <main id="main">
-        {/* ---------- Hero: build your stall ---------- */}
-        <section className="hero-x">
-          <div className="container hero-x__grid">
-            <div className="hero-x__copy">
-              <p className="eyebrow rise-in">For Nigerian sellers</p>
-              <h1 className="display rise-in" style={{ '--delay': '80ms' }}>
-                Your shop, on <span className="display__accent">your own</span>{' '}
-                <span className="display__mark">
-                  address
-                  <svg className="display__squiggle" viewBox="0 0 300 18" aria-hidden="true" preserveAspectRatio="none">
-                    <path d="M4 12 Q40 2 76 10 T150 10 T224 9 T296 7" />
-                  </svg>
-                </span>
-                .
-              </h1>
-              <p className="hero-x__body rise-in" style={{ '--delay': '160ms' }}>
-                Stop sending customers to a DM. Send them to a real storefront with your name on it,
-                where they can browse, pay by card or transfer, and get a receipt. Your money goes
-                straight to your bank.
-              </p>
-              <ul className="hero-x__ticks rise-in" style={{ '--delay': '240ms' }}>
-                <li>No monthly fee</li>
-                <li>Paid straight to your bank</li>
-                <li>Live in two minutes</li>
-              </ul>
-            </div>
-
-            <div className="rise-in" style={{ '--delay': '120ms' }}>
-              <HeroPlayground rootDomain={rootDomain} />
-            </div>
+        <section className="hero-adire">
+          <div className="container">
+            <LaunchDemo rootDomain={rootDomain} />
           </div>
         </section>
 
-        {/* ---------- Three steps ---------- */}
-        <section className="container section">
-          <div className="section__head">
-            <p className="eyebrow">How it works</p>
-            <h2 className="section__title">Stock up. Share the link. Get paid.</h2>
-          </div>
+        {/* A band of cloth between hero and page: the brand's one ornament. */}
+        <div className="cloth-band" aria-hidden="true">
+          <AdirePattern name="hordemart" columns={24} count={24} ink="var(--indigo)" resist="var(--surface-page)" className="cloth-band__svg" />
+        </div>
 
-          <ol className="steps-x">
-            <li className="step-x">
-              <StockLoop />
-              <h3 className="step-x__title">
-                <span className="step-x__num">1</span> Stock your shop
-              </h3>
-              <p className="step-x__body">
-                Add products from your phone with a price and a photo — or let us draw one until you
-                have taken yours.
-              </p>
-            </li>
-            <li className="step-x">
-              <ShareLoop />
-              <h3 className="step-x__title">
-                <span className="step-x__num">2</span> Share your link
-              </h3>
-              <p className="step-x__body">
-                Put <strong>your-shop.{rootDomain}</strong> in your WhatsApp status and Instagram bio.
-                It previews like a real website, because it is one.
-              </p>
-            </li>
-            <li className="step-x">
-              <PaidLoop />
-              <h3 className="step-x__title">
-                <span className="step-x__num">3</span> Get paid, directly
-              </h3>
-              <p className="step-x__body">
-                Customers pay through Paystack. Your share settles to your own bank account — we
-                check the account name with your bank before anything is saved.
-              </p>
-            </li>
-          </ol>
+        <section className="container section reel-section">
+          <div className="reel-section__text">
+            <h2 className="section__title">From a name to your first order</h2>
+            <ol className="sequence">
+              <li>
+                <strong>Name your shop.</strong> Your address is live straight away.
+              </li>
+              <li>
+                <strong>Add what you sell</strong> from your phone, with prices in naira.
+              </li>
+              <li>
+                <strong>Connect your bank account.</strong> We check the account name with
+                your bank before anything is saved.
+              </li>
+              <li>
+                <strong>Share the link.</strong> Customers pay through Paystack; you get the
+                alert.
+              </li>
+            </ol>
+          </div>
+          <HeroReel
+            poster="/media/hero-reel-poster.jpg"
+            webm="/media/hero-reel.webm"
+            mp4="/media/hero-reel.mp4"
+            caption="A store being built on HordeMart, in twelve seconds."
+          />
         </section>
 
-        {/* ---------- Be the customer ---------- */}
-        <section className="band band--sun">
+        <section className="calc-section">
           <div className="container section">
-            <div className="section__head">
-              <p className="eyebrow">Try it</p>
-              <h2 className="section__title">Be the customer for a minute.</h2>
+            <div className="calc-section__head">
+              <h2 className="section__title">What lands in your account</h2>
               <p className="section__lede">
-                Fill a basket and watch where every naira goes. The split is worked out by the same
-                code that prices real checkouts.
+                Enter a sale. You see the payment fee, our commission, and the amount paid into
+                your bank — worked out by the same code that prices real checkouts.
               </p>
             </div>
-            <CartDemo />
+            <PayoutCalculator />
           </div>
         </section>
 
-        {/* ---------- Where the money goes ---------- */}
         <section className="container section">
-          <div className="money-x">
-            <div>
-              <p className="eyebrow">No surprises</p>
-              <h2 className="section__title">On a {formatNaira(EXAMPLE_SALE_KOBO)} sale</h2>
-              <p className="section__lede">
-                On the free plan. Paystack splits the payment as it arrives, so nobody waits on
-                anybody to pay out — and nothing sits in a HordeMart wallet.
-              </p>
-            </div>
-
-            <div className="money-x__card card card--raised">
-              <div className="splitbar splitbar--lg" aria-hidden="true">
-                <span className="splitbar__seg splitbar__seg--seller" style={{ width: pct(split.sellerNet) }} />
-                <span className="splitbar__seg splitbar__seg--paystack" style={{ width: pct(split.paystackFee) }} />
-                <span className="splitbar__seg splitbar__seg--platform" style={{ width: pct(split.platformFee) }} />
-              </div>
-              <dl className="money-x__rows">
-                <div className="money-x__row money-x__row--seller">
-                  <dt>
-                    <i className="dot dot--seller" /> You receive
-                    <span>Settled to your bank by Paystack</span>
-                  </dt>
-                  <dd className="money">{formatNaira(split.sellerNet)}</dd>
-                </div>
-                <div className="money-x__row">
-                  <dt>
-                    <i className="dot dot--paystack" /> Paystack&rsquo;s fee
-                    <span>Card processing, charged by Paystack</span>
-                  </dt>
-                  <dd className="money">{formatNaira(split.paystackFee)}</dd>
-                </div>
-                <div className="money-x__row">
-                  <dt>
-                    <i className="dot dot--platform" /> Our commission
-                    <span>{FREE_PLAN.feePercentBps / 100}% of the sale. No setup fee.</span>
-                  </dt>
-                  <dd className="money">{formatNaira(split.platformFee)}</dd>
-                </div>
-              </dl>
-            </div>
-          </div>
-        </section>
-
-        {/* ---------- Not only shops ---------- */}
-        <section className="container section" style={{ paddingTop: 0 }}>
-          <div className="section__head">
-            <p className="eyebrow">Not only shops</p>
-            <h2 className="section__title">Turn on what you need.</h2>
-            <p className="section__lede">A tailor and a photographer want different pages.</p>
-          </div>
-
-          <ul className="tiles">
-            {MODULES.map((module, index) => (
-              <li key={module.name} className="tile" style={{ '--delay': `${index * 60}ms` }}>
-                <div className="tile__art">
-                  <ProductArt title={module.art} seed={module.name} label="" />
-                </div>
-                <h3 className="tile__name">{module.name}</h3>
-                <p className="tile__body">{module.body}</p>
+          <h2 className="section__title facts__title">What changes for your customers</h2>
+          <ul className="facts">
+            {FACTS.map((fact) => (
+              <li key={fact.title} className="fact">
+                <h3 className="fact__title">{fact.title}</h3>
+                <p className="fact__body">{fact.body}</p>
               </li>
             ))}
           </ul>
         </section>
 
-        {/* ---------- Final call ---------- */}
         <section className="container section" style={{ paddingTop: 0 }}>
-          <div className="cta-band">
-            <div>
-              <h2 className="cta-band__title">Your stall is waiting.</h2>
-              <p className="cta-band__body">Claim your address now — you can add products later.</p>
-            </div>
-            <div className="row row--wrap">
-              <a className="btn btn--sun btn--lg" href="/signup">
-                Open your shop →
-              </a>
-              <a className="btn btn--lg cta-band__ghost" href="/docs">
-                How it works
+          <div className="cta-cloth">
+            <AdirePattern name="open your shop" columns={8} count={16} ink="var(--indigo)" resist="#f4f1e6" className="cta-cloth__svg" />
+            <div className="cta-cloth__body">
+              <h2 className="cta-cloth__title">Your address is still free.</h2>
+              <p>It takes about two minutes. You can add products later.</p>
+              <a className="btn btn--light btn--lg" href="/signup">
+                Open your shop
               </a>
             </div>
           </div>
 
           <p className="note-strip">
-            <strong>Running in Paystack test mode.</strong>
+            <strong>Paystack test mode.</strong>
             <span>
-              Payments use test cards and no real money moves. See <a href="/docs">how it works</a>.
+              Payments on HordeMart currently use test cards; no real money moves yet.
             </span>
           </p>
 
-          {/* Platform surface, so ads are permitted here. Renders nothing
-              unless NEXT_PUBLIC_ADSENSE_CLIENT and a slot id are set, and
-              never on a storefront — see components/ads/AdSlot.jsx. */}
+          {/* Platform surface, so ads are permitted here — never on a store. */}
           <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_HOME} label="Sponsored" />
         </section>
       </main>
