@@ -111,11 +111,16 @@ function handleFor(platform: SocialPlatform) {
  * dropped; a Nigerian number written the local way (0801 234 5678) gains
  * its 234 country code, because wa.me cannot dial a local number.
  */
+export function normaliseWhatsAppNumber(value: string): string {
+  const digits = value.replace(/[^0-9]/g, '');
+  return /^0[789][01][0-9]{8}$/.test(digits) ? `234${digits.slice(1)}` : digits;
+}
+
 const whatsappSchema = z
   .string()
   .trim()
-  .transform((value) => value.replace(/[^0-9]/g, ''))
-  .transform((digits) => (/^0[789][01][0-9]{8}$/.test(digits) ? `234${digits.slice(1)}` : digits))
+  .refine((value) => /^[0-9\s+().-]*$/.test(value), 'Enter the number in full, like 2348012345678')
+  .transform(normaliseWhatsAppNumber)
   .refine((value) => PHONE_DIGITS.test(value), 'Enter the number in full, like 2348012345678');
 
 export const socialWebsiteSchema = z

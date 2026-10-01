@@ -24,6 +24,7 @@
 import { z } from 'zod';
 import { designImageSchema } from './theme';
 import { ValidationError } from '../errors';
+import { normaliseWhatsAppNumber } from '../content/socials';
 import { getPurifier } from '../security/sanitizeHtml';
 
 export const MAX_PAGE_BYTES = 64 * 1024;
@@ -37,7 +38,12 @@ export const internalPath = z
   .string()
   .trim()
   .max(200)
-  .regex(/^\/(?![/\\])[A-Za-z0-9\-._~/?=&%+]*$/, 'Links must point inside your store, like /shop');
+  // "shop" or "shop/adire-wrap" typed without the leading slash means the
+  // same page; add it. Only a bare path qualifies: anything with a scheme
+  // (":"), a dot-led or slash-led host, or a backslash is left alone and
+  // fails the pattern below.
+  .transform((value) => (/^[A-Za-z0-9][A-Za-z0-9\-._~/?=&%+]*$/.test(value) && !value.includes(':') ? `/${value}` : value))
+  .refine((value) => /^\/(?![/\\])[A-Za-z0-9\-._~/?=&%+]*$/.test(value), 'Links must point inside your store, like /shop');
 
 const plain = (max: number) =>
   z
@@ -166,10 +172,17 @@ export const BLOCK_SCHEMAS = {
       text: plain(240).default(''),
       // International format without "+": 2348012345678. wa.me builds the link.
       // Empty means "use the WhatsApp number saved in Brand → Social media".
+      // Spaces, "+" and a local 0801… form are accepted and normalised the
+      // same way as the Social media field.
       phone: z
         .string()
         .trim()
-        .regex(/^([0-9]{7,15})?$/, 'Use digits only, like 2348012345678')
+        // Phone characters only, checked BEFORE normalising: stripping
+        // non-digits from "call me" would leave "" and silently mean "use
+        // the saved number" instead of telling the seller it is wrong.
+        .refine((value) => /^[0-9\s+().-]*$/.test(value), 'Enter the number in full, like 2348012345678')
+        .transform(normaliseWhatsAppNumber)
+        .refine((value) => /^([0-9]{7,15})?$/.test(value), 'Enter the number in full, like 2348012345678')
         .default(''),
       prefill: plain(160).default(''),
       buttonLabel: plain(32).default('Chat on WhatsApp'),

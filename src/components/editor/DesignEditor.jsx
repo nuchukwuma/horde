@@ -8,6 +8,7 @@ import '@puckeditor/core/no-external.css';
 import { buildEditorConfig } from './editorConfig';
 import ThemePanel from './ThemePanel';
 import ClickToAddItem from './ClickToAddItem';
+import { describeDesignError } from './designErrors';
 import { buildSocialLinks } from '@/lib/content/socials';
 import { themeContrastProblems, withLook } from '@/lib/design/theme';
 import { PRESET_THEMES, presetPage } from '@/lib/design/presets';
@@ -40,6 +41,9 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
   const [page, setPage] = useState(initial.draft.page);
   const [revision, setRevision] = useState(initial.revision);
   const [published, setPublished] = useState(initial.published);
+  // Saved to the draft but not yet on the store. Without this the header
+  // said "Live: version N" straight after a Save draft, as if it were live.
+  const [hasUnpublished, setHasUnpublished] = useState(Boolean(initial.hasUnpublishedChanges));
   const [saved, setSaved] = useState(() => snapshot(initial.draft.theme, initial.draft.page));
   const [puckKey, setPuckKey] = useState(0);
   const [brandOpen, setBrandOpen] = useState(false);
@@ -78,13 +82,15 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ theme, page: pageRef.current, revision }),
       });
-      const body = await response.json();
+      const body = await response.json().catch(() => null);
       if (!response.ok) {
-        const detail = body?.error?.details?.[0];
-        throw new Error(detail?.message ? `${detail.message}${detail.field ? ` (${detail.field})` : ''}` : body?.error?.message);
+        const problem = describeDesignError(response.status, body, pageRef.current, config);
+        setStatus({ tone: 'error', text: problem.text, reload: problem.reload });
+        return null;
       }
       setRevision(body.data.revision);
       setPublished(body.data.published);
+      setHasUnpublished(Boolean(body.data.hasUnpublishedChanges));
       // What the server stored (sanitised) is now the baseline.
       setTheme(body.data.draft.theme);
       setPage(body.data.draft.page);
@@ -92,8 +98,8 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
       setSaved(snapshot(body.data.draft.theme, body.data.draft.page));
       setStatus({ tone: 'good', text: 'Draft saved. Customers still see the published version.' });
       return body.data.revision;
-    } catch (problem) {
-      setStatus({ tone: 'error', text: problem.message || 'Could not save.' });
+    } catch {
+      setStatus({ tone: 'error', text: 'Could not reach HordeMart. Check your connection and press Save again.' });
       return null;
     } finally {
       setBusy(null);
@@ -110,12 +116,17 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ revision: current }),
       });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body?.error?.message ?? 'Could not publish.');
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        const problem = describeDesignError(response.status, body, pageRef.current, config);
+        setStatus({ tone: 'error', text: problem.text, reload: problem.reload });
+        return;
+      }
       setPublished(body.data.published);
+      setHasUnpublished(false);
       setStatus({ tone: 'good', text: `Published. Your store is updated (version ${body.data.published.version}).` });
-    } catch (problem) {
-      setStatus({ tone: 'error', text: problem.message });
+    } catch {
+      setStatus({ tone: 'error', text: 'Could not reach HordeMart. Check your connection and press Publish again.' });
     } finally {
       setBusy(null);
     }
@@ -130,12 +141,33 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
     const fresh = presetPage(preset, storeName);
     // The look (Adire, Danfo, Credit Alert) and light/dark mode are kept: a
     // reset restores the starting layout and colours within the chosen look.
-    const base = { ...PRESET_THEMES[preset], logo: theme.logo, mode: theme.mode };
+    // The seller's logo and its settings are theirs, not the preset's.
+    const base = {
+      ...PRESET_THEMES[preset],
+      logo: theme.logo,
+      logoDark: theme.logoDark ?? null,
+      logoSize: theme.logoSize ?? 'md',
+      showName: theme.showName ?? true,
+      mode: theme.mode,
+    };
     setTheme(theme.style && theme.style !== 'adire' ? { ...withLook(base, theme.style), preset } : base);
     setPage(fresh);
     pageRef.current = fresh;
     setPuckKey((key) => key + 1); // Puck takes `data` once; remount to load the preset.
   }
+
+  // Nothing new since the last publish: publishing again would only bump the
+  // version number.
+  const nothingToPublish = Boolean(published) && !dirty && !hasUnpublished;
+  const stateText = unreadable
+    ? 'Colours need fixing (Brand)'
+    : dirty
+      ? 'Unsaved changes'
+      : hasUnpublished
+        ? 'Saved, not live yet'
+        : published
+          ? `Live: version ${published.version}`
+          : 'Not published yet';
 
   const metadata = useMemo(
     () => ({
@@ -163,19 +195,34 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
           drawerItem: ClickToAddItem,
           headerActions: () => (
             <div className="ed-actions">
-              <span className={`ed-state${dirty ? ' is-dirty' : ''}`} role="status">
-                {dirty ? 'Unsaved changes' : published ? `Live: version ${published.version}` : 'Not published yet'}
+              <a className="btn btn--sm btn--ghost ed-back" href={`/dashboard/${siteId}`}>
+                ← Dashboard
+              </a>
+              <span className={`ed-state${dirty || unreadable ? ' is-dirty' : ''}`} role="status">
+                {stateText}
               </span>
-              <button type="button" className="btn btn--sm" onClick={() => setBrandOpen((open) => !open)}>
+              <button type="button" className="btn btn--sm" onClick={() => setBrandOpen((open) => !open)} aria-expanded={brandOpen}>
                 Brand
               </button>
-              <button type="button" className="btn btn--sm btn--ghost" onClick={resetToPreset}>
-                Reset to preset
+              <button type="button" className="btn btn--sm btn--ghost" onClick={resetToPreset} title="Reset to the starting design">
+                Reset
               </button>
-              <button type="button" className="btn btn--sm" onClick={save} disabled={!dirty || busy || unreadable}>
+              <button
+                type="button"
+                className="btn btn--sm"
+                onClick={save}
+                disabled={!dirty || Boolean(busy) || unreadable}
+                title={unreadable ? 'Fix the colours in Brand first' : undefined}
+              >
                 {busy === 'save' ? 'Saving…' : 'Save draft'}
               </button>
-              <button type="button" className="btn btn--sm btn--primary" onClick={publish} disabled={Boolean(busy) || unreadable}>
+              <button
+                type="button"
+                className="btn btn--sm btn--primary"
+                onClick={publish}
+                disabled={Boolean(busy) || unreadable || nothingToPublish}
+                title={unreadable ? 'Fix the colours in Brand first' : nothingToPublish ? 'Your store already shows this design' : undefined}
+              >
                 {busy === 'publish' ? 'Publishing…' : 'Publish'}
               </button>
             </div>
@@ -199,6 +246,14 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
       {status ? (
         <div className={`ed-toast ed-toast--${status.tone}`} role={status.tone === 'error' ? 'alert' : 'status'}>
           {status.text}
+          {status.reload ? (
+            <>
+              {' '}
+              <button type="button" className="ed-toast__action" onClick={() => window.location.reload()}>
+                Reload
+              </button>
+            </>
+          ) : null}
           {status.tone === 'good' && published ? (
             <>
               {' '}

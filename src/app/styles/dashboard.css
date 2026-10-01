@@ -11,7 +11,21 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* One row on laptops: at 1024px the four buttons and the status used to
+   wrap into three rows and push the canvas down by 90px. */
+@media (min-width: 900px) {
+  .ed-actions {
+    flex-wrap: nowrap;
+  }
+
+  .ed-actions .btn--sm {
+    padding-inline: 12px;
+    white-space: nowrap;
+  }
 }
 
 .ed-state {
@@ -19,6 +33,11 @@
   font-weight: 600;
   color: var(--text-muted);
   margin-right: 4px;
+  white-space: nowrap;
+}
+
+.ed-back {
+  white-space: nowrap;
 }
 
 .ed-state.is-dirty {
@@ -440,6 +459,17 @@
 .ed-toast a {
   color: inherit;
   font-weight: 700;
+}
+
+.ed-toast__action {
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  padding: 2px 10px;
+  cursor: pointer;
 }
 
 .ed-toast__close {

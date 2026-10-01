@@ -1,5 +1,6 @@
 'use client';
 
+import { useLayoutEffect, useRef, useState } from 'react';
 import { FONT_PAIRS } from '@/lib/design/fonts';
 import { contrastProblems, withLook } from '@/lib/design/theme';
 import { LOOKS } from '@/lib/design/looks';
@@ -33,10 +34,37 @@ const MODES = [
   ['auto', 'Match phone'],
 ];
 
+/**
+ * What a seller types into a colour box, as a #rrggbb colour or null.
+ * Accepts "#22307a", "22307A" and the short "#fff"; anything else is null.
+ */
+export function normaliseHex(raw) {
+  const value = String(raw ?? '').trim().replace(/^#?/, '#').toLowerCase();
+  if (/^#[0-9a-f]{6}$/.test(value)) return value;
+  if (/^#[0-9a-f]{3}$/.test(value)) return `#${[...value.slice(1)].map((c) => c + c).join('')}`;
+  return null;
+}
+
 /** One palette's pickers and its readability verdict. */
 function ColorSet({ title, colors, onColor, idPrefix }) {
   const problems = contrastProblems(colors);
   const flagged = new Set(problems.flatMap((problem) => [problem.field, problem.against]));
+  const [typoField, setTypoField] = useState(null);
+
+  function applyTyped(key, input) {
+    const hex = normaliseHex(input.value);
+    if (!hex) {
+      // Put back the colour in use and say why, rather than silently
+      // keeping text that will never be applied.
+      input.value = colors[key];
+      setTypoField(key);
+      return;
+    }
+    setTypoField(null);
+    input.value = hex;
+    onColor(key, hex);
+  }
+
   return (
     <>
       {title ? <h4 className="ed-subtitle">{title}</h4> : null}
@@ -52,13 +80,26 @@ function ColorSet({ title, colors, onColor, idPrefix }) {
           <input
             className="input ed-color__hex"
             aria-label={`${idPrefix}${label}, hex value`}
+            aria-invalid={typoField === key || undefined}
             defaultValue={colors[key]}
             key={colors[key]}
             maxLength={7}
-            onBlur={(event) => onColor(key, event.target.value.trim())}
+            spellCheck={false}
+            onBlur={(event) => applyTyped(key, event.target)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                applyTyped(key, event.currentTarget);
+              }
+            }}
           />
         </div>
       ))}
+      {typoField ? (
+        <p className="ed-error" role="alert">
+          That isn’t a colour code. Use six characters like #22307a, or pick from the swatch.
+        </p>
+      ) : null}
       {problems.length > 0 ? (
         <ul className="ed-warnings" role="alert">
           {problems.map((problem) => (
@@ -87,6 +128,33 @@ export default function ThemePanel({
   const look = theme.style ?? 'adire';
   const mode = theme.mode ?? 'light';
   const darkColors = theme.darkColors ?? LOOKS[look].dark;
+  const panelRef = useRef(null);
+  const socialsDirty = useRef(false);
+
+  // Open below the editor's header, whose height changes with the window
+  // width (its buttons wrap), so Save and Publish stay reachable while the
+  // panel is open. The header is found from our own buttons inside it.
+  useLayoutEffect(() => {
+    const header = document.querySelector('.ed-actions')?.closest('header');
+    const panel = panelRef.current;
+    if (!header || !panel) return undefined;
+    const place = () => {
+      panel.style.top = `${Math.round(header.getBoundingClientRect().bottom) + 8}px`;
+    };
+    place();
+    const observer = new ResizeObserver(place);
+    observer.observe(header);
+    window.addEventListener('resize', place);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', place);
+    };
+  }, []);
+
+  function close() {
+    if (socialsDirty.current && !window.confirm('Your social media changes are not saved. Close without saving them?')) return;
+    onClose();
+  }
 
   function set(patch) {
     onChange({ ...theme, ...patch, preset: patch.preset ?? 'custom' });
@@ -103,10 +171,10 @@ export default function ThemePanel({
   }
 
   return (
-    <aside className="ed-panel" aria-label="Brand settings">
+    <aside className="ed-panel" aria-label="Brand settings" ref={panelRef}>
       <div className="ed-panel__head">
         <h2 className="ed-panel__title">Brand</h2>
-        <button type="button" className="btn btn--sm btn--ghost" onClick={onClose}>
+        <button type="button" className="btn btn--sm btn--ghost" onClick={close}>
           Close
         </button>
       </div>
@@ -115,7 +183,9 @@ export default function ThemePanel({
         <h3 className="ed-group__title">Logo</h3>
         <ImageField
           value={theme.logo}
-          onChange={(logo) => onChange({ ...theme, logo })}
+          // Removing the logo removes its dark-mode version too: that field is
+          // hidden without a main logo, so it would otherwise linger unseen.
+          onChange={(logo) => onChange({ ...theme, logo, ...(logo ? {} : { logoDark: null }) })}
           siteId={siteId}
           label={null}
           noun="logo"
@@ -170,7 +240,14 @@ export default function ThemePanel({
         <p className="ed-hint">You can see it at the top of the preview. Publish to put it on your store.</p>
       </section>
 
-      <SocialsSection siteId={siteId} socials={socials} onSaved={onSocialsSaved} />
+      <SocialsSection
+        siteId={siteId}
+        socials={socials}
+        onSaved={onSocialsSaved}
+        onDirtyChange={(dirty) => {
+          socialsDirty.current = dirty;
+        }}
+      />
 
       <section className="ed-group">
         <h3 className="ed-group__title">Look</h3>
@@ -236,7 +313,18 @@ export default function ThemePanel({
               key={id}
               type="button"
               className={`ed-preset${theme.preset === id ? ' is-on' : ''}`}
-              onClick={() => onChange({ ...preset, style: look, mode, logo: theme.logo })}
+              onClick={() =>
+                onChange({
+                  ...preset,
+                  style: look,
+                  mode,
+                  // The seller's logo and its settings are theirs, not the preset's.
+                  logo: theme.logo,
+                  logoDark: theme.logoDark ?? null,
+                  logoSize: theme.logoSize ?? 'md',
+                  showName: theme.showName ?? true,
+                })
+              }
             >
               <span className="ed-preset__swatches" aria-hidden="true">
                 <i style={{ background: preset.colors.background }} />
