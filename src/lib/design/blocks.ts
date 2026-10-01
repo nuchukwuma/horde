@@ -22,9 +22,9 @@
  */
 
 import { z } from 'zod';
-import DOMPurify from 'isomorphic-dompurify';
 import { designImageSchema } from './theme';
 import { ValidationError } from '../errors';
+import { getPurifier } from '../security/sanitizeHtml';
 
 export const MAX_PAGE_BYTES = 64 * 1024;
 export const MAX_BLOCKS = 30;
@@ -49,7 +49,7 @@ const plain = (max: number) =>
 
 /** Rich text from Puck's editor: a handful of inline and list tags, safe links. */
 export function sanitizeBlockRichText(dirty: string): string {
-  return DOMPurify.sanitize(dirty, {
+  return getPurifier().sanitize(dirty, {
     ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'a'],
     ALLOWED_ATTR: ['href'],
     ALLOWED_URI_REGEXP: /^(?:https:|mailto:|tel:|\/(?![/\\]))/i,

@@ -11,7 +11,42 @@
  * defence.
  */
 
-import DOMPurify from 'isomorphic-dompurify';
+import { createRequire } from 'node:module';
+import type DOMPurifyInstance from 'isomorphic-dompurify';
+
+type Purifier = typeof DOMPurifyInstance;
+
+/**
+ * DOMPurify, loaded on first use rather than at import.
+ *
+ * On the server isomorphic-dompurify boots jsdom, which costs ~0.5–1.5 s and
+ * tens of MB the moment it is imported. Sanitising happens only when a seller
+ * WRITES content, but this module is reachable from read paths (the
+ * storefront lists products through products.ts), so a top-level import made
+ * every storefront cold start and every dev route compile pay for a browser
+ * emulator it never used. The type import above is erased at build time.
+ */
+let purifier: Purifier | null = null;
+
+/** Instances that already carry the data: URI hook (see below). */
+const hooked = new WeakSet<object>();
+
+export function getPurifier(): Purifier {
+  if (!purifier) {
+    // createRequire, not a bare require: package.json is "type": "module", so
+    // scripts run through tsx have no global require.
+    const loaded = createRequire(import.meta.url)('isomorphic-dompurify') as Purifier | { default: Purifier };
+    purifier = 'sanitize' in loaded ? loaded : loaded.default;
+  }
+  // Keyed on the instance, not on a process-wide flag: if a bundler ever
+  // hands two modules different copies of DOMPurify, a global "already
+  // hooked" flag would leave the second copy without the hook.
+  if (!hooked.has(purifier)) {
+    installDataUriHook(purifier);
+    hooked.add(purifier);
+  }
+  return purifier;
+}
 
 /**
  * Strip `data:` URLs from src/href.
@@ -29,12 +64,8 @@ import DOMPurify from 'isomorphic-dompurify';
  */
 const DATA_URI_ATTRIBUTES = ['src', 'href', 'xlink:href'];
 
-declare global {
-  var __hordemartPurifyHook: boolean | undefined;
-}
-
-if (!globalThis.__hordemartPurifyHook) {
-  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+function installDataUriHook(instance: Purifier): void {
+  instance.addHook('afterSanitizeAttributes', (node) => {
     const element = node as unknown as {
       getAttribute?: (name: string) => string | null;
       removeAttribute?: (name: string) => void;
@@ -50,7 +81,6 @@ if (!globalThis.__hordemartPurifyHook) {
       }
     }
   });
-  globalThis.__hordemartPurifyHook = true;
 }
 
 /** Product descriptions and portfolio copy: formatting, links, images. */
@@ -76,7 +106,7 @@ const INLINE_TAGS = ['strong', 'b', 'em', 'i', 'br'];
 const SAFE_URI = /^(?:https?:|mailto:|tel:|#|\/)/i;
 
 export function sanitizeRichText(dirty: string): string {
-  return DOMPurify.sanitize(dirty, {
+  return getPurifier().sanitize(dirty, {
     ALLOWED_TAGS: RICH_TEXT_TAGS,
     ALLOWED_ATTR: RICH_TEXT_ATTRS,
     ALLOWED_URI_REGEXP: SAFE_URI,
@@ -93,12 +123,12 @@ export function sanitizeRichText(dirty: string): string {
 }
 
 export function sanitizeInline(dirty: string): string {
-  return DOMPurify.sanitize(dirty, {
+  return getPurifier().sanitize(dirty, {
     ALLOWED_TAGS: INLINE_TAGS,
     ALLOWED_ATTR: [],
   });
 }
 
 export function stripAllHtml(dirty: string): string {
-  return DOMPurify.sanitize(dirty, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+  return getPurifier().sanitize(dirty, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
 }
