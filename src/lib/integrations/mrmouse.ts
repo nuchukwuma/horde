@@ -8,8 +8,8 @@
  *
  *   1. One-click sign-in. A seller presses "Open MrMouse" in their dashboard;
  *      HordeMart issues a 60-second signed pass (an HS256 JWT) naming who they
- *      are and which store, and sends the browser to MrMouse's web app with
- *      the pass in the URL *fragment* — which browsers never send to a server
+ *      are and which store, and sends the browser to MrMouse's web app
+ *      (`/?sso=hordemart`) with the pass in the URL *fragment* — which browsers never send to a server
  *      or put in a Referer, so it does not land in anyone's access logs.
  *      MrMouse verifies it, signs them in to their own MrMouse account.
  *   2. Stock in (optional, per store). MrMouse pushes stock levels by SKU to
@@ -25,7 +25,7 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 
 export interface MrMouseConfig {
-  /** MrMouse's web app, e.g. https://app.mrmouse.ng. Sign-in lands at /sso/hordemart. */
+  /** MrMouse's web app, e.g. https://app.mrmouse.ng. Sign-in lands at /?sso=hordemart. */
   webUrl: string | null;
   /** MrMouse's server API, for sale events. */
   apiUrl: string | null;
@@ -149,9 +149,16 @@ export function verifyHandoffToken(token: string, secretKey: string, now = Date.
   }
 }
 
-/** Where the browser goes. The pass rides in the fragment, never the query. */
+/**
+ * Where the browser goes: MrMouse's web app root, flagged with
+ * ?sso=hordemart. The pass rides in the fragment, never the query.
+ *
+ * The root rather than a /sso/hordemart path because MrMouse builds with
+ * relative asset URLs (it also ships as a desktop app over file://), and
+ * on a deeper path those resolve to the wrong folder and the page is blank.
+ */
 export function launchUrl(config: MrMouseConfig, token: string): string {
-  return `${config.webUrl}/sso/hordemart#token=${token}`;
+  return `${config.webUrl}/?sso=hordemart#token=${token}`;
 }
 
 // ----------------------------------------------------- signed server messages
