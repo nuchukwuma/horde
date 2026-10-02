@@ -88,6 +88,16 @@ export interface SiteAttributes extends Timestamps {
    */
   socials: Record<string, string>;
   subscription: SiteSubscription;
+  /** Separate apps the seller has connected. See lib/integrations/. */
+  integrations?: {
+    mrmouse?: {
+      /** When the owner agreed to share store details with MrMouse; null = not connected. */
+      connectedAt?: Date | null;
+      connectedBy?: Types.ObjectId | null;
+      /** MrMouse is the source of stock levels, and hears about sales. */
+      stockSync?: boolean;
+    };
+  };
 }
 
 const siteSchema = new Schema<SiteAttributes>(
@@ -152,6 +162,13 @@ const siteSchema = new Schema<SiteAttributes>(
     theme: { type: Schema.Types.Mixed, default: {} },
     settings: { type: Schema.Types.Mixed, default: {} },
     socials: { type: Schema.Types.Mixed, default: {} },
+    integrations: {
+      mrmouse: {
+        connectedAt: { type: Date, default: null },
+        connectedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+        stockSync: { type: Boolean, default: false },
+      },
+    },
     subscription: {
       status: {
         type: String,

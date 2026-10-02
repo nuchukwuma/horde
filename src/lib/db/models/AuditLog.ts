@@ -40,6 +40,12 @@ export type AuditAction =
   | 'membership.revoked'
   | 'order.refunded'
   | 'plan.changed'
+  /** MrMouse: the owner agreed to share store details / withdrew it / changed stock sync. */
+  | 'integration.mrmouse.connected'
+  | 'integration.mrmouse.disconnected'
+  | 'integration.mrmouse.stock_sync_changed'
+  /** A signed sign-in pass naming this user was handed to MrMouse. */
+  | 'integration.mrmouse.launched'
   /** Paystack reported an amount or currency that disagrees with the order. */
   | 'webhook.amount_mismatch';
 

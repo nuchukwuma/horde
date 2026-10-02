@@ -36,6 +36,7 @@ import {
 import { runWithTenant, runWithoutTenantScope } from '../tenant/context';
 import { recordAudit } from '../audit';
 import { notifyOrderPaid } from '../orders/notifications';
+import { sendMrMouseSale } from '../integrations/mrmouseService';
 import { recordRefund, recordSettlement } from '../ledger/entries';
 import { refundedTotalForOrder } from '../ledger/balances';
 import { computeRefundSplit, readRefundPolicy } from '../payments/refundPolicy';
@@ -386,7 +387,11 @@ export async function confirmChargeByReference(
   });
 
   // Only the call that moved the order emails anyone; never throws.
-  if (transitioned) await notifyOrderPaid(order);
+  if (transitioned) {
+    await notifyOrderPaid(order);
+    // Only for stores that switched on MrMouse stock sync; never throws.
+    await sendMrMouseSale(order);
+  }
 
   return 'processed';
 }
