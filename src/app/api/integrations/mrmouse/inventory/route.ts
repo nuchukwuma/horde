@@ -22,6 +22,7 @@ import { runWithoutTenantScope } from '@/lib/tenant/context';
 import { AuthenticationError, NotFoundError } from '@/lib/errors';
 import { canSync, mrmouseConfig, verifyBodySignature } from '@/lib/integrations/mrmouse';
 import { applyMrMouseStock } from '@/lib/integrations/mrmouseService';
+import { retryDueMrMouseSales } from '@/lib/integrations/mrmouseSales';
 
 export const runtime = 'nodejs';
 
@@ -63,6 +64,9 @@ export async function POST(request: NextRequest) {
     if (!site) throw new NotFoundError('Store');
 
     const result = await applyMrMouseStock(site, body.items, new Date(body.sentAt));
+    // MrMouse is evidently reachable: a good moment to send this store's
+    // unconfirmed sales. Not awaited — MrMouse is waiting on this answer.
+    void retryDueMrMouseSales({ siteId: site._id, limit: 10 }).catch(() => {});
     return ok(result);
   } catch (error) {
     return toErrorResponse(error);

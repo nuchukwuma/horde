@@ -37,6 +37,9 @@ export type { SiteAttributes, SitePayout, SiteStatus, PayoutStatus, SiteModules 
 export { Product } from './Product';
 export type { ProductAttributes, ProductImage, ProductStatus } from './Product';
 
+export { MrMouseSaleDelivery } from './MrMouseSaleDelivery';
+export type { MrMouseSaleDeliveryAttributes, MrMouseDeliveryStatus, MrMouseSaleItem } from './MrMouseSaleDelivery';
+
 export { Order } from './Order';
 export type {
   OrderAttributes,

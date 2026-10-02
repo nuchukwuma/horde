@@ -3,6 +3,7 @@ import { Membership } from '@/lib/db/models/Membership';
 import { siteOrigin } from '@/lib/seo/meta';
 import { canLaunch, canSync, mrmouseConfig } from '@/lib/integrations/mrmouse';
 import { mrmouseState } from '@/lib/integrations/mrmouseService';
+import { mrmouseSaleBacklog } from '@/lib/integrations/mrmouseSales';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import MrMouseCard from '@/components/dashboard/MrMouseCard';
 
@@ -22,6 +23,7 @@ export default async function MrMousePage({ params }) {
   const config = mrmouseConfig();
   // The real owner decides what is shared — the same rule the API applies.
   const isOwner = Boolean(await Membership.exists({ userId: session.user._id, siteId: site._id, role: 'owner' }));
+  const backlog = isOwner && canSync(config) ? await mrmouseSaleBacklog(site._id) : null;
 
   return (
     <div className="shell">
@@ -36,6 +38,7 @@ export default async function MrMousePage({ params }) {
           siteId={siteId}
           isOwner={isOwner}
           initial={{ ...mrmouseState(site), connectedAt: undefined }}
+          initialBacklog={backlog}
           launchAvailable={canLaunch(config)}
           syncAvailable={canSync(config)}
           androidUrl={config.androidUrl}
