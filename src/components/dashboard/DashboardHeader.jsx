@@ -18,6 +18,7 @@ const LINKS = [
   ['content', '/content', 'Blog & work', (m) => m.blog || m.portfolio],
   ['design', '/design', 'Design'],
   ['payouts', '/payouts', 'Payouts', (m) => m.store],
+  ['mrmouse', '/mrmouse', 'MrMouse', (m) => m.store],
   ['address', '/address', 'Address'],
   ['billing', '/billing', 'Plan'],
 ];

@@ -17,6 +17,8 @@ export type LimitName =
   | 'auth:verify-email'
   | 'auth:step-up'
   | 'auth:password-reset'
+  | 'integration:launch'
+  | 'integration:inventory'
   | 'site:slug-change'
   | 'shop:signup'
   | 'shop:login'
@@ -52,6 +54,11 @@ const LIMITS: Record<LimitName, { tokens: number; window: `${number} ${'s' | 'm'
   // walking a list of addresses). Resetting a password is rare; 5 an hour is
   // plenty for a person.
   'auth:password-reset': { tokens: 5, window: '1 h' },
+  // Each launch mints a sign-in pass for another service; a person opens
+  // MrMouse a few times an hour at most.
+  'integration:launch': { tokens: 30, window: '10 m' },
+  // Per store. MrMouse batches stock changes; this is a backstop, not a budget.
+  'integration:inventory': { tokens: 120, window: '10 m' },
   // A store's address is what its customers trust; changing it often is a
   // fraud pattern, and every change breaks shoppers' sign-ins.
   'site:slug-change': { tokens: 3, window: '720 h' },

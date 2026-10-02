@@ -74,6 +74,10 @@ export default function PrivacyPage() {
           <strong>Google AdSense</strong>, on HordeMart’s own pages only (never on a seller’s store), if advertising is
           switched on. Google may use cookies to show ads.
         </li>
+        <li>
+          <strong>MrMouse</strong> — only if a seller connects it to their store, after agreeing to it: the seller’s name,
+          email and store details, and (with stock sync) item codes and quantities sold. Never shoppers’ details.
+        </li>
         <li>Law-enforcement or regulators, when the law requires it.</li>
       </ul>
       <p>

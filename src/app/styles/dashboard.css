@@ -1000,3 +1000,37 @@
   text-decoration: none;
   color: inherit;
 }
+
+/* ---------- MrMouse ---------- */
+
+.mrmouse {
+  display: grid;
+  gap: 14px;
+}
+
+.mrmouse__list {
+  margin: 0;
+  padding-left: 1.2em;
+  display: grid;
+  gap: 4px;
+  font-size: 14.5px;
+}
+
+.mrmouse__open {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.mrmouse__downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mrmouse__disconnect {
+  justify-self: start;
+  color: var(--critical);
+}

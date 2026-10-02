@@ -37,6 +37,11 @@ export interface ProductAttributes extends Timestamps {
     track: boolean;
     quantity: number;
     policy: InventoryPolicy;
+    /**
+     * When MrMouse last set this quantity (its own clock). An older or
+     * replayed stock message never overwrites a newer one.
+     */
+    syncedAt?: Date | null;
   };
   status: ProductStatus;
   weightGrams?: number | null;
@@ -67,6 +72,7 @@ const productSchema = new Schema<ProductAttributes>(
       track: { type: Boolean, default: false },
       quantity: { type: Number, default: 0, min: 0 },
       policy: { type: String, enum: ['deny', 'continue'], default: 'deny' },
+      syncedAt: { type: Date, default: null },
     },
     status: {
       type: String,
