@@ -23,7 +23,7 @@ export interface PlatformHosts {
 }
 
 /** Paths that only make sense on the app host. */
-const APP_ONLY = ['/login', '/signup', '/verify-email', '/forgot-password', '/reset-password', '/dashboard', '/admin'];
+const APP_ONLY = ['/login', '/signup', '/verify-email', '/forgot-password', '/reset-password', '/accept-terms', '/dashboard', '/admin'];
 
 function isAppOnly(pathname: string): boolean {
   const lower = pathname.toLowerCase();

@@ -118,3 +118,21 @@ describe('error responses', () => {
     expect(JSON.stringify(await response.json())).not.toMatch(/PAYSTACK/);
   });
 });
+
+describe('terms acceptance', () => {
+  it('asks again whenever the accepted version is not the current one', async () => {
+    const { needsTermsAcceptance, TERMS_VERSION } = await import('../../src/lib/legal/terms');
+    expect(needsTermsAcceptance({ termsAcceptedVersion: null })).toBe(true);
+    expect(needsTermsAcceptance({ termsAcceptedVersion: '2000-01-01' })).toBe(true);
+    expect(needsTermsAcceptance({ termsAcceptedVersion: TERMS_VERSION })).toBe(false);
+  });
+
+  it('only returns people to our own dashboard or admin after accepting', async () => {
+    const { safeNextPath } = await import('../../src/lib/legal/terms');
+    expect(safeNextPath('/dashboard/abc123/orders')).toBe('/dashboard/abc123/orders');
+    expect(safeNextPath('/admin')).toBe('/admin');
+    for (const evil of ['https://evil.example', '//evil.example', '/dashboard/../../x', '/login', '/dashboard?x=1', null]) {
+      expect(safeNextPath(evil)).toBe('/dashboard');
+    }
+  });
+});

@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { redirectIfTermsOutdated } from '@/lib/legal/termsGate';
 import { notFound, redirect } from 'next/navigation';
 import { connectToDatabase } from '@/lib/db/connect';
 import { validateSessionToken } from '@/lib/auth/session';
@@ -33,6 +34,7 @@ export default async function AdminPage() {
   const token = (await cookies()).get(sessionCookieName('platform'))?.value;
   const session = await validateSessionToken(token, 'platform');
   if (!session) redirect('/login');
+  redirectIfTermsOutdated(session.user, '/admin');
   if (session.user.platformRole !== 'admin') notFound();
 
   const [overview, sellers, flagged] = await Promise.all([

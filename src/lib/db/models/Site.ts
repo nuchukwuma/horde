@@ -94,6 +94,8 @@ export interface SiteAttributes extends Timestamps {
       /** When the owner agreed to share store details with MrMouse; null = not connected. */
       connectedAt?: Date | null;
       connectedBy?: Types.ObjectId | null;
+      /** The MrMouse connection terms version the owner accepted. */
+      termsVersion?: string | null;
       /** MrMouse is the source of stock levels, and hears about sales. */
       stockSync?: boolean;
     };
@@ -166,6 +168,7 @@ const siteSchema = new Schema<SiteAttributes>(
       mrmouse: {
         connectedAt: { type: Date, default: null },
         connectedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+        termsVersion: { type: String, default: null },
         stockSync: { type: Boolean, default: false },
       },
     },

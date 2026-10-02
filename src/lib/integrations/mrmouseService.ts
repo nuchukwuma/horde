@@ -8,24 +8,35 @@ import type { Types } from 'mongoose';
 import { Site, type SiteDocument } from '../db/models/Site';
 import { Product } from '../db/models/Product';
 import type { OrderAttributes } from '../db/models/Order';
-import { ConflictError, ForbiddenError, NotFoundError } from '../errors';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../errors';
+import { MRMOUSE_TERMS_VERSION } from '../legal/terms';
 import { recordAudit } from '../audit';
 import { runWithoutTenantScope, runWithTenant } from '../tenant/context';
 import { siteOrigin } from '../seo/meta';
 import type { AuthenticatedSession } from '../auth/session';
 import { canLaunch, canSync, launchUrl, mrmouseConfig, signBody, signHandoffToken, type MrMouseConfig } from './mrmouse';
 
+/**
+ * Connected means: the owner agreed, to the *current* connection terms. When
+ * MRMOUSE_TERMS_VERSION changes, sign-in and stock sync pause until the owner
+ * accepts again (`termsOutdated`).
+ */
 export function mrmouseState(site: Pick<SiteDocument, 'integrations'>) {
   const state = site.integrations?.mrmouse;
+  const agreed = Boolean(state?.connectedAt);
+  const current = state?.termsVersion === MRMOUSE_TERMS_VERSION;
   return {
-    connected: Boolean(state?.connectedAt),
+    connected: agreed && current,
+    termsOutdated: agreed && !current,
     connectedAt: state?.connectedAt ?? null,
-    stockSync: Boolean(state?.connectedAt && state?.stockSync),
+    stockSync: Boolean(agreed && current && state?.stockSync),
   };
 }
 
 export interface ConnectionChange {
   connect?: boolean;
+  /** Required with connect: true — the owner ticked the connection terms. */
+  acceptTerms?: boolean;
   stockSync?: boolean;
 }
 
@@ -58,15 +69,22 @@ export async function changeMrMouseConnection(
       });
 
     if (change.connect === true && !before.connected) {
+      if (change.acceptTerms !== true) {
+        throw new ValidationError('Tick the box to accept the MrMouse connection terms', [
+          { field: 'acceptTerms', message: 'Tick the box to accept the MrMouse connection terms' },
+        ]);
+      }
       site.set('integrations.mrmouse.connectedAt', new Date());
       site.set('integrations.mrmouse.connectedBy', actor.userId);
+      site.set('integrations.mrmouse.termsVersion', MRMOUSE_TERMS_VERSION);
       await site.save();
       await audit('integration.mrmouse.connected', mrmouseState(site));
     }
 
-    if (change.connect === false && before.connected) {
+    if (change.connect === false && (before.connected || before.termsOutdated)) {
       site.set('integrations.mrmouse.connectedAt', null);
       site.set('integrations.mrmouse.connectedBy', null);
+      site.set('integrations.mrmouse.termsVersion', null);
       site.set('integrations.mrmouse.stockSync', false);
       await site.save();
       await audit('integration.mrmouse.disconnected', mrmouseState(site));

@@ -22,6 +22,9 @@ export interface UserAttributes extends Timestamps {
   name: string;
   avatarUrl?: string;
   platformRole: PlatformRole;
+  /** Which Terms + Privacy version they accepted, and when (lib/legal/terms.ts). */
+  termsAcceptedVersion?: string | null;
+  termsAcceptedAt?: Date | null;
   emailVerifiedAt?: Date | null;
   status: UserStatus;
   lastLoginAt?: Date | null;
@@ -50,6 +53,8 @@ const userSchema = new Schema<UserAttributes>(
       index: true,
     },
     emailVerifiedAt: { type: Date, default: null },
+    termsAcceptedVersion: { type: String, default: null },
+    termsAcceptedAt: { type: Date, default: null },
     status: {
       type: String,
       required: true,

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { ensureDatabase } from '@/lib/http/context';
 import { findSiteBySlug } from '@/lib/tenant/loadSite';
 import { isModuleEnabled } from '@/lib/content/modules';
+import { platformOrigin } from '@/lib/seo/meta';
 import AccountForm from '@/components/shop/AccountForm';
 
 export const dynamic = 'force-dynamic';
@@ -17,5 +18,13 @@ export default async function ShopSignupPage({ params }) {
   // portfolio-only site has nothing for a shopper to have an account for.
   if (!site || !isModuleEnabled(site, 'store')) notFound();
 
-  return <AccountForm mode="signup" storeName={site.name} />;
+  // Absolute: on a store's own address "/terms" would be the store's page.
+  return (
+    <AccountForm
+      mode="signup"
+      storeName={site.name}
+      termsUrl={`${platformOrigin()}/terms`}
+      privacyUrl={`${platformOrigin()}/privacy#shoppers`}
+    />
+  );
 }

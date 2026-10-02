@@ -88,8 +88,8 @@ export default function PrivacyPage() {
       <h2 id="cookies">5. Cookies</h2>
       <p>
         HordeMart uses a cookie to keep you signed in, and stores your basket in your browser. These are needed for the
-        site to work. Advertising cookies may be set by Google on HordeMart’s own pages if advertising is switched on;
-        never on sellers’ stores.
+        site to work. Advertising cookies are set by Google on HordeMart’s own pages only if you press “Allow ads”, and
+        never on sellers’ stores. To change your choice, use “Ad choices” at the bottom of any HordeMart page.
       </p>
 
       <h2 id="keeping">6. How long we keep it</h2>

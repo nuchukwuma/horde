@@ -45,8 +45,32 @@ function isPlatformHostname(hostname, apex) {
   return hostname === bare || hostname === `app.${bare}` || hostname === `www.${bare}`;
 }
 
+/**
+ * Ad cookies need the visitor's consent first (NDPA 2023): nothing from
+ * Google loads until they press "Allow ads". The choice is kept in this
+ * browser only; "Ad choices" in the footer clears it (AdChoicesLink).
+ */
+export const AD_CONSENT_KEY = 'hm-ad-consent';
+
+function readConsent() {
+  try {
+    return window.localStorage.getItem(AD_CONSENT_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeConsent(value) {
+  try {
+    window.localStorage.setItem(AD_CONSENT_KEY, value);
+  } catch {
+    // Storage blocked: the choice lasts for this page view only.
+  }
+}
+
 export default function AdSlot({ slot, label = 'Advertisement', minHeight = 100 }) {
   const [allowed, setAllowed] = useState(false);
+  const [consent, setConsent] = useState(null);
   const pushed = useRef(false);
 
   useEffect(() => {
@@ -54,10 +78,16 @@ export default function AdSlot({ slot, label = 'Advertisement', minHeight = 100 
 
     const apex = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? '';
     setAllowed(isPlatformHostname(window.location.hostname, apex));
+    setConsent(readConsent() ?? 'ask');
   }, [slot]);
 
+  function choose(value) {
+    writeConsent(value);
+    setConsent(value);
+  }
+
   useEffect(() => {
-    if (!allowed || pushed.current) return;
+    if (!allowed || consent !== 'granted' || pushed.current) return;
     pushed.current = true;
 
     try {
@@ -67,9 +97,28 @@ export default function AdSlot({ slot, label = 'Advertisement', minHeight = 100 
       // A blocked or failed loader must not break the page around it. Ad
       // blockers are common and this is the expected path for many visitors.
     }
-  }, [allowed]);
+  }, [allowed, consent]);
 
-  if (!CLIENT || !slot || !allowed) return null;
+  if (!CLIENT || !slot || !allowed || consent === null || consent === 'denied') return null;
+
+  if (consent !== 'granted') {
+    return (
+      <aside className="ad-consent" aria-label="Advertising cookies">
+        <p>
+          This page can show ads from Google, which uses cookies to choose them.{' '}
+          <a href="/privacy#cookies">How we use cookies</a>
+        </p>
+        <div className="ad-consent__actions">
+          <button type="button" className="btn btn--sm" onClick={() => choose('granted')}>
+            Allow ads
+          </button>
+          <button type="button" className="btn btn--sm btn--quiet" onClick={() => choose('denied')}>
+            No thanks
+          </button>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside

@@ -44,7 +44,7 @@ export default function MrMouseCard({ siteId, isOwner, initial, launchAvailable,
       window.location.assign(url);
     });
 
-  const connect = () => run('connect', async () => setState(await send(base, 'PATCH', { connect: true })));
+  const connect = () => run('connect', async () => setState(await send(base, 'PATCH', { connect: true, acceptTerms: agreed })));
   const disconnect = () => {
     if (!window.confirm('Disconnect MrMouse? Stock sync stops. Your MrMouse account and its data are not deleted.')) return;
     run('disconnect', async () => setState(await send(base, 'PATCH', { connect: false })));
@@ -78,7 +78,14 @@ export default function MrMouseCard({ siteId, isOwner, initial, launchAvailable,
 
       {!state.connected ? (
         <section className="card">
-          <h2 className="product-form__title">Connect MrMouse to this store</h2>
+          <h2 className="product-form__title">
+            {state.termsOutdated ? 'The MrMouse connection terms have changed' : 'Connect MrMouse to this store'}
+          </h2>
+          {state.termsOutdated ? (
+            <p className="secondary" style={{ marginTop: 0 }}>
+              Sign-in and stock sync are paused until you accept the new version.
+            </p>
+          ) : null}
           {isOwner ? (
             <>
               <p className="secondary" style={{ marginTop: 0 }}>When you connect, HordeMart shares with MrMouse:</p>
@@ -90,12 +97,18 @@ export default function MrMouseCard({ siteId, isOwner, initial, launchAvailable,
               <p className="hint">
                 Never your customers’ details, your bank details or your password. You can disconnect at any time.
               </p>
-              <label className="checkbox" style={{ marginTop: 12 }}>
+              <label className="checkbox terms-check" style={{ marginTop: 12 }}>
                 <input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
-                <span>I agree to share these details with MrMouse.</span>
+                <span>
+                  I have read and accept the{' '}
+                  <a href="/terms/mrmouse" target="_blank" rel="noopener">
+                    MrMouse connection terms
+                  </a>
+                  , and agree to HordeMart sharing these details with MrMouse.
+                </span>
               </label>
               <button type="button" className="btn btn--primary" style={{ marginTop: 14 }} onClick={connect} disabled={!agreed || busy !== null}>
-                {busy === 'connect' ? 'Connecting…' : 'Connect MrMouse'}
+                {busy === 'connect' ? 'Connecting…' : state.termsOutdated ? 'Accept and reconnect' : 'Connect MrMouse'}
               </button>
             </>
           ) : (

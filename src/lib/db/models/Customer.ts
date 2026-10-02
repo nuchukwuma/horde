@@ -38,6 +38,9 @@ export interface CustomerAttributes extends Timestamps {
   name: string;
   phone?: string;
   emailVerifiedAt?: Date | null;
+  /** Which Terms + Privacy version they accepted at signup, and when. */
+  termsAcceptedVersion?: string | null;
+  termsAcceptedAt?: Date | null;
   status: CustomerStatus;
   lastLoginAt?: Date | null;
   failedLoginAttempts: number;
@@ -58,6 +61,8 @@ const customerSchema = new Schema<CustomerAttributes>(
     name: { type: String, required: true, trim: true, maxlength: 120 },
     phone: { type: String, trim: true, maxlength: 32 },
     emailVerifiedAt: { type: Date, default: null },
+    termsAcceptedVersion: { type: String, default: null },
+    termsAcceptedAt: { type: Date, default: null },
     status: {
       type: String,
       required: true,

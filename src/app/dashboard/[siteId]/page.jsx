@@ -1,4 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
+import { redirectIfTermsOutdated } from '@/lib/legal/termsGate';
 import { cookies } from 'next/headers';
 import { ensureDatabase } from '@/lib/http/context';
 import { validateSessionToken } from '@/lib/auth/session';
@@ -45,6 +46,7 @@ export default async function DashboardPage({ params }) {
   const token = (await cookies()).get(sessionCookieName('platform'))?.value;
   const session = await validateSessionToken(token, 'platform');
   if (!session) redirect('/login');
+  redirectIfTermsOutdated(session.user, `/dashboard/${siteId}`);
 
   // Throws Forbidden if this user has no membership on this site, so one seller
   // cannot read another's revenue by editing the URL.

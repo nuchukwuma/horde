@@ -5,6 +5,7 @@
  */
 
 import { cookies } from 'next/headers';
+import { redirectIfTermsOutdated } from '../legal/termsGate';
 import { notFound, redirect } from 'next/navigation';
 import { connectToDatabase } from '../db/connect';
 import { validateSessionToken, type AuthenticatedSession } from '../auth/session';
@@ -20,6 +21,7 @@ export async function requireDashboardAccess(
   const token = (await cookies()).get(sessionCookieName('platform'))?.value;
   const session = await validateSessionToken(token, 'platform');
   if (!session) redirect('/login');
+  redirectIfTermsOutdated(session.user, `/dashboard/${siteId}`);
 
   try {
     const access = await requireSiteAccess(session, siteId, ['owner', 'staff']);

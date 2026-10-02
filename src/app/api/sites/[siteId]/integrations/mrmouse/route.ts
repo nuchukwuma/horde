@@ -1,6 +1,7 @@
 /**
  * PATCH /api/sites/:siteId/integrations/mrmouse
- *   { connect: true }   the owner agrees to share store details with MrMouse
+ *   { connect: true, acceptTerms: true }
+ *                       the owner accepts the MrMouse connection terms
  *   { connect: false }  disconnect (also stops stock sync)
  *   { stockSync: bool } MrMouse becomes / stops being the source of stock levels
  *
@@ -18,7 +19,7 @@ import { changeMrMouseConnection } from '@/lib/integrations/mrmouseService';
 export const runtime = 'nodejs';
 
 const changeSchema = z
-  .object({ connect: z.boolean().optional(), stockSync: z.boolean().optional() })
+  .object({ connect: z.boolean().optional(), acceptTerms: z.boolean().optional(), stockSync: z.boolean().optional() })
   .refine((body) => body.connect !== undefined || body.stockSync !== undefined, 'Nothing to change');
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ siteId: string }> }) {

@@ -24,9 +24,17 @@ const validSeller = {
   name: 'Ade Okon',
   siteName: 'Ade Stores',
   slug: 'ade-store',
+  acceptTerms: true,
 };
 
 describe('seller signup input', () => {
+  it('refuses a shop without the terms accepted — ticked, not defaulted', () => {
+    const { acceptTerms: _ignored, ...unticked } = validSeller;
+    void _ignored;
+    expect(sellerSignUpSchema.safeParse(unticked).success).toBe(false);
+    expect(sellerSignUpSchema.safeParse({ ...validSeller, acceptTerms: false }).success).toBe(false);
+  });
+
   it('accepts a well-formed submission', () => {
     expect(sellerSignUpSchema.safeParse(validSeller).success).toBe(true);
   });
@@ -71,7 +79,7 @@ describe('seller signup input', () => {
     // assigned server-side. This asserts the shape rather than trusting it.
     const parsed = sellerSignUpSchema.parse(validSeller);
     expect(Object.keys(parsed).sort()).toEqual(
-      ['email', 'name', 'password', 'siteName', 'slug'].sort(),
+      ['acceptTerms', 'email', 'name', 'password', 'siteName', 'slug'].sort(),
     );
   });
 });
@@ -82,8 +90,16 @@ describe('shopper signup input', () => {
       email: 'buyer@example.com',
       password: 'correct-horse-battery',
       name: 'Chidi Eze',
+      acceptTerms: true,
     });
     expect(result.success).toBe(true);
+  });
+
+  it('refuses an account without the terms accepted', () => {
+    const base = { email: 'buyer@example.com', password: 'correct-horse-battery', name: 'Chidi Eze' };
+    expect(customerSignUpSchema.safeParse(base).success).toBe(false);
+    expect(customerSignUpSchema.safeParse({ ...base, acceptTerms: false }).success).toBe(false);
+    expect(customerSignUpSchema.safeParse({ ...base, acceptTerms: 'yes' }).success).toBe(false);
   });
 
   it('strips a client-supplied siteId rather than honouring it', () => {
@@ -94,6 +110,7 @@ describe('shopper signup input', () => {
       email: 'buyer@example.com',
       password: 'correct-horse-battery',
       name: 'Chidi Eze',
+      acceptTerms: true,
       siteId: '507f1f77bcf86cd799439011',
     } as Record<string, unknown>);
 

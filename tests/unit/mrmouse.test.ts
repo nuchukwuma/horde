@@ -41,8 +41,9 @@ describe('MrMouse configuration', () => {
   it('puts the pass in the fragment, which browsers never send to a server', () => {
     const config = mrmouseConfig({ MRMOUSE_WEB_URL: 'https://app.mrmouse.ng/', MRMOUSE_SSO_SECRET: SECRET });
     const url = new URL(launchUrl(config, 'abc.def.ghi'));
-    expect(url.pathname).toBe('/sso/hordemart');
-    expect(url.search).toBe('');
+    expect(url.pathname).toBe('/');
+    expect(url.searchParams.get('sso')).toBe('hordemart');
+    expect(url.search).not.toContain('token');
     expect(url.hash).toBe('#token=abc.def.ghi');
   });
 });

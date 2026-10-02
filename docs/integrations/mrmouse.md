@@ -31,16 +31,32 @@ A seller presses **Open MrMouse** in their HordeMart dashboard. HordeMart
 sends the browser to:
 
 ```
-{MRMOUSE_WEB_URL}/sso/hordemart#token=<JWT>
+{MRMOUSE_WEB_URL}/?sso=hordemart#token=<JWT>
 ```
+
+The app root, not a `/sso/hordemart` path: Mr Mouse builds with relative
+asset URLs (it also ships as a desktop app over `file://`), and on a deeper
+path those resolve to the wrong folder.
 
 The pass is in the URL **fragment**: browsers never send fragments to a
 server or in a Referer. MrMouse's page must:
 
 1. Read `location.hash`, then immediately `history.replaceState` to remove it.
-2. POST the token to MrMouse's own backend over HTTPS.
+2. POST it at once to `POST /api/integrations/hordemart/sso { token }`.
+   The backend checks it and either signs the seller in (already linked,
+   current terms) → `{ status: "signed_in", token, user }`, or answers
+   `{ status: "consent_required", ticket, profile }` with a 10-minute,
+   single-use ticket — so the pass's 60 seconds never run out while
+   someone reads the terms.
+3. First time: show what linking means, require a tick, then
+   `POST /api/integrations/hordemart/sso/confirm { ticket, acceptTerms: true,
+   termsVersion, acceptAppTerms: true, appTermsVersion }` → signed in.
 
-The backend verifies it (reference implementation: `verifyHandoffToken` in
+A reference implementation of all of this — frontend, Express routes,
+Mongoose models and tests — is in the Mr Mouse handover package
+(`src/assets/integrations/HordeMartLink.jsx`, `server/routes/hordemart.js`).
+
+The backend verifies the pass (same rules as `verifyHandoffToken` in
 `src/lib/integrations/mrmouse.ts`):
 
 - Compact JWT, header `{"alg":"HS256","typ":"JWT"}`, signed with

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ProductArt from '@/components/art/ProductArt';
 import { formatNaira } from '@/lib/ui/format';
+import TermsCheckbox from '@/components/legal/TermsCheckbox';
 import { NIGERIAN_STATES, normaliseNigerianPhone } from '@/lib/shop/nigeria';
 import { getCart, onCartChange, removeFromCart, setQuantity } from './cart';
 
@@ -25,7 +26,7 @@ const BLOCKED_COPY = {
   site_not_active: 'This shop is not taking orders right now.',
 };
 
-export default function CartView({ storeName, shopper, privacyUrl = '/privacy' }) {
+export default function CartView({ storeName, shopper, privacyUrl = '/privacy', termsUrl = '/terms' }) {
   const [lines, setLines] = useState(null);
   const [quote, setQuote] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,6 +40,7 @@ export default function CartView({ storeName, shopper, privacyUrl = '/privacy' }
   const [region, setRegion] = useState('');
   const [note, setNote] = useState('');
   const [phoneError, setPhoneError] = useState(null);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState(null);
   const [paying, setPaying] = useState(false);
   const seq = useRef(0);
@@ -111,6 +113,7 @@ export default function CartView({ storeName, shopper, privacyUrl = '/privacy' }
             method === 'delivery'
               ? { method, address, city, state: region, note: note.trim() || undefined }
               : { method, note: note.trim() || undefined },
+          acceptTerms,
         }),
       });
       const body = await response.json();
@@ -402,10 +405,14 @@ export default function CartView({ storeName, shopper, privacyUrl = '/privacy' }
             />
           </div>
 
+          <div style={{ marginTop: 16 }}>
+            <TermsCheckbox id="checkout-terms" checked={acceptTerms} onChange={setAcceptTerms} termsUrl={termsUrl} privacyUrl={privacyUrl} />
+          </div>
+
           <button
             type="submit"
             className="btn btn--primary btn--lg btn--block"
-            disabled={paying || loading || !quote || !quote.canCheckout || hasProblem}
+            disabled={paying || loading || !quote || !quote.canCheckout || hasProblem || !acceptTerms}
           >
             {paying ? (
               <>
@@ -420,12 +427,7 @@ export default function CartView({ storeName, shopper, privacyUrl = '/privacy' }
             <span aria-hidden="true">🔒</span> Card, bank transfer or USSD, via Paystack. Your payment goes to{' '}
             {storeName} directly.
           </p>
-          <p className="cart__secure">
-            Your details go only to {storeName}, to get your order to you.{' '}
-            <a href={privacyUrl} target="_blank" rel="noopener">
-              Privacy
-            </a>
-          </p>
+          <p className="cart__secure">Your details go only to {storeName}, to get your order to you.</p>
           {!shopper ? (
             <p className="cart__secure">
               No account needed. <a href="/account/login">Sign in</a> to keep your orders together.

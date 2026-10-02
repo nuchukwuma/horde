@@ -10,6 +10,7 @@
  * checkout/createCheckout.ts, where customerId is nullable.
  */
 
+import { acceptanceStamp } from '../legal/terms';
 import type { Types } from 'mongoose';
 import { Customer, type CustomerAttributes } from '../db/models/Customer';
 import { fakeVerifyPassword, hashPassword, verifyPassword } from '../auth/password';
@@ -54,6 +55,8 @@ export async function registerCustomer(
       phone: input.phone,
       status: 'active',
       emailVerifiedAt: null,
+      // customerSignUpSchema refuses a body without acceptTerms: true.
+      ...acceptanceStamp(),
     }),
   );
 

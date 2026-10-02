@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import TermsCheckbox from '@/components/legal/TermsCheckbox';
 
 /**
  * Shopper sign-in and registration for one storefront.
@@ -13,7 +14,7 @@ import { useState } from 'react';
  * the browser is already on, which is the only thing the server will accept.
  */
 
-export default function AccountForm({ mode, storeName, next = '/' }) {
+export default function AccountForm({ mode, storeName, next = '/', termsUrl = '/terms', privacyUrl = '/privacy' }) {
   const isSignup = mode === 'signup';
 
   const [name, setName] = useState('');
@@ -21,6 +22,7 @@ export default function AccountForm({ mode, storeName, next = '/' }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   async function onSubmit(event) {
     event.preventDefault();
@@ -28,7 +30,7 @@ export default function AccountForm({ mode, storeName, next = '/' }) {
     setError(null);
 
     const endpoint = isSignup ? '/api/shop/account/signup' : '/api/shop/account/login';
-    const payload = isSignup ? { name, email, password } : { email, password };
+    const payload = isSignup ? { name, email, password, acceptTerms } : { email, password };
 
     try {
       const response = await fetch(endpoint, {
@@ -126,7 +128,13 @@ export default function AccountForm({ mode, storeName, next = '/' }) {
           ) : null}
         </div>
 
-        <button className="btn btn--primary" type="submit" disabled={busy}>
+        {isSignup ? (
+          <TermsCheckbox checked={acceptTerms} onChange={setAcceptTerms} termsUrl={termsUrl} privacyUrl={privacyUrl}>
+            {' '}(HordeMart runs this store’s accounts for {storeName})
+          </TermsCheckbox>
+        ) : null}
+
+        <button className="btn btn--primary" type="submit" disabled={busy || (isSignup && !acceptTerms)}>
           {busy ? 'Please wait…' : isSignup ? 'Create account' : 'Sign in'}
         </button>
 
