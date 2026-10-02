@@ -15,3 +15,14 @@ export const LEGAL_ENTITY = {
   contactEmail: process.env.SALES_CONTACT_EMAIL ?? null, // TODO: a privacy@ address
   lastUpdated: '1 October 2026',
 };
+
+/**
+ * The version of the Terms + Privacy Policy that people accept. Bump it
+ * (to the date of the change) whenever either page changes in substance:
+ * every seller is then asked to accept the new version before they can use
+ * their dashboard again, and new acceptances record the new version.
+ */
+export const TERMS_VERSION = '2026-10-02';
+
+/** The MrMouse connection terms (/terms/mrmouse). Same rule. */
+export const MRMOUSE_TERMS_VERSION = '2026-10-02';

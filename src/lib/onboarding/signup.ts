@@ -16,6 +16,7 @@
  * onboarding — see the note at the bottom of this file.
  */
 
+import { acceptanceStamp } from '../legal/terms';
 import { Types } from 'mongoose';
 import { User } from '../db/models/User';
 import { Site, type SiteAttributes } from '../db/models/Site';
@@ -89,6 +90,8 @@ export async function signUpSeller(input: SellerSignUpInput): Promise<SellerSign
       platformRole: 'user',
       status: 'active',
       emailVerifiedAt: null,
+      // The signup schema refuses a body without acceptTerms: true.
+      ...acceptanceStamp(),
     });
     userId = user._id;
 

@@ -33,6 +33,8 @@ export type AuditAction =
   | 'user.step_up'
   | 'user.step_up.failed'
   | 'user.password.changed'
+  /** Accepted a (new) version of the Terms and Privacy Policy. */
+  | 'user.terms.accepted'
   /** A reset link was emailed; and the password was then reset from it. */
   | 'user.password_reset.requested'
   | 'user.password_reset.completed'

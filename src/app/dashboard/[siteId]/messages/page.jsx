@@ -1,4 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
+import { redirectIfTermsOutdated } from '@/lib/legal/termsGate';
 import { cookies } from 'next/headers';
 import { ensureDatabase } from '@/lib/http/context';
 import { validateSessionToken } from '@/lib/auth/session';
@@ -26,6 +27,7 @@ export default async function MessagesPage({ params }) {
   const token = (await cookies()).get(sessionCookieName('platform'))?.value;
   const session = await validateSessionToken(token, 'platform');
   if (!session) redirect('/login');
+  redirectIfTermsOutdated(session.user, `/dashboard/${siteId}/messages`);
 
   let site;
   try {

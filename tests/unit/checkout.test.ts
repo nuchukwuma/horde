@@ -37,6 +37,7 @@ const buyer = {
   customerName: 'Ada Buyer',
   customerPhone: '0803 123 4567',
   delivery: { method: 'delivery', address: '12 Allen Avenue', city: 'Ikeja', state: 'Lagos' },
+  acceptTerms: true,
 };
 
 describe('the cart schema gives a client nowhere to put a price', () => {
@@ -120,6 +121,13 @@ describe('checkout asks who the order is for and where it goes', () => {
 
   it.each(['12345', '0803123456', '+44 7700 900123', '0603 123 4567', 'call me'])('rejects the phone number %s', (typed) => {
     expect(checkoutSchema.safeParse({ items, ...buyer, customerPhone: typed }).success).toBe(false);
+  });
+
+  it('requires the terms ticked at checkout', () => {
+    expect(checkoutSchema.safeParse({ items, ...buyer, acceptTerms: false }).success).toBe(false);
+    const { acceptTerms: _ignored, ...unticked } = buyer;
+    void _ignored;
+    expect(checkoutSchema.safeParse({ items, ...unticked }).success).toBe(false);
   });
 
   it('requires a name and a phone number', () => {

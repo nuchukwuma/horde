@@ -9,6 +9,7 @@
 
 import { z } from 'zod';
 import { NIGERIAN_STATES, normaliseNigerianPhone } from '../shop/nigeria';
+import { acceptTermsSchema } from '../legal/terms';
 import {
   SLUG_MAX_LENGTH,
   SLUG_MIN_LENGTH,
@@ -73,6 +74,7 @@ export const sellerSignUpSchema = z.object({
   name: z.string().trim().min(1).max(120),
   siteName: z.string().trim().min(1).max(120),
   slug: slugSchema,
+  acceptTerms: acceptTermsSchema,
 });
 
 /**
@@ -87,6 +89,7 @@ export const customerSignUpSchema = z.object({
   password: passwordSchema,
   name: z.string().trim().min(1).max(120),
   phone: z.string().trim().max(32).optional(),
+  acceptTerms: acceptTermsSchema,
 });
 
 export const customerSignInSchema = z.object({
@@ -253,6 +256,7 @@ export const checkoutSchema = z.object({
       return phone;
     }),
   delivery: deliverySchema,
+  acceptTerms: acceptTermsSchema,
 });
 
 export type CheckoutInputBody = z.infer<typeof checkoutSchema>;

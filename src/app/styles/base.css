@@ -1083,3 +1083,44 @@ table.data th.num {
   border: 0;
   border-top: 1px solid var(--border);
 }
+
+/* The consent box (components/legal/TermsCheckbox.jsx). */
+.terms-check {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.terms-check a {
+  font-weight: 600;
+}
+
+/* Ad-cookie consent, in place of an ad until the visitor chooses. */
+.ad-consent {
+  margin: 24px 0;
+  padding: 14px 16px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.ad-consent p {
+  margin: 0 0 10px;
+}
+
+.ad-consent__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.footer__link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

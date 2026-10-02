@@ -22,7 +22,7 @@ export default async function CartPage({ params }) {
       <header className="page-head">
         <h1 className="page-head__title">Your basket</h1>
       </header>
-      <CartView storeName={site.name} shopper={shopper} privacyUrl={`${platformOrigin()}/privacy#shoppers`} />
+      <CartView storeName={site.name} shopper={shopper} privacyUrl={`${platformOrigin()}/privacy#shoppers`} termsUrl={`${platformOrigin()}/terms`} />
     </div>
   );
 }

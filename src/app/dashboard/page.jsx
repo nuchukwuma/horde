@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { redirectIfTermsOutdated } from '@/lib/legal/termsGate';
 import { redirect } from 'next/navigation';
 import { connectToDatabase } from '@/lib/db/connect';
 import { validateSessionToken } from '@/lib/auth/session';
@@ -19,6 +20,7 @@ export default async function DashboardIndex() {
   const token = (await cookies()).get(sessionCookieName('platform'))?.value;
   const session = await validateSessionToken(token, 'platform');
   if (!session) redirect('/login');
+  redirectIfTermsOutdated(session.user, '/dashboard');
 
   const membership = await Membership.findOne({ userId: session.user._id }).sort({ createdAt: 1 }).lean();
   if (membership) redirect(`/dashboard/${membership.siteId}`);

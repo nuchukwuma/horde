@@ -222,3 +222,30 @@ describe.runIf(hasMongo)('who may change where a store is paid', () => {
     await expect(requireOwnerMembership(session(admin), site._id)).rejects.toThrow(/not the owner/);
   });
 });
+
+describe.runIf(hasMongo)('terms acceptance is recorded', () => {
+  it('stamps the version and time on a new seller and a new shopper', async () => {
+    const { signUpSeller } = await import('../../src/lib/onboarding/signup');
+    const { registerCustomer } = await import('../../src/lib/shop/customerAccount');
+    const { TERMS_VERSION } = await import('../../src/lib/legal/terms');
+
+    const seller = await signUpSeller({
+      email: 'terms-seller@example.com',
+      password: 'correct-horse-battery',
+      name: 'Ade',
+      siteName: 'Terms Shop',
+      slug: 'terms-shop',
+    });
+    const user = await User.findById(seller.userId).lean();
+    expect(user?.termsAcceptedVersion).toBe(TERMS_VERSION);
+    expect(user?.termsAcceptedAt).toBeInstanceOf(Date);
+
+    const customer = await registerCustomer({
+      siteId: seller.siteId,
+      email: 'terms-buyer@example.com',
+      password: 'correct-horse-battery',
+      name: 'Chidi',
+    });
+    expect(customer.termsAcceptedVersion).toBe(TERMS_VERSION);
+  });
+});

@@ -74,6 +74,9 @@ export interface OrderAttributes extends Timestamps {
   /** +234XXXXXXXXXX. Absent on orders placed before checkout asked for it. */
   customerPhone?: string;
   delivery?: OrderDelivery | null;
+  /** The Terms + Privacy version the buyer accepted at checkout, and when. */
+  termsAcceptedVersion?: string | null;
+  termsAcceptedAt?: Date | null;
   /** When the seller marked it sent or collected. Null until then. */
   fulfilledAt?: Date | null;
   items: OrderItem[];
@@ -118,6 +121,8 @@ const orderSchema = new Schema<OrderAttributes>(
       ),
       default: null,
     },
+    termsAcceptedVersion: { type: String, default: null },
+    termsAcceptedAt: { type: Date, default: null },
     fulfilledAt: { type: Date, default: null },
     items: {
       type: [

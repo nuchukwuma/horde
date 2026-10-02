@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import TermsCheckbox from '@/components/legal/TermsCheckbox';
 import PlatformHeader from '@/components/platform/PlatformHeader';
 import StallScene from '@/components/scenes/StallScene';
 
@@ -68,6 +69,7 @@ export default function SignupPage() {
   const [error, setError] = useState(null);
   // Which field a 409 blamed, so the message can sit beside it.
   const [conflict, setConflict] = useState(null);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [busy, setBusy] = useState(false);
   const [opened, setOpened] = useState(false);
 
@@ -148,7 +150,7 @@ export default function SignupPage() {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, siteName, slug: effectiveSlug }),
+        body: JSON.stringify({ name, email, password, siteName, slug: effectiveSlug, acceptTerms }),
       });
 
       const body = await response.json();
@@ -335,10 +337,14 @@ export default function SignupPage() {
                 </p>
               </div>
 
+              <div style={{ marginTop: 20 }}>
+                <TermsCheckbox checked={acceptTerms} onChange={setAcceptTerms} />
+              </div>
+
               <button
                 className="btn btn--primary btn--lg btn--block"
                 type="submit"
-                disabled={busy || slugState.status === 'taken'}
+                disabled={busy || slugState.status === 'taken' || !acceptTerms}
                 style={{ marginTop: 22 }}
               >
                 {busy ? (
@@ -350,10 +356,6 @@ export default function SignupPage() {
                 )}
               </button>
 
-              <p className="auth__legal">
-                By opening a shop you agree to our <a href="/terms">Terms</a> and{' '}
-                <a href="/privacy">Privacy Policy</a>.
-              </p>
 
               <p className="auth__switch">
                 Already selling with us? <a href="/login">Sign in</a>

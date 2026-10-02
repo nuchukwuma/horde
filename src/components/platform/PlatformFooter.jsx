@@ -1,4 +1,5 @@
 import BrandMark from '@/components/art/BrandMark';
+import AdChoicesLink from '@/components/ads/AdChoicesLink';
 
 export default function PlatformFooter() {
   return (
@@ -16,6 +17,7 @@ export default function PlatformFooter() {
           <a href="/login">Sign in</a>
           <a href="/terms">Terms</a>
           <a href="/privacy">Privacy</a>
+          <AdChoicesLink />
         </nav>
         <p className="footer__fine">
           Payments are processed by Paystack. Seller funds settle directly to the seller&rsquo;s

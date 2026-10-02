@@ -9,6 +9,7 @@
  */
 
 import { randomBytes } from 'node:crypto';
+import { acceptanceStamp } from '../legal/terms';
 import type { Types } from 'mongoose';
 import { Order, type OrderDelivery, type OrderItem } from '../db/models/Order';
 import { Plan } from '../db/models/Plan';
@@ -124,6 +125,8 @@ export async function createCheckout(
             }
           : { method: 'pickup', note: input.delivery.note || undefined }
         : null,
+      // checkoutSchema refuses a body without acceptTerms: true.
+      ...acceptanceStamp(),
       items,
       subtotalKobo,
       shippingKobo: 0,
