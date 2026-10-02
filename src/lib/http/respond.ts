@@ -69,6 +69,15 @@ export function toErrorResponse(error: unknown): NextResponse<ErrorBody> {
     );
   }
 
+  // request.json() on a body that is empty, cut off (the browser navigated
+  // away mid-request) or not JSON. The client's fault, not a server failure.
+  if (error instanceof SyntaxError && /JSON/.test(error.message)) {
+    return NextResponse.json(
+      { error: { code: 'invalid_json', message: 'The request could not be read. Please try again.' } },
+      { status: 400 },
+    );
+  }
+
   if (error instanceof RateLimitError) {
     return NextResponse.json(
       { error: { code: error.code, message: error.publicMessage } },

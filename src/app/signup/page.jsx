@@ -350,6 +350,11 @@ export default function SignupPage() {
                 )}
               </button>
 
+              <p className="auth__legal">
+                By opening a shop you agree to our <a href="/terms">Terms</a> and{' '}
+                <a href="/privacy">Privacy Policy</a>.
+              </p>
+
               <p className="auth__switch">
                 Already selling with us? <a href="/login">Sign in</a>
               </p>

@@ -906,6 +906,30 @@
   margin-top: 18px;
 }
 
+.cart__method {
+  border: 0;
+  padding: 0;
+  margin-inline: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.cart__method + .field,
+.cart__row + .field,
+.field + .cart__row {
+  margin-top: 16px;
+}
+
+.cart__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.cart__row .field + .field {
+  margin-top: 0;
+}
+
 .cart__secure {
   margin: 10px 0 0;
   font-size: 13px;

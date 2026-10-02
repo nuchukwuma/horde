@@ -35,6 +35,7 @@ import {
 } from './paystackEvent';
 import { runWithTenant, runWithoutTenantScope } from '../tenant/context';
 import { recordAudit } from '../audit';
+import { notifyOrderPaid } from '../orders/notifications';
 import { recordRefund, recordSettlement } from '../ledger/entries';
 import { refundedTotalForOrder } from '../ledger/balances';
 import { computeRefundSplit, readRefundPolicy } from '../payments/refundPolicy';
@@ -344,6 +345,7 @@ export async function confirmChargeByReference(
   const siteId = String(order.siteId);
   const slug = `site-${siteId}`;
 
+  let transitioned = false;
   await runWithTenant({ siteId, slug }, async () => {
     // Guarded on status so two concurrent deliveries cannot both transition it.
     const updated = await Order.updateOne(
@@ -361,6 +363,7 @@ export async function confirmChargeByReference(
     );
 
     if (updated.modifiedCount === 0) return;
+    transitioned = true;
 
     // Paystack's reported fee is authoritative; our checkout figure was an
     // estimate for display. The ledger records what actually happened.
@@ -381,6 +384,9 @@ export async function confirmChargeByReference(
 
     await takeStock(order);
   });
+
+  // Only the call that moved the order emails anyone; never throws.
+  if (transitioned) await notifyOrderPaid(order);
 
   return 'processed';
 }

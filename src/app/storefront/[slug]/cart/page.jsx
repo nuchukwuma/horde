@@ -4,6 +4,7 @@ import { requireStorefront } from '@/lib/tenant/storefront';
 import { isModuleEnabled } from '@/lib/content/modules';
 import { validateCustomerSessionToken } from '@/lib/auth/session';
 import { sessionCookieName } from '@/lib/auth/cookies';
+import { platformOrigin } from '@/lib/seo/meta';
 import CartView from '@/components/shop/CartView';
 
 export const metadata = { title: 'Your basket', robots: { index: false } };
@@ -21,7 +22,7 @@ export default async function CartPage({ params }) {
       <header className="page-head">
         <h1 className="page-head__title">Your basket</h1>
       </header>
-      <CartView storeName={site.name} shopper={shopper} />
+      <CartView storeName={site.name} shopper={shopper} privacyUrl={`${platformOrigin()}/privacy#shoppers`} />
     </div>
   );
 }

@@ -90,6 +90,8 @@ export function buildPlatformRobots(hostKind: 'apex' | 'app', origin = platformO
 export const PLATFORM_PAGES: SitemapEntry[] = [
   { path: '/', changeFrequency: 'weekly', priority: 1 },
   { path: '/docs', changeFrequency: 'monthly', priority: 0.6 },
+  { path: '/terms', changeFrequency: 'yearly', priority: 0.2 },
+  { path: '/privacy', changeFrequency: 'yearly', priority: 0.2 },
 ];
 
 export function buildPlatformSitemap(entries: SitemapEntry[] = PLATFORM_PAGES, origin = platformOrigin()): string {

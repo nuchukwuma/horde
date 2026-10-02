@@ -150,6 +150,7 @@ export function assertEmailVerified(user: Pick<UserAttributes, 'emailVerifiedAt'
   if (!isEmailVerified(user)) {
     throw new ForbiddenError(
       'Confirm your email address before connecting a bank account.',
+      'Confirm your email address before connecting a bank account. Check your inbox for our link.',
     );
   }
 }

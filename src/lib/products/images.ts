@@ -39,7 +39,8 @@ export function cloudinaryConfig(
   return { cloudName, apiKey, apiSecret };
 }
 
-export type UploadPurpose = 'products' | 'design';
+/** products: product photos · design: banners and logos · content: blog and portfolio images. */
+export type UploadPurpose = 'products' | 'design' | 'content';
 
 /** Each site's uploads live in their own folders, which is what saves are checked against. */
 export function siteImageFolder(siteId: string, purpose: UploadPurpose): string {

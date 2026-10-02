@@ -4,7 +4,7 @@
  * the apex left the seller with a session the dashboard host could not see.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { platformRedirect } from '../../src/lib/tenant/platformRoutes';
 import { buildPlatformRobots, buildPlatformSitemap } from '../../src/lib/seo/sitemap';
 import { AuthenticationError } from '../../src/lib/errors';
@@ -17,7 +17,7 @@ describe('platformRedirect', () => {
     expect(platformRedirect('WWW.HordeMart.com.', '/', hosts)).toEqual({ host: 'hordemart.com', pathname: '/' });
   });
 
-  it.each(['/login', '/signup', '/verify-email', '/dashboard', '/dashboard/abc/design', '/LOGIN'])(
+  it.each(['/login', '/signup', '/verify-email', '/forgot-password', '/reset-password', '/dashboard', '/dashboard/abc/design', '/admin', '/LOGIN'])(
     'moves %s from the apex to the app host',
     (path) => {
       expect(platformRedirect('hordemart.com', path, hosts)).toEqual({ host: 'app.hordemart.com', pathname: path });
@@ -80,5 +80,41 @@ describe('AuthenticationError', () => {
     const error = new AuthenticationError('Invalid email or password', 'Those details don’t match.');
     expect(error.statusCode).toBe(401);
     expect(error.publicMessage).toBe('Those details don’t match.');
+  });
+});
+
+describe('error responses', () => {
+  it('answers an unreadable JSON body with a 400, not a 500', async () => {
+    const { toErrorResponse } = await import('../../src/lib/http/respond');
+    let parseError: unknown;
+    try {
+      JSON.parse('');
+    } catch (error) {
+      parseError = error;
+    }
+    const response = toErrorResponse(parseError);
+    expect(response.status).toBe(400);
+    expect((await response.json()).error.code).toBe('invalid_json');
+  });
+
+  it('lets a forbidden error carry an actionable message, generic by default', async () => {
+    const { ForbiddenError } = await import('../../src/lib/errors');
+    expect(new ForbiddenError('x').publicMessage).toBe('You do not have access to this resource');
+    expect(new ForbiddenError('x', 'Confirm your email first.').publicMessage).toBe('Confirm your email first.');
+  });
+
+  it('reports a missing Paystack key as payments unavailable, not a crash', async () => {
+    const { toErrorResponse } = await import('../../src/lib/http/respond');
+    const { readPaystackConfig } = await import('../../src/lib/paystack/client');
+    let error: unknown;
+    try {
+      readPaystackConfig({});
+    } catch (caught) {
+      error = caught;
+    }
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const response = toErrorResponse(error);
+    expect(response.status).toBe(503);
+    expect(JSON.stringify(await response.json())).not.toMatch(/PAYSTACK/);
   });
 });

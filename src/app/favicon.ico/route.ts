@@ -5,6 +5,9 @@
  * logo on a store — so this only covers those bare documents.
  */
 
+// Not prerendered: an empty cached body trips Next's prerender cache.
+export const dynamic = 'force-dynamic';
+
 // A relative Location: middleware skips this path, and request.url here
 // carries the server's own hostname, not the one the browser asked for.
 export function GET() {

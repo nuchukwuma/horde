@@ -14,6 +14,8 @@ export default function PlatformFooter() {
           <a href="/docs">How it works</a>
           <a href="/signup">Open a shop</a>
           <a href="/login">Sign in</a>
+          <a href="/terms">Terms</a>
+          <a href="/privacy">Privacy</a>
         </nav>
         <p className="footer__fine">
           Payments are processed by Paystack. Seller funds settle directly to the seller&rsquo;s

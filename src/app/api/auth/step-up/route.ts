@@ -41,7 +41,9 @@ export async function POST(request: NextRequest) {
       userAgent: requestUserAgent(request),
     });
 
-    if (!valid) throw new AuthenticationError('That password is not right');
+    // A 401 here means "wrong password", not "signed out", and the client
+    // shows the public message, so it has to say so.
+    if (!valid) throw new AuthenticationError('Step-up password mismatch', 'That password isn’t right. Try again.');
 
     await markReauthenticated(session.sessionId);
     return ok({ confirmed: true });

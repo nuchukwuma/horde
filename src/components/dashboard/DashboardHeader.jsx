@@ -9,15 +9,23 @@ import SignOutButton from '@/components/auth/SignOutButton';
  * link stays visible without widening the page.
  */
 
+// [key, path, label, shown when] — `modules` is the site's on/off switches.
 const LINKS = [
   ['overview', '', 'Overview'],
+  ['products', '/products', 'Products', (m) => m.store],
+  ['orders', '/orders', 'Orders', (m) => m.store],
+  ['messages', '/messages', 'Messages', (m) => m.store],
+  ['content', '/content', 'Blog & work', (m) => m.blog || m.portfolio],
   ['design', '/design', 'Design'],
-  ['messages', '/messages', 'Messages'],
+  ['payouts', '/payouts', 'Payouts', (m) => m.store],
   ['address', '/address', 'Address'],
   ['billing', '/billing', 'Plan'],
 ];
 
-export default function DashboardHeader({ siteId, current, storeUrl }) {
+export default function DashboardHeader({ siteId, current, storeUrl, modules = null }) {
+  // Without the site's modules every link shows; a page that has them hides
+  // the ones that would lead to a switched-off part of the site.
+  const shown = LINKS.filter(([, , , when]) => !when || !modules || when(modules));
   return (
     <header className="masthead dash-head">
       <div className="container masthead__inner dash-head__inner">
@@ -25,7 +33,7 @@ export default function DashboardHeader({ siteId, current, storeUrl }) {
           HordeMart
         </a>
         <nav className="nav dash-nav" aria-label="Dashboard">
-          {LINKS.map(([key, path, label]) => (
+          {shown.map(([key, path, label]) => (
             <a key={key} href={`/dashboard/${siteId}${path}`} aria-current={current === key ? 'page' : undefined}>
               {label}
             </a>

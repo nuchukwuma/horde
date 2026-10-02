@@ -42,8 +42,13 @@ export class AuthenticationError extends AppError {
 }
 
 export class ForbiddenError extends AppError {
-  constructor(message = 'Insufficient permissions') {
-    super(403, 'forbidden', message, { publicMessage: 'You do not have access to this resource' });
+  /**
+   * Generic by default, so a refusal says nothing about what exists. Pass a
+   * `publicMessage` only where the person can act on the reason — "confirm
+   * your email first" — and it names nothing they could not already see.
+   */
+  constructor(message = 'Insufficient permissions', publicMessage = 'You do not have access to this resource') {
+    super(403, 'forbidden', message, { publicMessage });
   }
 }
 

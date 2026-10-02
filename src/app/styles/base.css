@@ -1025,3 +1025,61 @@ table.data th.num {
   margin: 8px auto 24px;
   color: var(--text-secondary);
 }
+
+/* Single-column auth pages: forgot / reset password. */
+.auth-simple {
+  max-width: 480px;
+  padding-block: 48px 72px;
+}
+
+.auth-simple .card {
+  margin-top: 18px;
+}
+
+.auth__forgot {
+  font-size: 13.5px;
+  margin-bottom: 7px;
+}
+
+/* ---------- Legal pages ---------- */
+
+.legal {
+  padding-block: 40px 72px;
+  max-width: 760px;
+  line-height: 1.65;
+}
+
+.legal h1 {
+  font-size: clamp(30px, 5vw, 42px);
+  margin-bottom: 4px;
+}
+
+.legal h2 {
+  font-size: 20px;
+  margin: 32px 0 8px;
+  scroll-margin-top: 90px;
+}
+
+.legal ul {
+  padding-left: 1.2em;
+}
+
+.legal li + li {
+  margin-top: 6px;
+}
+
+.legal .alert {
+  margin: 16px 0 8px;
+}
+
+.legal__updated,
+.legal__contact {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.legal hr {
+  margin: 36px 0 16px;
+  border: 0;
+  border-top: 1px solid var(--border);
+}

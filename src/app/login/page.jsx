@@ -97,9 +97,14 @@ export default function LoginPage() {
               </div>
 
               <div className="field">
-                <label className="label" htmlFor="password">
-                  Password
-                </label>
+                <div className="row row--between">
+                  <label className="label" htmlFor="password">
+                    Password
+                  </label>
+                  <a className="auth__forgot" href="/forgot-password">
+                    Forgot password?
+                  </a>
+                </div>
                 <input
                   id="password"
                   name="password"

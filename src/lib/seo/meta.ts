@@ -47,6 +47,19 @@ export function platformOrigin(rootDomain = process.env.ROOT_DOMAIN): string {
 }
 
 /**
+ * The dashboard host's origin, from APP_HOST — for links in emails.
+ *
+ * Never from the request: a Host header is whatever the client sent, and a
+ * link built from it lets anyone who can trigger an email (a password reset)
+ * point the recipient's link at a server they control.
+ */
+export function appOrigin(appHost = process.env.APP_HOST): string {
+  if (!appHost) throw new Error('APP_HOST is not configured; refusing to build an email link');
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+  return `${protocol}://${appHost}`;
+}
+
+/**
  * An absolute, self-consistent canonical URL.
  *
  * Always built from the site's own origin, so a post reachable at both the

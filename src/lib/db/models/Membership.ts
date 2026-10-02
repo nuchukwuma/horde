@@ -17,6 +17,7 @@ export type StaffPermission =
   | 'products:write'
   | 'orders:read'
   | 'orders:refund'
+  | 'orders:fulfil'
   | 'content:write'
   | 'settings:write'
   | 'payouts:read';
@@ -44,6 +45,7 @@ const membershipSchema = new Schema<MembershipAttributes>(
         'products:write',
         'orders:read',
         'orders:refund',
+        'orders:fulfil',
         'content:write',
         'settings:write',
         'payouts:read',

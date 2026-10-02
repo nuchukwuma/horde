@@ -11,6 +11,7 @@ import type { NextRequest } from 'next/server';
 import { ensureDatabase, requireSession } from '@/lib/http/context';
 import { ok, toErrorResponse } from '@/lib/http/respond';
 import { issueEmailVerification } from '@/lib/auth/emailVerification';
+import { appOrigin } from '@/lib/seo/meta';
 import { clientIdentifier, enforceRateLimit } from '@/lib/ratelimit';
 import { ConflictError } from '@/lib/errors';
 
@@ -33,10 +34,9 @@ export async function POST(request: NextRequest) {
       throw new ConflictError('That address is already confirmed.');
     }
 
-    const appOrigin = new URL(request.url).origin;
     const { delivery } = await issueEmailVerification({
       user: session.user,
-      appOrigin,
+      appOrigin: appOrigin(),
     });
 
     // Reported so a developer can tell a console-printed link from a sent one.

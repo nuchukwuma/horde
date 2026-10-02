@@ -99,6 +99,7 @@ npm run dev:webpack # Same, on webpack — fallback if Turbopack misbehaves
 npm test            # Unit suite; integration suites skip without a database
 npm run typecheck   # tsc --noEmit
 npm run verify      # typecheck + lint + test — run before every commit
+npm run make-admin -- someone@example.com   # platform admin (/admin); --revoke to undo
 ```
 
 Integration tests need a real MongoDB:

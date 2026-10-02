@@ -33,6 +33,9 @@ export type AuditAction =
   | 'user.step_up'
   | 'user.step_up.failed'
   | 'user.password.changed'
+  /** A reset link was emailed; and the password was then reset from it. */
+  | 'user.password_reset.requested'
+  | 'user.password_reset.completed'
   | 'membership.granted'
   | 'membership.revoked'
   | 'order.refunded'

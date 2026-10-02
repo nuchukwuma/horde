@@ -1,5 +1,6 @@
 /**
- * Single-use, expiring tokens sent by email.
+ * Single-use, expiring tokens sent by email: address verification, and
+ * password reset.
  *
  * Only a SHA-256 digest is stored, exactly as for sessions: a database dump
  * must not hand over the ability to verify someone else's address. SHA-256
@@ -12,7 +13,7 @@
 import mongoose, { Schema, type Model, type Types } from 'mongoose';
 import type { Timestamps } from './timestamps';
 
-export type VerificationPurpose = 'email';
+export type VerificationPurpose = 'email' | 'password_reset';
 
 export interface VerificationTokenAttributes extends Timestamps {
   _id: Types.ObjectId;
@@ -34,7 +35,7 @@ const verificationTokenSchema = new Schema<VerificationTokenAttributes>(
   {
     tokenHash: { type: String, required: true, unique: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    purpose: { type: String, required: true, enum: ['email'], default: 'email' },
+    purpose: { type: String, required: true, enum: ['email', 'password_reset'], default: 'email' },
     email: { type: String, required: true, lowercase: true, trim: true, maxlength: 320 },
     expiresAt: { type: Date, required: true },
     consumedAt: { type: Date, default: null },

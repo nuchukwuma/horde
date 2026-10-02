@@ -39,7 +39,7 @@ export default async function MessagesPage({ params }) {
 
   return (
     <div className="shell">
-      <DashboardHeader siteId={siteId} current="messages" storeUrl={siteOrigin(site)} />
+      <DashboardHeader siteId={siteId} current="messages" storeUrl={siteOrigin(site)} modules={site.modules} />
 
       <main className="container" style={{ paddingBlock: '28px 64px', maxWidth: 760 }}>
         <h1 style={{ fontSize: 22, marginBottom: 18 }}>Messages</h1>

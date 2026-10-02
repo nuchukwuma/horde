@@ -58,7 +58,7 @@ export default async function BillingPage({ params, searchParams }) {
 
   return (
     <div className="shell">
-      <DashboardHeader siteId={siteId} current="billing" storeUrl={siteOrigin(site)} />
+      <DashboardHeader siteId={siteId} current="billing" storeUrl={siteOrigin(site)} modules={site.modules} />
       <main className="container" style={{ paddingBlock: '40px 64px', maxWidth: 960 }}>
         <h1 style={{ fontSize: 28, marginBottom: 6 }}>Plan and billing</h1>
         <p className="secondary" style={{ marginTop: 0 }}>

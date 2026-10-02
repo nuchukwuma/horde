@@ -22,6 +22,8 @@ export default async function DashboardIndex() {
 
   const membership = await Membership.findOne({ userId: session.user._id }).sort({ createdAt: 1 }).lean();
   if (membership) redirect(`/dashboard/${membership.siteId}`);
+  // A platform admin with no store of their own lands on the admin panel.
+  if (session.user.platformRole === 'admin') redirect('/admin');
 
   return (
     <div className="shell">

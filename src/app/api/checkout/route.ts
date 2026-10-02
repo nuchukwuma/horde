@@ -56,6 +56,8 @@ export async function POST(request: NextRequest) {
       customerEmail: shopper?.customer.email ?? body.customerEmail,
       customerName: shopper?.customer.name ?? body.customerName,
       customerId: shopper?.customer._id ?? null,
+      customerPhone: body.customerPhone,
+      delivery: body.delivery,
       // Back to THIS store's receipt page. It used to be one global
       // CHECKOUT_CALLBACK_URL, which cannot be right for more than one store:
       // every shopper would land on the same address whichever shop they paid.

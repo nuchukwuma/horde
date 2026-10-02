@@ -9,7 +9,7 @@
 import type { NextRequest } from 'next/server';
 import { requireSession } from '@/lib/http/context';
 import { ok, toErrorResponse } from '@/lib/http/respond';
-import { requireSiteOwner } from '@/lib/auth/guards';
+import { requireOwnerMembership } from '@/lib/auth/guards';
 import { assertRecentlyAuthenticated } from '@/lib/auth/session';
 import { enforceRateLimit } from '@/lib/ratelimit';
 import { verifyPayoutAccount } from '@/lib/onboarding/payout';
@@ -27,7 +27,7 @@ export async function POST(
 
     // Payout details decide where money goes, so only the owner touches them
     // and only with a freshly confirmed password.
-    await requireSiteOwner(session, siteId);
+    await requireOwnerMembership(session, siteId);
     assertRecentlyAuthenticated(session);
 
     // Keyed by site, not IP: this spends Paystack quota and an unthrottled

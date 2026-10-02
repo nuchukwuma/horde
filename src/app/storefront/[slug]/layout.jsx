@@ -119,7 +119,8 @@ export default async function StorefrontLayout({ children, params }) {
           <div>
             <p className="store-footer__name">{site.name}</p>
             <p className="muted" style={{ margin: '4px 0 0' }}>
-              © {new Date().getFullYear()} · Payments secured by Paystack
+              © {new Date().getFullYear()} · Payments secured by Paystack ·{' '}
+              <a href={`${platformOrigin()}/privacy#shoppers`}>Privacy</a>
             </p>
             {socialLinks.length > 0 ? (
               <ul className="store-footer__socials" aria-label={`${site.name} on social media`}>
