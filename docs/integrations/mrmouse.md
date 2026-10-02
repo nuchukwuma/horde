@@ -135,8 +135,18 @@ X-HordeMart-Signature: t=<unix seconds>,v1=<hex HMAC-SHA256(secret, "<t>.<raw bo
 - **Deduplicate on `orderNumber`**: it is unique per store; a message can arrive
   twice.
 - Contains no customer details and no amounts — only what left the shelf.
-- Answer 2xx quickly. HordeMart sends once with a 5-second timeout and does
-  not retry; MrMouse's next stock push corrects any lost message.
+- Answer 2xx only once the sale is recorded. Anything else (or no answer
+  within 5 seconds) is retried: after 1 min, 5 min, 15 min, 1 h, 3 h, 6 h,
+  12 h and 24 h, each time freshly signed. After that the store owner sees
+  the sale as "didn't reach MrMouse" with a Try again button. Because of
+  the retries, deduplicating on `(siteId, orderNumber)` is required.
+- Until a sale is confirmed, HordeMart takes its units off any stock count
+  MrMouse sends (and off counts MrMouse took before it was delivered), so a
+  push cannot put sold items back on the shelf.
+- Retries run after each new sale and each stock message from that store,
+  and from `GET /api/cron/mrmouse-sales` (`Authorization: Bearer
+  $CRON_SECRET`) or `npm run mrmouse:retry` — schedule one of those every
+  few minutes.
 
 ## Security checklist for MrMouse
 

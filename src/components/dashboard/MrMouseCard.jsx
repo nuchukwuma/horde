@@ -19,7 +19,7 @@ async function send(url, method, body) {
   return result.data;
 }
 
-export default function MrMouseCard({ siteId, isOwner, initial, launchAvailable, syncAvailable, androidUrl, iosUrl, emailVerified }) {
+export default function MrMouseCard({ siteId, isOwner, initial, initialBacklog = null, launchAvailable, syncAvailable, androidUrl, iosUrl, emailVerified }) {
   const [state, setState] = useState(initial);
   const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(null);
@@ -50,6 +50,9 @@ export default function MrMouseCard({ siteId, isOwner, initial, launchAvailable,
     run('disconnect', async () => setState(await send(base, 'PATCH', { connect: false })));
   };
   const toggleSync = (on) => run('sync', async () => setState(await send(base, 'PATCH', { stockSync: on })));
+  // Sales HordeMart is still trying to tell MrMouse about (owner only).
+  const [backlog, setBacklog] = useState(initialBacklog);
+  const retrySales = () => run('retry', async () => setBacklog(await send(`${base}/sales`, 'POST')));
 
   const downloads =
     androidUrl || iosUrl ? (
@@ -165,6 +168,23 @@ export default function MrMouseCard({ siteId, isOwner, initial, launchAvailable,
             ) : (
               <span className="badge">Coming soon</span>
             )}
+            {backlog?.failed > 0 ? (
+              <div className="alert alert--warning" role="alert" style={{ marginTop: 14 }}>
+                <span className="alert__icon" aria-hidden="true">!</span>
+                <span>
+                  {backlog.failed === 1 ? '1 sale' : `${backlog.failed} sales`} didn’t reach MrMouse after two days of
+                  trying ({backlog.failedOrders.join(', ')}). Your stock here already counts them; MrMouse doesn’t yet.{' '}
+                  <button type="button" className="btn btn--sm" onClick={retrySales} disabled={busy !== null}>
+                    {busy === 'retry' ? 'Sending…' : 'Try again'}
+                  </button>
+                </span>
+              </div>
+            ) : backlog?.pending > 0 ? (
+              <p className="hint" style={{ marginBottom: 0 }}>
+                {backlog.pending === 1 ? '1 recent sale is' : `${backlog.pending} recent sales are`} on the way to
+                MrMouse. We keep trying until it confirms.
+              </p>
+            ) : null}
           </section>
 
           {isOwner ? (

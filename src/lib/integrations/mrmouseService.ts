@@ -14,7 +14,8 @@ import { recordAudit } from '../audit';
 import { runWithoutTenantScope, runWithTenant } from '../tenant/context';
 import { siteOrigin } from '../seo/meta';
 import type { AuthenticatedSession } from '../auth/session';
-import { canLaunch, canSync, launchUrl, mrmouseConfig, signBody, signHandoffToken, type MrMouseConfig } from './mrmouse';
+import { canLaunch, canSync, launchUrl, mrmouseConfig, signHandoffToken, type MrMouseConfig } from './mrmouse';
+import { queueMrMouseSale, salesMrMouseHasNotCounted } from './mrmouseSales';
 
 /**
  * Connected means: the owner agreed, to the *current* connection terms. When
@@ -166,6 +167,10 @@ export interface StockLine {
  * Quantity only, and it switches stock counting on for that product. A line
  * older than the last one applied (`sentAt` is MrMouse's clock) is skipped,
  * so a delayed or replayed message cannot put back yesterday's numbers.
+ *
+ * MrMouse's count cannot include sales it has not received yet (still being
+ * retried, or delivered after it counted), so those units are taken off what
+ * it sends — otherwise its push would put sold items back on the shelf.
  */
 export async function applyMrMouseStock(
   site: SiteDocument,
@@ -178,8 +183,10 @@ export async function applyMrMouseStock(
     let updated = 0;
     let stale = 0;
     const unknownSkus: string[] = [];
+    const notYetCounted = await salesMrMouseHasNotCounted(sentAt);
 
     for (const line of lines) {
+      const quantity = Math.max(0, line.quantity - (notYetCounted.get(line.sku) ?? 0));
       // updateMany: a SKU shared by two listings (one colour, two pages) moves both.
       const result = await Product.updateMany(
         {
@@ -187,7 +194,7 @@ export async function applyMrMouseStock(
           status: { $ne: 'archived' },
           $or: [{ 'inventory.syncedAt': null }, { 'inventory.syncedAt': { $lt: sentAt } }],
         },
-        { $set: { 'inventory.quantity': line.quantity, 'inventory.track': true, 'inventory.syncedAt': sentAt } },
+        { $set: { 'inventory.quantity': quantity, 'inventory.track': true, 'inventory.syncedAt': sentAt } },
       );
       if (result.matchedCount > 0) {
         updated += result.matchedCount;
@@ -204,8 +211,8 @@ export async function applyMrMouseStock(
 
 /**
  * Tell MrMouse a paid order took stock: SKUs and quantities, nothing about
- * the buyer and no amounts. Best effort — the sale is already recorded, and
- * MrMouse can reconcile from its next stock push if a message is lost.
+ * the buyer and no amounts. Queued and retried until MrMouse confirms it
+ * (./mrmouseSales.ts). Never throws — the sale itself is already recorded.
  */
 export async function sendMrMouseSale(order: OrderAttributes, config: MrMouseConfig = mrmouseConfig()): Promise<void> {
   if (!canSync(config)) return;
@@ -224,23 +231,18 @@ export async function sendMrMouseSale(order: OrderAttributes, config: MrMouseCon
     const items = order.items
       .map((item) => ({ sku: skuById.get(String(item.productId)), quantity: item.quantity }))
       .filter((item): item is { sku: string; quantity: number } => Boolean(item.sku));
-    if (items.length === 0) return;
 
-    const body = JSON.stringify({
-      event: 'order.paid',
-      siteId: String(site._id),
-      orderNumber: order.orderNumber,
-      paidAt: new Date(order.paystack?.paidAt ?? Date.now()).toISOString(),
-      items,
-    });
-    const response = await fetch(`${config.apiUrl}/integrations/hordemart/sales`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-HordeMart-Signature': signBody(body, config.webhookSecret as string) },
-      body,
-      signal: AbortSignal.timeout(5_000),
-    });
-    if (!response.ok) console.error('[mrmouse] sale event refused', response.status, order.orderNumber);
+    await queueMrMouseSale(
+      {
+        siteId: site._id,
+        orderId: order._id,
+        orderNumber: order.orderNumber,
+        paidAt: new Date(order.paystack?.paidAt ?? Date.now()),
+        items,
+      },
+      { config },
+    );
   } catch {
-    console.error('[mrmouse] sale event not delivered', order.orderNumber);
+    console.error('[mrmouse] sale event not queued', order.orderNumber);
   }
 }

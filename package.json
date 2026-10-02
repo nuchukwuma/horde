@@ -21,7 +21,8 @@
     "doctor": "tsx --env-file=.env.local scripts/doctor.ts",
     "verify": "npm run typecheck && npm run lint && npm run test",
     "sync-indexes": "tsx --env-file=.env.local scripts/sync-indexes.ts",
-    "make-admin": "tsx --env-file=.env.local scripts/make-admin.ts"
+    "make-admin": "tsx --env-file=.env.local scripts/make-admin.ts",
+    "mrmouse:retry": "tsx --env-file=.env.local scripts/mrmouse-retry.ts"
   },
   "dependencies": {
     "@gsap/react": "2.1.2",
