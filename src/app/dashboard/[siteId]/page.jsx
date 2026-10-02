@@ -16,6 +16,7 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import { Product } from '@/lib/db/models/Product';
 import { countOrdersToSend } from '@/lib/orders/sellerOrders';
 import { getPublishedDesign } from '@/lib/design/published';
+import SiteSections from '@/components/dashboard/SiteSections';
 
 /**
  * Seller dashboard.
@@ -51,8 +52,9 @@ export default async function DashboardPage({ params }) {
   // Throws Forbidden if this user has no membership on this site, so one seller
   // cannot read another's revenue by editing the URL.
   let site;
+  let role;
   try {
-    ({ site } = await requireSiteAccess(session, siteId, ['owner', 'staff']));
+    ({ site, role } = await requireSiteAccess(session, siteId, ['owner', 'staff']));
   } catch {
     notFound();
   }
@@ -272,6 +274,9 @@ export default async function DashboardPage({ params }) {
             </div>
           )}
         </section>
+        {role === 'owner' ? (
+          <SiteSections siteId={siteId} initial={{ blog: site.modules.blog, portfolio: site.modules.portfolio }} />
+        ) : null}
       </main>
     </div>
   );
