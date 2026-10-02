@@ -10,7 +10,8 @@ import type { NextRequest } from 'next/server';
 import { requirePublicSite } from '@/lib/http/context';
 import { toErrorResponse } from '@/lib/http/respond';
 import { withSite } from '@/lib/tenant/loadSite';
-import { buildSitemap, type SitemapEntry } from '@/lib/seo/sitemap';
+import { buildPlatformSitemap, buildSitemap, type SitemapEntry } from '@/lib/seo/sitemap';
+import { TENANT_HOST_HEADER } from '@/lib/tenant/headers';
 import { Post } from '@/lib/db/models/Post';
 import { Project } from '@/lib/db/models/Project';
 import { Product } from '@/lib/db/models/Product';
@@ -29,6 +30,14 @@ const MAX_PER_TYPE = 5_000;
 
 export async function GET(request: NextRequest) {
   try {
+    // The marketing site's own pages. The app host has nothing to list.
+    if (request.headers.get(TENANT_HOST_HEADER) === 'apex') {
+      return new Response(buildPlatformSitemap(), {
+        status: 200,
+        headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' },
+      });
+    }
+
     const site = await requirePublicSite(request);
 
     const entries: SitemapEntry[] = [

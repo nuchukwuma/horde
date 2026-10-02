@@ -10,7 +10,7 @@
 
 import { randomBytes } from 'node:crypto';
 import type { Types } from 'mongoose';
-import { Order, type OrderItem } from '../db/models/Order';
+import { Order, type OrderDelivery, type OrderItem } from '../db/models/Order';
 import { Plan } from '../db/models/Plan';
 import { Product } from '../db/models/Product';
 import type { SiteDocument } from '../db/models/Site';
@@ -31,6 +31,9 @@ export interface CheckoutInput {
   items: CartLine[];
   customerEmail: string;
   customerName?: string;
+  /** Normalised +234XXXXXXXXXX (checkoutSchema). */
+  customerPhone?: string;
+  delivery?: OrderDelivery | null;
   /**
    * Set only when a signed-in shopper is checking out. Null for a guest, which
    * is the normal case and always will be — an account is never required to
@@ -108,6 +111,19 @@ export async function createCheckout(
       customerId: input.customerId ?? null,
       customerEmail: input.customerEmail,
       customerName: input.customerName,
+      customerPhone: input.customerPhone,
+      // Copied field by field: only what the method needs is kept.
+      delivery: input.delivery
+        ? input.delivery.method === 'delivery'
+          ? {
+              method: 'delivery',
+              address: input.delivery.address,
+              city: input.delivery.city,
+              state: input.delivery.state,
+              note: input.delivery.note || undefined,
+            }
+          : { method: 'pickup', note: input.delivery.note || undefined }
+        : null,
       items,
       subtotalKobo,
       shippingKobo: 0,
@@ -192,7 +208,8 @@ async function buildOrderItems(
   });
 
   if (products.length !== quantities.size) {
-    throw new NotFoundError('One or more items in your cart is no longer available');
+    // ConflictError, not NotFoundError: that would read "… not found" twice over.
+    throw new ConflictError('Something in your basket is no longer for sale. Refresh the page and try again.');
   }
 
   const items: OrderItem[] = [];

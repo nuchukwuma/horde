@@ -11,6 +11,10 @@ import RevenueChart from '@/components/charts/RevenueChart';
 import { formatNaira, formatDateTime } from '@/lib/ui/format';
 import { siteOrigin } from '@/lib/seo/meta';
 import StoreLink from '@/components/dashboard/StoreLink';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import { Product } from '@/lib/db/models/Product';
+import { countOrdersToSend } from '@/lib/orders/sellerOrders';
+import { getPublishedDesign } from '@/lib/design/published';
 
 /**
  * Seller dashboard.
@@ -52,11 +56,26 @@ export default async function DashboardPage({ params }) {
   }
   if (!site) notFound();
 
-  const { summary, page, series } = await withSite(site, async () => ({
+  const { summary, page, series, productCount, toSend } = await withSite(site, async () => ({
     summary: await dashboardSummary(),
     page: await listTransactions({ limit: 12 }),
     series: await dailyRevenue(30),
+    productCount: site.modules.store ? await Product.countDocuments({ status: 'active' }) : 0,
+    toSend: site.modules.store ? await countOrdersToSend() : 0,
   }));
+  const designed = Boolean(await getPublishedDesign(String(site._id), site.slug));
+
+  // What a new seller still has to do before their first sale. Shown until
+  // every step is done, then never again.
+  const steps = [
+    { done: Boolean(session.user.emailVerifiedAt), label: 'Confirm your email address', href: `/dashboard/${siteId}/payouts` },
+    { done: site.payout?.status === 'verified', label: 'Add the bank account you want to be paid into', href: `/dashboard/${siteId}/payouts` },
+    ...(site.modules.store
+      ? [{ done: productCount > 0, label: 'Add your first product', href: `/dashboard/${siteId}/products/new` }]
+      : []),
+    { done: designed, label: 'Make your site look like yours, then publish it', href: `/dashboard/${siteId}/design` },
+  ];
+  const remaining = steps.filter((step) => !step.done).length;
 
   const gate = site.canAcceptPayments();
 
@@ -71,25 +90,7 @@ export default async function DashboardPage({ params }) {
         Skip to content
       </a>
 
-      <header className="masthead">
-        <div className="container masthead__inner">
-          <a className="brand" href="/">
-            HordeMart
-          </a>
-          <nav className="nav" aria-label="Dashboard">
-            <a href={`/dashboard/${siteId}`} aria-current="page">
-              Overview
-            </a>
-            <a href={`/dashboard/${siteId}/design`}>Design</a>
-            <a href={`/dashboard/${siteId}/messages`}>Messages</a>
-            <a href={`/dashboard/${siteId}/address`}>Address</a>
-            <a href={`/dashboard/${siteId}/billing`}>Plan</a>
-            <a href={storeUrl} target="_blank" rel="noopener noreferrer">
-              View store ↗
-            </a>
-          </nav>
-        </div>
-      </header>
+      <DashboardHeader siteId={siteId} current="overview" storeUrl={storeUrl} modules={site.modules} />
 
       <main id="main" className="container" style={{ paddingBlock: '28px 64px' }}>
         <div className="row row--between" style={{ marginBottom: 20, flexWrap: 'wrap' }}>
@@ -112,12 +113,56 @@ export default async function DashboardPage({ params }) {
           <StoreLink url={storeUrl} />
         </div>
 
+        {remaining > 0 ? (
+          <section className="card setup" style={{ marginBottom: 20 }} aria-labelledby="setup-title">
+            <h2 id="setup-title" style={{ fontSize: 17, margin: '0 0 4px' }}>
+              Get ready to sell
+            </h2>
+            <p className="secondary" style={{ margin: '0 0 12px', fontSize: 14 }}>
+              {steps.length - remaining} of {steps.length} done.
+            </p>
+            <ol className="setup__steps">
+              {steps.map((step) => (
+                <li key={step.label} className={step.done ? 'setup__step setup__step--done' : 'setup__step'}>
+                  <span className="setup__mark" aria-hidden="true">
+                    {step.done ? '✓' : ''}
+                  </span>
+                  {step.done ? (
+                    <span>
+                      {step.label} <span className="visually-hidden">(done)</span>
+                    </span>
+                  ) : (
+                    <a href={step.href}>{step.label}</a>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </section>
+        ) : null}
+
+        {toSend > 0 ? (
+          <a className="alert alert--info to-send" href={`/dashboard/${siteId}/orders`} style={{ marginBottom: 20 }}>
+            <span className="alert__icon" aria-hidden="true">▲</span>
+            <span>
+              <strong>
+                {toSend} paid order{toSend === 1 ? '' : 's'} to send.
+              </strong>{' '}
+              See who bought what and where it goes →
+            </span>
+          </a>
+        ) : null}
+
         {!gate.allowed ? (
           <div className="card" style={{ marginBottom: 20, borderColor: 'var(--warning)' }}>
             <strong>This store cannot take payments yet.</strong>
             <p style={{ color: 'var(--text-secondary)', margin: '6px 0 0', fontSize: 14 }}>
               {explain(gate.reason)}
             </p>
+            {['payout_not_verified', 'no_subaccount'].includes(gate.reason) ? (
+              <a className="btn btn--primary btn--sm" href={`/dashboard/${siteId}/payouts`} style={{ marginTop: 12 }}>
+                Add bank details
+              </a>
+            ) : null}
           </div>
         ) : null}
 

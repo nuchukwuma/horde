@@ -51,6 +51,19 @@ export interface OrderSplit {
   sellerNetKobo: number;
 }
 
+/**
+ * Where to send the order. Personal data under the NDPA: shown to this
+ * store's seller (and platform support), never to anyone else, and the
+ * address is only stored when the shopper asked for delivery.
+ */
+export interface OrderDelivery {
+  method: 'delivery' | 'pickup';
+  address?: string;
+  city?: string;
+  state?: string;
+  note?: string;
+}
+
 export interface OrderAttributes extends Timestamps {
   _id: Types.ObjectId;
   siteId: Types.ObjectId;
@@ -58,6 +71,11 @@ export interface OrderAttributes extends Timestamps {
   customerId?: Types.ObjectId | null;
   customerEmail: string;
   customerName?: string;
+  /** +234XXXXXXXXXX. Absent on orders placed before checkout asked for it. */
+  customerPhone?: string;
+  delivery?: OrderDelivery | null;
+  /** When the seller marked it sent or collected. Null until then. */
+  fulfilledAt?: Date | null;
   items: OrderItem[];
   subtotalKobo: number;
   shippingKobo: number;
@@ -86,6 +104,21 @@ const orderSchema = new Schema<OrderAttributes>(
     customerId: { type: Schema.Types.ObjectId, ref: 'Customer', default: null },
     customerEmail: { type: String, required: true, lowercase: true, trim: true, maxlength: 320 },
     customerName: { type: String, trim: true, maxlength: 200 },
+    customerPhone: { type: String, trim: true, maxlength: 20 },
+    delivery: {
+      type: new Schema(
+        {
+          method: { type: String, required: true, enum: ['delivery', 'pickup'] },
+          address: { type: String, trim: true, maxlength: 300 },
+          city: { type: String, trim: true, maxlength: 100 },
+          state: { type: String, trim: true, maxlength: 40 },
+          note: { type: String, trim: true, maxlength: 500 },
+        },
+        { _id: false },
+      ),
+      default: null,
+    },
+    fulfilledAt: { type: Date, default: null },
     items: {
       type: [
         {

@@ -8,6 +8,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { resolveHost } from './lib/tenant/resolveHost';
+import { platformRedirect } from './lib/tenant/platformRoutes';
 import {
   STOREFRONT_PATH_PREFIX,
   TENANT_CUSTOM_DOMAIN_HEADER,
@@ -69,6 +70,17 @@ export function middleware(request: NextRequest): NextResponse {
       new NextResponse('Server misconfigured', { status: 500 }),
       policyFor('invalid', nonce),
     );
+  }
+
+  // www → apex; sign-in, sign-up and the dashboard → the app host; the app
+  // host's front door → the dashboard (lib/tenant/platformRoutes.ts). 307,
+  // so a POST that lands on the wrong host is replayed, not turned into GET.
+  const moved = platformRedirect(request.headers.get('host'), request.nextUrl.pathname, { rootDomain, appHost });
+  if (moved) {
+    const url = request.nextUrl.clone();
+    url.host = moved.host;
+    url.pathname = moved.pathname;
+    return withCsp(NextResponse.redirect(url, 307), policyFor('apex', nonce));
   }
 
   const requestHeaders = new Headers(request.headers);

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ProductArt from '@/components/art/ProductArt';
 import { formatNaira } from '@/lib/ui/format';
+import { NIGERIAN_STATES, normaliseNigerianPhone } from '@/lib/shop/nigeria';
 import { getCart, onCartChange, removeFromCart, setQuantity } from './cart';
 
 /**
@@ -10,8 +11,10 @@ import { getCart, onCartChange, removeFromCart, setQuantity } from './cart';
  *
  * Every figure on this page comes from /api/shop/cart/quote — the database's
  * prices, not anything stored in the browser — and checkout prices the order
- * again from scratch. The shopper's email is the only thing they type that
- * matters, and a signed-in shopper's address comes from their account.
+ * again from scratch. What the shopper types is who they are and where the
+ * order goes — email for the receipt, name and phone so the seller can reach
+ * them, and an address unless they are collecting it themselves. A signed-in
+ * shopper's email comes from their account.
  */
 
 const BLOCKED_COPY = {
@@ -22,13 +25,20 @@ const BLOCKED_COPY = {
   site_not_active: 'This shop is not taking orders right now.',
 };
 
-export default function CartView({ storeName, shopper }) {
+export default function CartView({ storeName, shopper, privacyUrl = '/privacy' }) {
   const [lines, setLines] = useState(null);
   const [quote, setQuote] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState(null);
   const [email, setEmail] = useState(shopper?.email ?? '');
   const [name, setName] = useState(shopper?.name ?? '');
+  const [phone, setPhone] = useState('');
+  const [method, setMethod] = useState('delivery');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [region, setRegion] = useState('');
+  const [note, setNote] = useState('');
+  const [phoneError, setPhoneError] = useState(null);
   const [error, setError] = useState(null);
   const [paying, setPaying] = useState(false);
   const seq = useRef(0);
@@ -79,6 +89,12 @@ export default function CartView({ storeName, shopper }) {
   async function checkout(event) {
     event.preventDefault();
     setError(null);
+    if (!normaliseNigerianPhone(phone)) {
+      setPhoneError('Enter a Nigerian mobile number, like 0803 123 4567.');
+      document.getElementById('checkout-phone')?.focus();
+      return;
+    }
+    setPhoneError(null);
     setPaying(true);
 
     try {
@@ -86,11 +102,21 @@ export default function CartView({ storeName, shopper }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // Ids and quantities only. Any price here would be ignored anyway.
-        body: JSON.stringify({ items: lines, customerEmail: email, customerName: name || undefined }),
+        body: JSON.stringify({
+          items: lines,
+          customerEmail: email,
+          customerName: name.trim(),
+          customerPhone: phone,
+          delivery:
+            method === 'delivery'
+              ? { method, address, city, state: region, note: note.trim() || undefined }
+              : { method, note: note.trim() || undefined },
+        }),
       });
       const body = await response.json();
       if (!response.ok) {
-        setError(body?.error?.message ?? 'Could not start checkout');
+        const detail = Array.isArray(body?.error?.details) ? body.error.details[0]?.message : null;
+        setError(detail ?? body?.error?.message ?? 'Could not start checkout');
         setPaying(false);
         refresh(getCart());
         return;
@@ -249,16 +275,130 @@ export default function CartView({ storeName, shopper }) {
 
           <div className="field">
             <label className="label" htmlFor="checkout-name">
-              Your name <span className="muted">(optional)</span>
+              Your name
             </label>
             <input
               id="checkout-name"
               className="input"
               autoComplete="name"
+              minLength={2}
               maxLength={200}
+              required
               value={name}
               readOnly={Boolean(shopper?.name)}
               onChange={(event) => setName(event.target.value)}
+            />
+          </div>
+
+          <div className="field">
+            <label className="label" htmlFor="checkout-phone">
+              Phone number
+            </label>
+            <input
+              id="checkout-phone"
+              type="tel"
+              className="input"
+              autoComplete="tel"
+              inputMode="tel"
+              placeholder="0803 123 4567"
+              maxLength={24}
+              required
+              value={phone}
+              aria-invalid={phoneError ? 'true' : undefined}
+              aria-describedby="checkout-phone-hint"
+              onChange={(event) => {
+                setPhone(event.target.value);
+                if (phoneError) setPhoneError(null);
+              }}
+            />
+            <p id="checkout-phone-hint" className={`hint${phoneError ? ' hint--error' : ''}`}>
+              {phoneError ?? `So ${storeName} can reach you about delivery.`}
+            </p>
+          </div>
+
+          <fieldset className="field cart__method">
+            <legend className="label">How you’ll get it</legend>
+            <label className="checkbox">
+              <input type="radio" name="delivery-method" value="delivery" checked={method === 'delivery'} onChange={() => setMethod('delivery')} />
+              <span>Deliver it to me</span>
+            </label>
+            <label className="checkbox">
+              <input type="radio" name="delivery-method" value="pickup" checked={method === 'pickup'} onChange={() => setMethod('pickup')} />
+              <span>I’ll collect it, or nothing needs delivering</span>
+            </label>
+          </fieldset>
+
+          {method === 'delivery' ? (
+            <>
+              <div className="field">
+                <label className="label" htmlFor="checkout-address">
+                  Delivery address
+                </label>
+                <input
+                  id="checkout-address"
+                  className="input"
+                  autoComplete="street-address"
+                  placeholder="House number, street, area"
+                  minLength={5}
+                  maxLength={300}
+                  required
+                  value={address}
+                  onChange={(event) => setAddress(event.target.value)}
+                />
+              </div>
+              <div className="cart__row">
+                <div className="field">
+                  <label className="label" htmlFor="checkout-city">
+                    Town or city
+                  </label>
+                  <input
+                    id="checkout-city"
+                    className="input"
+                    autoComplete="address-level2"
+                    minLength={2}
+                    maxLength={100}
+                    required
+                    value={city}
+                    onChange={(event) => setCity(event.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label className="label" htmlFor="checkout-state">
+                    State
+                  </label>
+                  <select
+                    id="checkout-state"
+                    className="select"
+                    autoComplete="address-level1"
+                    required
+                    value={region}
+                    onChange={(event) => setRegion(event.target.value)}
+                  >
+                    <option value="">Choose</option>
+                    {NIGERIAN_STATES.map((state) => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </>
+          ) : null}
+
+          <div className="field">
+            <label className="label" htmlFor="checkout-note">
+              Note for {storeName} <span className="muted">(optional)</span>
+            </label>
+            <textarea
+              id="checkout-note"
+              className="textarea"
+              rows={2}
+              maxLength={500}
+              placeholder={method === 'delivery' ? 'Landmark, best time to call…' : 'When you’ll collect, sizes…'}
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              style={{ minHeight: 72 }}
             />
           </div>
 
@@ -279,6 +419,12 @@ export default function CartView({ storeName, shopper }) {
           <p className="cart__secure">
             <span aria-hidden="true">🔒</span> Card, bank transfer or USSD, via Paystack. Your payment goes to{' '}
             {storeName} directly.
+          </p>
+          <p className="cart__secure">
+            Your details go only to {storeName}, to get your order to you.{' '}
+            <a href={privacyUrl} target="_blank" rel="noopener">
+              Privacy
+            </a>
           </p>
           {!shopper ? (
             <p className="cart__secure">

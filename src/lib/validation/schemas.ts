@@ -8,6 +8,7 @@
  */
 
 import { z } from 'zod';
+import { NIGERIAN_STATES, normaliseNigerianPhone } from '../shop/nigeria';
 import {
   SLUG_MAX_LENGTH,
   SLUG_MIN_LENGTH,
@@ -45,6 +46,13 @@ export const signUpSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   name: z.string().trim().min(1).max(120),
+});
+
+export const passwordResetRequestSchema = z.object({ email: emailSchema });
+
+export const passwordResetSchema = z.object({
+  token: z.string().trim().min(16).max(200),
+  password: passwordSchema,
 });
 
 export const signInSchema = z.object({
@@ -199,6 +207,27 @@ export const siteBrandingSchema = z.object({
  * A request carrying a price is not rejected — the field simply does not exist
  * in this schema and is stripped.
  */
+/**
+ * Where the order goes. "pickup" is for shoppers collecting in person, and
+ * for stores that sell services or digital goods; the address is then not
+ * asked for, and not stored — personal data we do not need, we do not keep.
+ */
+export const deliverySchema = z.discriminatedUnion('method', [
+  z.object({
+    method: z.literal('delivery'),
+    address: z.string().trim().min(5, 'Enter the street address').max(300),
+    city: z.string().trim().min(2, 'Enter the town or city').max(100),
+    state: z.enum(NIGERIAN_STATES, { errorMap: () => ({ message: 'Choose a state' }) }),
+    note: z.string().trim().max(500).optional(),
+  }),
+  z.object({
+    method: z.literal('pickup'),
+    note: z.string().trim().max(500).optional(),
+  }),
+]);
+
+export type DeliveryInput = z.infer<typeof deliverySchema>;
+
 export const checkoutSchema = z.object({
   items: z
     .array(
@@ -210,7 +239,20 @@ export const checkoutSchema = z.object({
     .min(1, 'Your cart is empty')
     .max(100, 'Too many items in one order'),
   customerEmail: emailSchema,
-  customerName: z.string().trim().max(200).optional(),
+  customerName: z.string().trim().min(2, 'Enter your name').max(200),
+  customerPhone: z
+    .string()
+    .trim()
+    .max(24)
+    .transform((value, ctx) => {
+      const phone = normaliseNigerianPhone(value);
+      if (!phone) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Enter a Nigerian mobile number, like 0803 123 4567' });
+        return z.NEVER;
+      }
+      return phone;
+    }),
+  delivery: deliverySchema,
 });
 
 export type CheckoutInputBody = z.infer<typeof checkoutSchema>;
@@ -254,7 +296,9 @@ export const createProjectSchema = z.object({
   client: z.string().trim().max(200).optional(),
   role: z.string().trim().max(200).optional(),
   // http(s) only: a javascript: or data: URL here would be rendered as a link.
-  projectUrl: z.string().url().startsWith('http').max(2_000).optional(),
+  projectUrl: z
+    .union([z.string().trim().url().regex(/^https?:\/\//i, 'Use a web address starting with https://').max(2_000), z.literal('')])
+    .optional(),
   completedAt: z.string().datetime().optional(),
   tags: z.array(z.string().trim().max(40)).max(20).optional(),
   status: publishStatusSchema.optional(),

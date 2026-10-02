@@ -31,14 +31,24 @@ export class ValidationError extends AppError {
 }
 
 export class AuthenticationError extends AppError {
-  constructor(message = 'Authentication required') {
-    super(401, 'unauthenticated', message, { publicMessage: 'Authentication required' });
+  /**
+   * `publicMessage` defaults to the generic "Authentication required". Pass
+   * one only where the client needs more — a failed sign-in, which must say
+   * the details were wrong without saying which one.
+   */
+  constructor(message = 'Authentication required', publicMessage = 'Authentication required') {
+    super(401, 'unauthenticated', message, { publicMessage });
   }
 }
 
 export class ForbiddenError extends AppError {
-  constructor(message = 'Insufficient permissions') {
-    super(403, 'forbidden', message, { publicMessage: 'You do not have access to this resource' });
+  /**
+   * Generic by default, so a refusal says nothing about what exists. Pass a
+   * `publicMessage` only where the person can act on the reason — "confirm
+   * your email first" — and it names nothing they could not already see.
+   */
+  constructor(message = 'Insufficient permissions', publicMessage = 'You do not have access to this resource') {
+    super(403, 'forbidden', message, { publicMessage });
   }
 }
 

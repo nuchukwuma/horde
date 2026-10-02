@@ -29,9 +29,10 @@ export async function POST(
 
     // Which of this site's folders the upload may land in. Design images
     // (store banners, logos) need the settings permission rather than products.
-    const purpose = request.nextUrl.searchParams.get('purpose') === 'design' ? 'design' : 'products';
+    const requested = request.nextUrl.searchParams.get('purpose');
+    const purpose = requested === 'design' || requested === 'content' ? requested : 'products';
     if (purpose === 'design') assertPermission(access, 'settings:write');
-
+    if (purpose === 'content') assertPermission(access, 'content:write');
     if (purpose === 'products') assertPermission(access, 'products:write');
 
     // The largest photo this store's plan accepts. Checked in the browser

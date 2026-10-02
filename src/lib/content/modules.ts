@@ -55,6 +55,7 @@ export async function assertModuleAllowedByPlan(
   if (!plan.limits.modules.includes(module)) {
     throw new ForbiddenError(
       `The ${plan.name} plan does not include the ${module} module`,
+      `Your ${plan.name} plan doesn’t include a ${module === 'store' ? 'shop' : module}. Upgrade under Plan to switch it on.`,
     );
   }
 }

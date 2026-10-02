@@ -1,6 +1,7 @@
 import { requireDashboardAccess } from '@/lib/dashboard/access';
 import { siteOrigin } from '@/lib/seo/meta';
 import AddressForm from '@/components/dashboard/AddressForm';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
 
 export const metadata = { title: 'Store address', robots: { index: false } };
 
@@ -13,10 +14,8 @@ export default async function AddressPage({ params }) {
 
   return (
     <div className="shell">
+      <DashboardHeader siteId={siteId} current="address" storeUrl={siteOrigin(site)} modules={site.modules} />
       <main className="container container--narrow" style={{ paddingBlock: '40px 64px' }}>
-        <p>
-          <a href={`/dashboard/${siteId}`}>← Back to dashboard</a>
-        </p>
         <h1 style={{ fontSize: 28, marginBottom: 8 }}>Store address</h1>
         <p className="secondary" style={{ marginTop: 0 }}>
           Your store is at{' '}

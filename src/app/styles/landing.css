@@ -928,3 +928,9 @@
   font-size: 14px;
   color: var(--text-muted);
 }
+
+.auth__legal {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}

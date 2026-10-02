@@ -13,6 +13,7 @@ import { toErrorResponse } from '@/lib/http/respond';
 import { signUpSeller } from '@/lib/onboarding/signup';
 import { createSession } from '@/lib/auth/session';
 import { issueEmailVerification } from '@/lib/auth/emailVerification';
+import { appOrigin } from '@/lib/seo/meta';
 import { sessionCookieName, sessionCookieOptions } from '@/lib/auth/cookies';
 import { sellerSignUpSchema } from '@/lib/validation/schemas';
 import { clientIdentifier, enforceRateLimit } from '@/lib/ratelimit';
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     try {
       const { delivery } = await issueEmailVerification({
         user: { _id: result.userId, email: body.email, name: body.name },
-        appOrigin: new URL(request.url).origin,
+        appOrigin: appOrigin(),
       });
       verificationSent = delivery.transport === 'resend';
     } catch {

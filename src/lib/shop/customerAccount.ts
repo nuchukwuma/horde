@@ -84,13 +84,13 @@ export async function authenticateCustomer(
 
   if (!customer) {
     await fakeVerifyPassword();
-    throw new AuthenticationError('Invalid email or password');
+    throw new AuthenticationError('Invalid email or password', 'That email and password don’t match an account. Check them and try again.');
   }
 
   const valid = await verifyPassword(customer.passwordHash ?? '', input.password);
 
   if (!valid || customer.status !== 'active') {
-    throw new AuthenticationError('Invalid email or password');
+    throw new AuthenticationError('Invalid email or password', 'That email and password don’t match an account. Check them and try again.');
   }
 
   await runWithTenant(tenant, () =>

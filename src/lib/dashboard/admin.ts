@@ -14,6 +14,7 @@ import { Types } from 'mongoose';
 import { LedgerEntry } from '../db/models/LedgerEntry';
 import { Order } from '../db/models/Order';
 import { Site } from '../db/models/Site';
+import { User } from '../db/models/User';
 import { AuditLog } from '../db/models/AuditLog';
 import { WebhookEvent } from '../db/models/WebhookEvent';
 import { platformTotals, type PlatformTotals, type TotalsFilter } from '../ledger/balances';
@@ -274,4 +275,51 @@ export async function flaggedTransactions(
         .slice(0, limit);
     },
   );
+}
+
+export interface StoreRow extends SellerVolumeRow {
+  ownerEmail: string | null;
+  createdAt: Date | null;
+}
+
+/**
+ * Every store, newest first, with its sales beside it — including stores that
+ * have not sold anything yet, which sellerVolume (built from the ledger)
+ * cannot see. Those are exactly the ones an admin checks during onboarding.
+ */
+export async function storesWithVolume(limit = 200): Promise<StoreRow[]> {
+  const capped = Math.min(Math.max(limit, 1), 500);
+  const [volume, sites] = await Promise.all([
+    sellerVolume({ limit: 200 }),
+    runWithoutTenantScope('platform admin store list, which spans every tenant', () =>
+      Site.find({}).sort({ createdAt: -1 }).limit(capped).lean(),
+    ),
+  ]);
+  const owners = await runWithoutTenantScope('platform admin store list: owner emails', () =>
+    User.find({ _id: { $in: sites.map((site) => site.ownerId) } })
+      .select('email')
+      .lean(),
+  );
+  const emailById = new Map(owners.map((owner) => [String(owner._id), owner.email]));
+  const volumeById = new Map(volume.map((row) => [row.siteId, row]));
+
+  return sites.map((site) => {
+    const sold = volumeById.get(String(site._id));
+    return {
+      siteId: String(site._id),
+      slug: site.slug,
+      name: site.name,
+      planCode: site.planCode,
+      status: site.status,
+      payoutStatus: site.payout?.status ?? 'unset',
+      prohibitedProductFlag: Boolean(site.prohibitedProductFlag),
+      grossKobo: sold?.grossKobo ?? 0,
+      platformCommissionKobo: sold?.platformCommissionKobo ?? 0,
+      sellerNetKobo: sold?.sellerNetKobo ?? 0,
+      saleCount: sold?.saleCount ?? 0,
+      refundCount: sold?.refundCount ?? 0,
+      ownerEmail: emailById.get(String(site.ownerId)) ?? null,
+      createdAt: site.createdAt ?? null,
+    };
+  });
 }

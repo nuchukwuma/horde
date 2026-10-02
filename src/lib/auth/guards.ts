@@ -79,3 +79,27 @@ export async function requireSiteOwner(
 ): Promise<SiteAccess> {
   return requireSiteAccess(session, siteId, ['owner']);
 }
+
+/**
+ * The store's actual owner — and nobody else, platform admins included.
+ *
+ * For where the money goes. requireSiteOwner lets a platform admin through
+ * (useful for support reads); this does not, so no admin account, stolen or
+ * otherwise, can point a seller's payouts at a different bank account.
+ */
+export async function requireOwnerMembership(
+  session: AuthenticatedSession,
+  siteId: Types.ObjectId | string,
+): Promise<SiteAccess> {
+  const site = await Site.findById(siteId);
+  if (!site) throw new NotFoundError('Site');
+
+  const membership = await Membership.findOne({ userId: session.user._id, siteId: site._id, role: 'owner' });
+  if (!membership) {
+    throw new ForbiddenError(
+      `User ${String(session.user._id)} is not the owner of site ${String(site._id)}`,
+      'Only the store owner can change where its money is paid.',
+    );
+  }
+  return { site, role: 'owner', permissions: membership.permissions };
+}

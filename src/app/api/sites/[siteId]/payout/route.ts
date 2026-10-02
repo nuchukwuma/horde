@@ -8,7 +8,7 @@
 import type { NextRequest } from 'next/server';
 import { requireSession, requestIp, requestUserAgent } from '@/lib/http/context';
 import { ok, toErrorResponse } from '@/lib/http/respond';
-import { requireSiteOwner } from '@/lib/auth/guards';
+import { requireOwnerMembership, requireSiteOwner } from '@/lib/auth/guards';
 import { assertRecentlyAuthenticated } from '@/lib/auth/session';
 import { enforceRateLimit } from '@/lib/ratelimit';
 import { savePayoutDetails } from '@/lib/onboarding/payout';
@@ -54,7 +54,7 @@ export async function POST(
     // Redirecting a seller's payouts is the highest-value action in the product
     // for an attacker, so: owner only, password re-confirmed, rate limited, and
     // written to the audit log by the service below.
-    const access = await requireSiteOwner(session, siteId);
+    const access = await requireOwnerMembership(session, siteId);
     assertRecentlyAuthenticated(session);
     await enforceRateLimit('payout:update', `site:${siteId}`);
 

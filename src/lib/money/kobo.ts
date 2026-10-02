@@ -155,6 +155,18 @@ export function nairaToKobo(naira: string | number): number {
   return assertKobo(sign === '-' ? -kobo : kobo, 'kobo');
 }
 
+/**
+ * Kobo as the plain naira string a seller would type: 250000 → "2500",
+ * 250050 → "2500.50". For pre-filling an edit form; integer arithmetic only,
+ * so it round-trips through nairaToKobo exactly.
+ */
+export function koboToNairaInput(amountKobo: number): string {
+  const kobo = assertNonNegativeKobo(amountKobo);
+  const naira = Math.floor(kobo / KOBO_PER_NAIRA);
+  const rest = kobo % KOBO_PER_NAIRA;
+  return rest === 0 ? String(naira) : `${naira}.${String(rest).padStart(2, '0')}`;
+}
+
 /** Display only. Never feed the result back into arithmetic. */
 export function formatKobo(amountKobo: number, currency = 'NGN'): string {
   assertKobo(amountKobo, 'amountKobo');

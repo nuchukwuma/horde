@@ -34,6 +34,19 @@ export class PaystackUnavailableError extends AppError {
   }
 }
 
+/**
+ * Paystack cannot be used at all: the key is missing, or a live key was
+ * refused. A deployment fault, not the shopper's, so a 503 they can retry
+ * rather than the generic 500 — and never the key's name in the response.
+ */
+export class PaymentsUnavailableError extends AppError {
+  constructor(message: string) {
+    super(503, 'payments_unavailable', message, {
+      publicMessage: 'Payments are temporarily unavailable. Please try again in a little while.',
+    });
+  }
+}
+
 export interface PaystackConfig {
   secretKey: string;
   baseUrl: string;
@@ -54,11 +67,11 @@ export function readPaystackConfig(
   const secretKey = env.PAYSTACK_SECRET_KEY;
 
   if (!secretKey) {
-    throw new Error('PAYSTACK_SECRET_KEY is not configured');
+    throw new PaymentsUnavailableError('PAYSTACK_SECRET_KEY is not configured');
   }
 
   if (!secretKey.startsWith('sk_test_') && env.HORDEMART_ALLOW_LIVE_KEYS !== 'true') {
-    throw new Error(
+    throw new PaymentsUnavailableError(
       'Refusing to use a non-test Paystack key. Set HORDEMART_ALLOW_LIVE_KEYS=true to go live.',
     );
   }

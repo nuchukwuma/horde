@@ -9,7 +9,9 @@
 import { Project, type ProjectAttributes } from '../db/models/Project';
 import { sanitizeInline, sanitizeRichText, stripAllHtml } from '../security/sanitizeHtml';
 import { slugifyOrFallback, uniqueSlug } from './slug';
+import { Types } from 'mongoose';
 import { NotFoundError } from '../errors';
+import { checkContentImages } from './images';
 
 export interface CreateProjectInput {
   title: string;
@@ -47,7 +49,7 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectA
     slug,
     summary: input.summary ? stripAllHtml(input.summary) : undefined,
     descriptionHtml: input.descriptionHtml ? sanitizeRichText(input.descriptionHtml) : undefined,
-    images: input.images ?? [],
+    images: checkContentImages(input.images ?? [], 'Project'),
     client: input.client ? stripAllHtml(input.client) : undefined,
     role: input.role ? stripAllHtml(input.role) : undefined,
     projectUrl: input.projectUrl,
@@ -68,6 +70,7 @@ export async function updateProject(
   projectId: string,
   input: Partial<CreateProjectInput>,
 ): Promise<ProjectAttributes> {
+  if (!Types.ObjectId.isValid(projectId)) throw new NotFoundError('Project');
   const project = await Project.findById(projectId);
   if (!project) throw new NotFoundError('Project');
 
@@ -78,11 +81,11 @@ export async function updateProject(
   if (input.descriptionHtml !== undefined) {
     update.descriptionHtml = sanitizeRichText(input.descriptionHtml);
   }
-  if (input.images !== undefined) update.images = input.images;
+  if (input.images !== undefined) update.images = checkContentImages(input.images, 'Project', project.images);
   if (input.client !== undefined) update.client = stripAllHtml(input.client);
   if (input.role !== undefined) update.role = stripAllHtml(input.role);
   if (input.projectUrl !== undefined) update.projectUrl = input.projectUrl;
-  if (input.completedAt !== undefined) update.completedAt = new Date(input.completedAt);
+  if (input.completedAt !== undefined) update.completedAt = input.completedAt ? new Date(input.completedAt) : null;
   if (input.tags !== undefined) update.tags = normaliseTags(input.tags);
   if (input.position !== undefined) update.position = input.position;
 
@@ -125,4 +128,18 @@ function normaliseTags(tags?: string[]): string[] {
     .filter((tag) => tag.length > 0 && tag.length <= 40);
 
   return [...new Set(cleaned)].slice(0, 20);
+}
+
+/** Every project that is not archived, drafts included, for the dashboard. */
+export async function listProjectsForSeller(limit = 200) {
+  return Project.find({ status: { $ne: 'archived' } })
+    .sort({ position: 1, createdAt: -1 })
+    .limit(Math.min(Math.max(limit, 1), 500))
+    .lean();
+}
+
+export async function findProjectForSeller(projectId: string) {
+  if (!Types.ObjectId.isValid(projectId)) return null;
+  const project = await Project.findOne({ _id: projectId, status: { $ne: 'archived' } }).lean();
+  return project ?? null;
 }

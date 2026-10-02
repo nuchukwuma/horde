@@ -200,3 +200,26 @@ export async function findActiveProduct(slug: string): Promise<ProductView | nul
   const product = await Product.findOne({ slug: String(slug).toLowerCase(), status: 'active' }).lean();
   return product ? toProductView(product as ProductAttributes) : null;
 }
+
+/** A product as the dashboard's edit form needs it: any status, with image ids. */
+export interface SellerProductView extends Omit<ProductView, 'images'> {
+  images: Array<{ cloudinaryPublicId: string; url: string; alt: string; width?: number; height?: number }>;
+}
+
+export async function findProductForSeller(productId: string): Promise<SellerProductView | null> {
+  if (!Types.ObjectId.isValid(productId)) return null;
+  const product = await Product.findById(productId).lean();
+  if (!product || product.status === 'archived') return null;
+  return {
+    ...toProductView(product as ProductAttributes),
+    // The form sends these back on save, and assertOwnProductImages checks
+    // each public id against this store's folder again then.
+    images: (product.images ?? []).map((image) => ({
+      cloudinaryPublicId: image.cloudinaryPublicId,
+      url: image.url,
+      alt: image.alt ?? '',
+      width: image.width,
+      height: image.height,
+    })),
+  };
+}

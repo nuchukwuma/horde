@@ -31,11 +31,19 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/** Who and where: everything checkout asks for besides the cart. */
+const buyer = {
+  customerEmail: 'buyer@example.com',
+  customerName: 'Ada Buyer',
+  customerPhone: '0803 123 4567',
+  delivery: { method: 'delivery', address: '12 Allen Avenue', city: 'Ikeja', state: 'Lagos' },
+};
+
 describe('the cart schema gives a client nowhere to put a price', () => {
   it('accepts ids and quantities', () => {
     const result = checkoutSchema.safeParse({
       items: [{ productId: 'a'.repeat(24), quantity: 2 }],
-      customerEmail: 'buyer@example.com',
+      ...buyer,
     });
     expect(result.success).toBe(true);
   });
@@ -43,7 +51,7 @@ describe('the cart schema gives a client nowhere to put a price', () => {
   it('strips a price a client tries to smuggle in', () => {
     const result = checkoutSchema.safeParse({
       items: [{ productId: 'a'.repeat(24), quantity: 1, priceKobo: 1, unitPriceKobo: 1 }],
-      customerEmail: 'buyer@example.com',
+      ...buyer,
       totalKobo: 1,
     });
 
@@ -59,7 +67,7 @@ describe('the cart schema gives a client nowhere to put a price', () => {
   it('rejects a malformed product id', () => {
     const result = checkoutSchema.safeParse({
       items: [{ productId: 'not-an-object-id', quantity: 1 }],
-      customerEmail: 'buyer@example.com',
+      ...buyer,
     });
     expect(result.success).toBe(false);
   });
@@ -68,21 +76,21 @@ describe('the cart schema gives a client nowhere to put a price', () => {
     for (const quantity of [0, -1, 1.5]) {
       const result = checkoutSchema.safeParse({
         items: [{ productId: 'a'.repeat(24), quantity }],
-        customerEmail: 'buyer@example.com',
+        ...buyer,
       });
       expect(result.success, `quantity ${quantity}`).toBe(false);
     }
   });
 
   it('rejects an empty cart', () => {
-    const result = checkoutSchema.safeParse({ items: [], customerEmail: 'buyer@example.com' });
+    const result = checkoutSchema.safeParse({ items: [], ...buyer });
     expect(result.success).toBe(false);
   });
 
   it('rejects an absurdly large cart', () => {
     const result = checkoutSchema.safeParse({
       items: Array.from({ length: 101 }, () => ({ productId: 'a'.repeat(24), quantity: 1 })),
-      customerEmail: 'buyer@example.com',
+      ...buyer,
     });
     expect(result.success).toBe(false);
   });
@@ -90,9 +98,52 @@ describe('the cart schema gives a client nowhere to put a price', () => {
   it('requires a usable customer email', () => {
     const result = checkoutSchema.safeParse({
       items: [{ productId: 'a'.repeat(24), quantity: 1 }],
+      ...buyer,
       customerEmail: 'not-an-email',
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe('checkout asks who the order is for and where it goes', () => {
+  const items = [{ productId: 'a'.repeat(24), quantity: 1 }];
+
+  it.each([
+    ['0803 123 4567', '+2348031234567'],
+    ['08031234567', '+2348031234567'],
+    ['+234 (803) 123-4567', '+2348031234567'],
+    ['2349051234567', '+2349051234567'],
+  ])('normalises the phone number %s', (typed, stored) => {
+    const result = checkoutSchema.safeParse({ items, ...buyer, customerPhone: typed });
+    expect(result.success && result.data.customerPhone).toBe(stored);
+  });
+
+  it.each(['12345', '0803123456', '+44 7700 900123', '0603 123 4567', 'call me'])('rejects the phone number %s', (typed) => {
+    expect(checkoutSchema.safeParse({ items, ...buyer, customerPhone: typed }).success).toBe(false);
+  });
+
+  it('requires a name and a phone number', () => {
+    const without = (key: keyof typeof buyer) => Object.fromEntries(Object.entries(buyer).filter(([name]) => name !== key));
+    const noName = without('customerName');
+    const noPhone = without('customerPhone');
+    expect(checkoutSchema.safeParse({ items, ...noName }).success).toBe(false);
+    expect(checkoutSchema.safeParse({ items, ...noPhone }).success).toBe(false);
+  });
+
+  it('requires a full address for delivery, with a real state', () => {
+    expect(checkoutSchema.safeParse({ items, ...buyer, delivery: { method: 'delivery', address: '12 Allen Avenue', city: 'Ikeja' } }).success).toBe(false);
+    expect(
+      checkoutSchema.safeParse({ items, ...buyer, delivery: { ...buyer.delivery, state: 'Atlantis' } }).success,
+    ).toBe(false);
+  });
+
+  it('takes no address for collection, and drops one if sent', () => {
+    const result = checkoutSchema.safeParse({
+      items,
+      ...buyer,
+      delivery: { method: 'pickup', address: '12 Allen Avenue', note: 'Saturday' },
+    });
+    expect(result.success && result.data.delivery).toEqual({ method: 'pickup', note: 'Saturday' });
   });
 });
 

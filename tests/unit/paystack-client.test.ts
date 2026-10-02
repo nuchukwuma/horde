@@ -8,6 +8,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  PaymentsUnavailableError,
   PaystackError,
   PaystackUnavailableError,
   paystackRequest,
@@ -42,6 +43,18 @@ describe('readPaystackConfig', () => {
 
   it('throws when unset', () => {
     expect(() => readPaystackConfig({})).toThrow(/not configured/);
+  });
+
+  it('reports a missing key as a 503 that names no key', () => {
+    // Checkout used to answer "Something went wrong" (500) here.
+    try {
+      readPaystackConfig({});
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(PaymentsUnavailableError);
+      expect((error as PaymentsUnavailableError).statusCode).toBe(503);
+      expect((error as PaymentsUnavailableError).publicMessage).not.toMatch(/PAYSTACK|key/i);
+    }
   });
 
   it('refuses a live key by default', () => {

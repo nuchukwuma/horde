@@ -5,11 +5,12 @@
  * so nothing downstream can forget to.
  */
 
-import type { Types } from 'mongoose';
 import { Post, type PostAttributes } from '../db/models/Post';
 import { sanitizeInline, sanitizeRichText, stripAllHtml } from '../security/sanitizeHtml';
 import { estimateReadingMinutes, slugifyOrFallback, uniqueSlug } from './slug';
+import { Types } from 'mongoose';
 import { NotFoundError } from '../errors';
+import { checkContentImages } from './images';
 
 export interface CreatePostInput {
   title: string;
@@ -27,6 +28,7 @@ export interface CreatePostInput {
 
 export async function createPost(input: CreatePostInput): Promise<PostAttributes> {
   const contentHtml = sanitizeRichText(input.contentHtml);
+  if (input.coverImage) checkContentImages([input.coverImage], 'Post');
 
   const desired = slugifyOrFallback(input.slug || input.title, 'post');
   const slug = await uniqueSlug(desired, async (candidate) => {
@@ -60,6 +62,7 @@ export async function updatePost(
   postId: string,
   input: UpdatePostInput,
 ): Promise<PostAttributes> {
+  if (!Types.ObjectId.isValid(postId)) throw new NotFoundError('Post');
   const post = await Post.findById(postId);
   if (!post) throw new NotFoundError('Post');
 
@@ -68,7 +71,10 @@ export async function updatePost(
   if (input.title !== undefined) update.title = sanitizeInline(input.title);
   if (input.excerpt !== undefined) update.excerpt = stripAllHtml(input.excerpt);
   if (input.tags !== undefined) update.tags = normaliseTags(input.tags);
-  if (input.coverImage !== undefined) update.coverImage = input.coverImage;
+  if (input.coverImage !== undefined) {
+    if (input.coverImage) checkContentImages([input.coverImage], 'Post', post.coverImage ? [post.coverImage] : []);
+    update.coverImage = input.coverImage;
+  }
 
   if (input.contentHtml !== undefined) {
     const contentHtml = sanitizeRichText(input.contentHtml);
@@ -133,4 +139,18 @@ function normaliseTags(tags?: string[]): string[] {
     .filter((tag) => tag.length > 0 && tag.length <= 40);
 
   return [...new Set(cleaned)].slice(0, 20);
+}
+
+/** Every post that is not archived, drafts included, for the dashboard. */
+export async function listPostsForSeller(limit = 200) {
+  return Post.find({ status: { $ne: 'archived' } })
+    .sort({ createdAt: -1 })
+    .limit(Math.min(Math.max(limit, 1), 500))
+    .lean();
+}
+
+export async function findPostForSeller(postId: string) {
+  if (!Types.ObjectId.isValid(postId)) return null;
+  const post = await Post.findOne({ _id: postId, status: { $ne: 'archived' } }).lean();
+  return post ?? null;
 }

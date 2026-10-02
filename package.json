@@ -20,7 +20,8 @@
     "seed": "tsx --env-file=.env.local scripts/seed.ts",
     "doctor": "tsx --env-file=.env.local scripts/doctor.ts",
     "verify": "npm run typecheck && npm run lint && npm run test",
-    "sync-indexes": "tsx --env-file=.env.local scripts/sync-indexes.ts"
+    "sync-indexes": "tsx --env-file=.env.local scripts/sync-indexes.ts",
+    "make-admin": "tsx --env-file=.env.local scripts/make-admin.ts"
   },
   "dependencies": {
     "@gsap/react": "2.1.2",

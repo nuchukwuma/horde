@@ -32,13 +32,22 @@ export default function VerifyEmailPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token }),
         });
-        const body = await response.json();
+        const body = await response.json().catch(() => null);
         if (cancelled) return;
 
         setState(
           response.ok
             ? { status: 'done', message: body.data.email }
-            : { status: 'error', message: body?.error?.message ?? 'That link is not valid.' },
+            : {
+                status: 'error',
+                // A malformed or spent token comes back as a validation
+                // error, whose generic wording ("Request validation failed")
+                // means nothing to the person who clicked the link.
+                message:
+                  response.status === 400 || response.status === 404 || response.status === 422
+                    ? 'This link isn’t valid, or it has already been used.'
+                    : body?.error?.message ?? 'That link is not valid.',
+              },
         );
       } catch {
         if (!cancelled) {

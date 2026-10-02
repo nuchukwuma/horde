@@ -6,6 +6,8 @@ import { enforceRateLimit } from '@/lib/ratelimit';
 import { ADDONS, TIERS, TIERS_ARE_PLACEHOLDERS, salesContactEmail, tierFor } from '@/config/plans';
 import { formatDate, formatNaira } from '@/lib/ui/format';
 import BillingActions from '@/components/dashboard/BillingActions';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import { siteOrigin } from '@/lib/seo/meta';
 
 /**
  * Plan and billing.
@@ -56,10 +58,8 @@ export default async function BillingPage({ params, searchParams }) {
 
   return (
     <div className="shell">
+      <DashboardHeader siteId={siteId} current="billing" storeUrl={siteOrigin(site)} modules={site.modules} />
       <main className="container" style={{ paddingBlock: '40px 64px', maxWidth: 960 }}>
-        <p>
-          <a href={`/dashboard/${siteId}`}>← Back to dashboard</a>
-        </p>
         <h1 style={{ fontSize: 28, marginBottom: 6 }}>Plan and billing</h1>
         <p className="secondary" style={{ marginTop: 0 }}>
           {site.name} is on <strong>{tier.label}</strong>

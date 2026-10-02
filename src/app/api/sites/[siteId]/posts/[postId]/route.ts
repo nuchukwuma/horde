@@ -7,6 +7,7 @@
  */
 
 import type { NextRequest } from 'next/server';
+import { Types } from 'mongoose';
 import { requireSession } from '@/lib/http/context';
 import { ok, toErrorResponse } from '@/lib/http/respond';
 import { assertPermission, requireSiteAccess } from '@/lib/auth/guards';
@@ -29,6 +30,7 @@ export async function GET(
     const access = await requireSiteAccess(session, siteId, ['owner', 'staff']);
     assertModuleEnabled(access.site, 'blog');
 
+    if (!Types.ObjectId.isValid(postId)) throw new NotFoundError('Post');
     const post = await withSite(access.site, () => Post.findById(postId).lean());
     if (!post) throw new NotFoundError('Post');
 

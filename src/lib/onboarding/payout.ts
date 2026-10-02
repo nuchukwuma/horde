@@ -20,6 +20,7 @@ import { PaystackError } from '../paystack/client';
 import { ConflictError, NotFoundError, ValidationError } from '../errors';
 import { recordAudit } from '../audit';
 import { runWithoutTenantScope } from '../tenant/context';
+import { assertEmailConfigured, sendEmail } from '../email/transport';
 
 /**
  * How long a newly verified seller must wait before they can take payments.
@@ -115,7 +116,7 @@ export async function savePayoutDetails(
   // caller — an admin tool, a script, a second endpoint — cannot reach the
   // step that attaches a bank account without passing it. See
   // auth/emailVerification.ts for why the gate is here and not on login.
-  const actor = await User.findById(input.actorUserId).select('emailVerifiedAt');
+  const actor = await User.findById(input.actorUserId).select('emailVerifiedAt email name');
   if (!actor) throw new NotFoundError('User');
   assertEmailVerified(actor);
 
@@ -197,6 +198,34 @@ export async function savePayoutDetails(
     ip: input.ip,
     userAgent: input.userAgent,
   });
+
+  // Tell the owner, by email, every time. If someone else got into the
+  // account and redirected the payouts, this is how the seller finds out
+  // before the next settlement rather than after it. Best effort: the change
+  // has already happened at Paystack, so a failed email must not report the
+  // change itself as failed.
+  try {
+    // Never the log transport in production: it would print the account
+    // name into the server log.
+    assertEmailConfigured();
+    await sendEmail({
+      to: actor.email,
+      subject: `Your payout bank account was changed — ${site.name}`,
+      text: [
+        `Hi ${actor.name},`,
+        '',
+        `The bank account that receives payments for ${site.name} was just set to:`,
+        '',
+        `  ${verified.accountName}, account ending ${verified.accountNumberLast4}`,
+        '',
+        'If this was you, there is nothing to do.',
+        '',
+        'If it was NOT you, change your HordeMart password now, put your own bank details back under Payouts in your dashboard, and contact HordeMart support straight away.',
+      ].join('\n'),
+    });
+  } catch {
+    console.error('[payout] change notification email could not be sent', String(site._id));
+  }
 
   return {
     subaccountCode: subaccount.subaccount_code,

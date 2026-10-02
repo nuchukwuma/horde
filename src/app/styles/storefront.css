@@ -78,11 +78,48 @@
 }
 
 @media (max-width: 560px) {
+  /* Phones: brand and the account/basket buttons share the first row, the
+     menu gets a row of its own. Squeezed onto one row, the menu scrolled
+     sideways with no visible scrollbar, so "Journal" sat half off-screen and
+     the store's name shrank to "Ade …". */
+  .store-head .masthead__inner {
+    flex-wrap: wrap;
+    row-gap: 0;
+    padding-top: 8px;
+  }
+  .store-head .store-brand {
+    flex: 1 1 0;
+  }
+  .store-nav {
+    order: 3;
+    flex: 1 0 100%;
+    margin-left: -8px;
+    padding-bottom: 6px;
+  }
   .store-nav a:not(.store-nav__account) {
     padding-inline: 8px;
   }
   .store-nav__account {
     display: none;
+  }
+}
+
+/* The account icon replaces the hidden text link on phones only. */
+.store-head__account {
+  display: none;
+}
+
+@media (max-width: 560px) {
+  .store-head__account {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border-strong);
+    background: var(--surface-1);
+    color: var(--text-primary);
   }
 }
 
@@ -867,6 +904,30 @@
 
 .cart__form .btn {
   margin-top: 18px;
+}
+
+.cart__method {
+  border: 0;
+  padding: 0;
+  margin-inline: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.cart__method + .field,
+.cart__row + .field,
+.field + .cart__row {
+  margin-top: 16px;
+}
+
+.cart__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.cart__row .field + .field {
+  margin-top: 0;
 }
 
 .cart__secure {
