@@ -13,19 +13,26 @@ import localFont from 'next/font/local';
  *
  * Each family is exposed as a CSS variable on <html>. Declaring a family costs
  * one @font-face rule; the browser downloads a file only when text actually
- * uses it. So only the platform pair is preloaded — a storefront fetches just
- * the pair its seller picked (lib/design/fonts.ts), and nothing else.
+ * uses it, so a storefront fetches just the pair its seller picked
+ * (lib/design/fonts.ts) and nothing else.
+ *
+ * Nothing here is preloaded. A preload in the root layout reaches every
+ * route, stores included, and made every store download HordeMart's own pair
+ * (~70 KB) whatever its seller chose. HordeMart's own pages live in the
+ * app/(platform) route group, whose layout preloads the pair
+ * (components/platform/platformFonts.js); stores sit outside that group.
  *
  * Licences: all SIL Open Font License 1.1 (copies beside each file).
  */
 
 
-// Platform pair (Adire direction): preloaded.
+// Platform pair (Adire direction). Preloaded on HordeMart's pages only (see above).
 export const unbounded = localFont({
   src: '../assets/fonts/unbounded-latin-wght-normal.woff2',
   variable: '--font-unbounded',
   weight: '200 900',
   display: 'swap',
+  preload: false,
   fallback: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
 });
 
@@ -34,6 +41,7 @@ export const figtree = localFont({
   variable: '--font-figtree',
   weight: '300 900',
   display: 'swap',
+  preload: false,
   fallback: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
 });
 

@@ -33,6 +33,7 @@ import { promoteDraft, validateDraft } from '../../src/lib/design/service';
 import { siteImageFolder } from '../../src/lib/products/images';
 import { slugSchema } from '../../src/lib/validation/schemas';
 import { ValidationError } from '../../src/lib/errors';
+import { imageUrlAt } from '@/lib/media/responsiveImage';
 
 const fashion = PRESET_THEMES.fashion;
 const siteId = '64b7f0c2a1b2c3d4e5f60718';
@@ -194,15 +195,21 @@ describe('store logo', () => {
   });
 
   it('picks the logo for the mode showing; "match phone" lets the browser download only one', () => {
+    // Logos are served at header size (480px wide at most), not as uploaded.
+    const light = imageUrlAt(logo, 480);
+    const dark = imageUrlAt(logoDark, 480);
+    expect(light).toContain('/f_auto,q_auto,c_limit,w_480/');
     const theme = { ...fashion, logo, logoDark };
-    expect(brand(theme, 'light')).toContain(logo.url);
-    expect(brand(theme, 'light')).not.toContain(logoDark.url);
-    expect(brand(theme, 'dark')).toContain(logoDark.url);
-    expect(brand(theme, 'dark')).not.toContain(logo.url);
-    expect(brand({ ...theme, logoDark: null }, 'dark')).toContain(logo.url);
+    // Quoted: the light URL is a prefix of the dark one (…/logo, …/logo-dark).
+    const q = (url: string) => `"${url}"`;
+    expect(brand(theme, 'light')).toContain(q(light));
+    expect(brand(theme, 'light')).not.toContain(q(dark));
+    expect(brand(theme, 'dark')).toContain(q(dark));
+    expect(brand(theme, 'dark')).not.toContain(q(light));
+    expect(brand({ ...theme, logoDark: null }, 'dark')).toContain(q(light));
     const auto = brand(theme, 'auto');
-    expect(auto).toContain(`<source srcSet="${logoDark.url}" media="(prefers-color-scheme: dark)"/>`);
-    expect(auto).toContain(`src="${logo.url}"`);
+    expect(auto).toContain(`<source srcSet="${dark}" media="(prefers-color-scheme: dark)"/>`);
+    expect(auto).toContain(`src="${light}"`);
   });
 
   it('builds a small tab icon on our own cloud, and falls back to the upload without one', () => {

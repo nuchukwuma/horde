@@ -8,6 +8,8 @@ import { serializeJsonLd } from '@/lib/seo/jsonLd';
 import { formatNaira } from '@/lib/ui/format';
 import ProductArt from '@/components/art/ProductArt';
 import AddToCart from '@/components/shop/AddToCart';
+import StoreImage from '@/components/media/StoreImage';
+import { IMAGE_SIZES } from '@/lib/media/responsiveImage';
 
 /**
  * One product.
@@ -94,8 +96,7 @@ export default async function ProductPage({ params }) {
         <div className="product__gallery">
           <div className="product__media">
             {photo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={photo.url} alt={photo.alt ?? product.title} />
+              <StoreImage image={photo} alt={photo.alt ?? product.title} sizes={IMAGE_SIZES.productMain} priority fallbackWidth={800} />
             ) : (
               <ProductArt title={product.title} seed={product.id} label={product.title} />
             )}
@@ -104,8 +105,7 @@ export default async function ProductPage({ params }) {
             <ul className="product__thumbs">
               {product.images.slice(1, 5).map((image) => (
                 <li key={image.url}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={image.url} alt={image.alt ?? ''} loading="lazy" />
+                  <StoreImage image={image} sizes={IMAGE_SIZES.thumb} fallbackWidth={240} />
                 </li>
               ))}
             </ul>

@@ -6,6 +6,7 @@ import { findPublishedPost } from '@/lib/content/posts';
 import { buildPageMeta } from '@/lib/seo/meta';
 import { blogPostingJsonLd, breadcrumbJsonLd, serializeJsonLd } from '@/lib/seo/jsonLd';
 import { formatDate } from '@/lib/ui/format';
+import StoreImage from '@/components/media/StoreImage';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,11 +102,12 @@ export default async function BlogPost({ params }) {
       </div>
 
       {post.coverImage?.url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={post.coverImage.url}
-          alt={post.coverImage.alt ?? ''}
-          style={{ width: '100%', borderRadius: 'var(--radius-lg)', marginBottom: 32 }}
+        <StoreImage
+          image={post.coverImage}
+          sizes="(min-width: 760px) 720px, 100vw"
+          priority
+          fallbackWidth={800}
+          className="post-cover"
         />
       ) : null}
 

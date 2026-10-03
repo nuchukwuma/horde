@@ -4,6 +4,8 @@ import { withSite } from '@/lib/tenant/loadSite';
 import { isModuleEnabled } from '@/lib/content/modules';
 import { listPublishedProjects } from '@/lib/content/projects';
 import ProductArt from '@/components/art/ProductArt';
+import StoreImage from '@/components/media/StoreImage';
+import { IMAGE_SIZES } from '@/lib/media/responsiveImage';
 
 export const metadata = { title: 'Work' };
 
@@ -30,7 +32,7 @@ export default async function WorkIndex({ params }) {
               <div className="product-card__media">
                 {project.images?.[0]?.url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={project.images[0].url} alt={project.images[0].alt ?? project.title} loading="lazy" />
+                  <StoreImage image={project.images[0]} alt={project.images[0].alt ?? project.title} sizes={IMAGE_SIZES.productCard} fallbackWidth={480} />
                 ) : (
                   <ProductArt title={project.title} seed={String(project._id)} label={project.title} />
                 )}

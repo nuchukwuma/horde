@@ -20,6 +20,8 @@
 import LookArt from '@/components/design/LookArt';
 import ProductCard from '@/components/shop/ProductCard';
 import SocialIcon from '@/components/shop/SocialIcon';
+import StoreImage from '@/components/media/StoreImage';
+import { IMAGE_SIZES } from '@/lib/media/responsiveImage';
 
 /** Rich text is a sanitised string on the server, a live editor in Puck. */
 function Rich({ value, className }) {
@@ -69,8 +71,8 @@ export function Hero({ heading, subheading, image, ctaLabel, ctaHref, align = 'l
     <section className={`blk-hero blk-hero--${align}${image ? ' blk-hero--image' : ` blk-hero--art-${storeLook(puck)}`}`}>
       <div className="blk-hero__media" aria-hidden={image ? undefined : true}>
         {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={image.url} alt={image.alt ?? ''} width={image.width} height={image.height} />
+          // The hero is usually the first thing on the page: fetch its photo first.
+          <StoreImage image={image} sizes={IMAGE_SIZES.hero} priority fallbackWidth={1080} />
         ) : (
           <LookArt look={storeLook(puck)} name={storeName(puck)} size="lg" className="blk-hero__cloth" />
         )}
@@ -124,8 +126,7 @@ export function CategoryGrid({ heading, tiles = [], puck }) {
             <a className="blk-cat" href={tile.href || '/shop'}>
               <span className="blk-cat__media" aria-hidden="true">
                 {tile.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={tile.image.url} alt="" loading="lazy" />
+                  <StoreImage image={tile.image} alt="" sizes={IMAGE_SIZES.categoryTile} fallbackWidth={480} />
                 ) : (
                   <LookArt look={storeLook(puck)} name={artName(puck, tile.label)} size="sm" className="blk-cat__cloth" />
                 )}
@@ -166,8 +167,7 @@ export function ImageText({ heading, body, image, imageSide = 'left', puck }) {
     <section className={`container blk-section blk-split blk-split--${imageSide}`}>
       <div className="blk-split__media">
         {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={image.url} alt={image.alt ?? ''} loading="lazy" />
+          <StoreImage image={image} sizes={IMAGE_SIZES.split} fallbackWidth={800} />
         ) : (
           <LookArt look={storeLook(puck)} name={artName(puck, heading)} size="md" className="blk-split__cloth" />
         )}

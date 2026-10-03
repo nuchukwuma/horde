@@ -12,6 +12,8 @@ import ProductArt from '@/components/art/ProductArt';
 import { Render } from '@puckeditor/core/rsc';
 import { renderConfig } from '@/components/blocks/renderConfig';
 import { getPublishedDesign } from '@/lib/design/published';
+import StoreImage from '@/components/media/StoreImage';
+import { IMAGE_SIZES } from '@/lib/media/responsiveImage';
 
 /**
  * Storefront home.
@@ -97,8 +99,7 @@ export default async function StorefrontHome({ params }) {
               {products.slice(0, 3).map((product, index) => (
                 <div key={product.id} className={`fan-card fan-card--${index}`}>
                   {product.images?.[0]?.url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={product.images[0].url} alt="" />
+                    <StoreImage image={product.images[0]} alt="" sizes={IMAGE_SIZES.productCard} fallbackWidth={480} />
                   ) : (
                     <ProductArt title={product.title} seed={product.id} label="" />
                   )}
@@ -161,7 +162,7 @@ export default async function StorefrontHome({ params }) {
                 <div className="product-card__media">
                   {project.images?.[0]?.url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={project.images[0].url} alt={project.images[0].alt ?? project.title} loading="lazy" />
+                    <StoreImage image={project.images[0]} alt={project.images[0].alt ?? project.title} sizes={IMAGE_SIZES.productCard} fallbackWidth={480} />
                   ) : (
                     <ProductArt title={project.title} seed={String(project._id)} label={project.title} />
                   )}
