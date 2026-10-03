@@ -435,3 +435,33 @@ describe('store address rules', () => {
     expect(slugSchema.safeParse(slug).success).toBe(false);
   });
 });
+
+describe('product photo shape', () => {
+  it('defaults an older saved theme to the portrait frame it always had', () => {
+    const { imageShape, imageFit, ...older } = themeSchema.parse(fashion);
+    expect([imageShape, imageFit]).toEqual(['portrait', 'cover']);
+    const parsed = themeSchema.parse(older);
+    expect(parsed.imageShape).toBe('portrait');
+    expect(parsed.imageFit).toBe('cover');
+    expect(normaliseTheme({ ...older, logoSize: undefined }).imageShape).toBe('portrait');
+  });
+
+  it('accepts only the five frames and two fits', () => {
+    for (const shape of ['portrait', 'square', 'landscape', 'arch', 'circle']) {
+      expect(themeSchema.parse({ ...fashion, imageShape: shape }).imageShape).toBe(shape);
+    }
+    expect(() => themeSchema.parse({ ...fashion, imageShape: 'hexagon' })).toThrow();
+    expect(() => themeSchema.parse({ ...fashion, imageFit: 'stretch' })).toThrow();
+  });
+
+  it('reaches the storefront as data attributes the CSS keys on', () => {
+    const attributes = themeAttributes(themeSchema.parse({ ...fashion, imageShape: 'arch', imageFit: 'contain' }));
+    expect(attributes['data-image-shape']).toBe('arch');
+    expect(attributes['data-image-fit']).toBe('contain');
+  });
+
+  it('survives a change of look: the frame is the seller’s choice', () => {
+    const themed = withLook(themeSchema.parse({ ...fashion, imageShape: 'circle' }), 'danfo');
+    expect(themed.imageShape).toBe('circle');
+  });
+});

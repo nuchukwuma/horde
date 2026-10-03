@@ -5,6 +5,7 @@ import { validateCustomerSessionToken } from '@/lib/auth/session';
 import { sessionCookieName } from '@/lib/auth/cookies';
 import CartButton from '@/components/shop/CartButton';
 import StoreBrand from '@/components/shop/StoreBrand';
+import StoreNav from '@/components/shop/StoreNav';
 import BrandMark from '@/components/art/BrandMark';
 import SocialIcon from '@/components/shop/SocialIcon';
 import { buildSocialLinks } from '@/lib/content/socials';
@@ -82,7 +83,7 @@ export default async function StorefrontLayout({ children, params }) {
         <div className="container masthead__inner">
           <StoreBrand name={site.name} theme={design?.theme ?? null} />
 
-          <nav className="nav store-nav" aria-label="Primary">
+          <StoreNav>
             {modules.store ? <a href="/shop">Shop</a> : null}
             {modules.portfolio ? <a href="/work">Work</a> : null}
             {modules.blog ? <a href="/blog">Journal</a> : null}
@@ -91,7 +92,7 @@ export default async function StorefrontLayout({ children, params }) {
                 {shopper ? 'Messages' : 'Sign in'}
               </a>
             ) : null}
-          </nav>
+          </StoreNav>
 
           {/* On phones the menu's "Sign in" / "Messages" text link is hidden to
               make room, which left customers no way into their account from

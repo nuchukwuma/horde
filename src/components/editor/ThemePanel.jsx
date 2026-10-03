@@ -403,6 +403,50 @@ export default function ThemePanel({
         </div>
       </section>
 
+      <section className="ed-group">
+        <h3 className="ed-group__title">Product photos</h3>
+        <p className="ed-hint">The frame your product photos sit in, on the shop page and each product’s page.</p>
+        <div className="ed-shapes" role="radiogroup" aria-label="Product photo shape">
+          {[
+            ['portrait', 'Tall'],
+            ['square', 'Square'],
+            ['landscape', 'Wide'],
+            ['arch', 'Arch'],
+            ['circle', 'Round'],
+          ].map(([value, label]) => {
+            const on = (theme.imageShape ?? 'portrait') === value;
+            return (
+              <label key={value} className={on ? 'ed-shape is-on' : 'ed-shape'}>
+                <input type="radio" name="imageShape" value={value} checked={on} onChange={() => set({ imageShape: value })} />
+                <span className={`ed-shape__frame ed-shape__frame--${value}`} aria-hidden="true" />
+                {label}
+              </label>
+            );
+          })}
+        </div>
+
+        <div className="ed-segment ed-segment--small" style={{ marginTop: 12 }}>
+          {[
+            ['cover', 'Fill the frame'],
+            ['contain', 'Show whole photo'],
+          ].map(([value, label]) => (
+            <label key={value} className={(theme.imageFit ?? 'cover') === value ? 'is-on' : ''}>
+              <input
+                type="radio"
+                name="imageFit"
+                value={value}
+                checked={(theme.imageFit ?? 'cover') === value}
+                onChange={() => set({ imageFit: value })}
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+        <p className="ed-hint" style={{ marginTop: 8 }}>
+          “Show whole photo” suits products shot on a plain background; nothing gets cropped.
+        </p>
+      </section>
+
     </aside>
   );
 }

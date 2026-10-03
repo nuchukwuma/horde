@@ -3,6 +3,7 @@
  * MrMouse implements the same checks (docs/integrations/mrmouse.md).
  */
 
+import { shouldSuggestMrMouse } from '../../src/lib/integrations/mrmousePromo';
 import { describe, expect, it } from 'vitest';
 import {
   canLaunch,
@@ -87,5 +88,18 @@ describe('signed server messages', () => {
     expect(verifyBodySignature(body, null, SECRET, now)).toBe(false);
     expect(verifyBodySignature(body, 't=abc,v1=zz', SECRET, now)).toBe(false);
     expect(verifyBodySignature(body, header, SECRET, now + 6 * 60_000)).toBe(false);
+  });
+});
+
+describe('suggesting MrMouse in the dashboard', () => {
+  const base = { storeOn: true, productCount: 3, connected: false, snoozed: false };
+  it('suggests it to a selling store with products that has not connected', () => {
+    expect(shouldSuggestMrMouse(base)).toBe(true);
+  });
+  it('stays quiet before there is stock to manage, once connected, when snoozed, or with no shop', () => {
+    expect(shouldSuggestMrMouse({ ...base, productCount: 0 })).toBe(false);
+    expect(shouldSuggestMrMouse({ ...base, connected: true })).toBe(false);
+    expect(shouldSuggestMrMouse({ ...base, snoozed: true })).toBe(false);
+    expect(shouldSuggestMrMouse({ ...base, storeOn: false })).toBe(false);
   });
 });

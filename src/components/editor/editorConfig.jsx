@@ -71,6 +71,12 @@ export function buildEditorConfig(siteId) {
                   <span>Work</span>
                   <span>Journal</span>
                 </nav>
+                {/* On a phone-width preview the links fold behind this, as on the live store. */}
+                <span className="store-menu-btn" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" focusable="false">
+                    <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </span>
               </div>
             </header>
             {children}
