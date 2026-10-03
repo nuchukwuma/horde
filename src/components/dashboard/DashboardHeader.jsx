@@ -1,4 +1,5 @@
 import SignOutButton from '@/components/auth/SignOutButton';
+import ColorSchemeSwitch from '@/components/platform/ColorSchemeSwitch';
 
 /**
  * One header for every dashboard page. The pages used to have three
@@ -45,6 +46,7 @@ export default function DashboardHeader({ siteId, current, storeUrl, modules = n
             </a>
           ) : null}
         </nav>
+        <ColorSchemeSwitch />
         <SignOutButton endpoint="/api/auth/logout" redirectTo="/login" />
       </div>
     </header>

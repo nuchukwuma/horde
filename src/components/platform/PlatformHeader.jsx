@@ -1,4 +1,5 @@
 import BrandMark from '@/components/art/BrandMark';
+import ColorSchemeSwitch from './ColorSchemeSwitch';
 
 /**
  * Header for HordeMart's own pages (landing, docs, sign in, sign up).
@@ -20,12 +21,17 @@ export default function PlatformHeader({ current, cta = true }) {
           >
             How it works
           </a>
+          <ColorSchemeSwitch />
           <a href="/login" aria-current={current === 'login' ? 'page' : undefined}>
             Sign in
           </a>
           {cta ? (
-            <a className="btn btn--primary btn--sm" href="/signup">
-              Open your shop
+            <a className="btn btn--primary btn--sm" href="/signup" aria-label="Open your shop">
+              {/* "Open shop" on the narrowest phones, where the header is full. */}
+              <span className="cta-long">Open your shop</span>
+              <span className="cta-short" aria-hidden="true">
+                Open shop
+              </span>
             </a>
           ) : null}
         </nav>

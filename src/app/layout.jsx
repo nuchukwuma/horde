@@ -1,4 +1,7 @@
 import { connection } from 'next/server';
+import { cookies, headers } from 'next/headers';
+import { TENANT_SLUG_HEADER } from '@/lib/tenant/headers';
+import { COLOR_SCHEME_COOKIE, parseColorScheme } from '@/lib/ui/colorScheme';
 import { fontVariables } from './fonts';
 import './styles/tokens.css';
 import './styles/base.css';
@@ -30,8 +33,13 @@ export default async function RootLayout({ children }) {
   // See lib/security/csp.ts.
   await connection();
 
+  // HordeMart's own pages honour the light/dark switch. A store never does:
+  // its scheme is the seller's choice, set in the store design.
+  const onStore = Boolean((await headers()).get(TENANT_SLUG_HEADER));
+  const scheme = onStore ? null : parseColorScheme((await cookies()).get(COLOR_SCHEME_COOKIE)?.value);
+
   return (
-    <html lang="en-NG" className={fontVariables}>
+    <html lang="en-NG" className={fontVariables} data-theme={scheme ?? undefined}>
       <body>{children}</body>
     </html>
   );
