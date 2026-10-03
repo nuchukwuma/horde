@@ -18,6 +18,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { VerificationToken } from '../db/models/VerificationToken';
 import { User, type UserAttributes } from '../db/models/User';
 import { assertEmailConfigured, sendEmail, type SendResult } from '../email/transport';
+import { verifyEmail, verifyEmailReminder } from '../email/templates';
 import { ForbiddenError, ValidationError } from '../errors';
 
 /**
@@ -38,6 +39,8 @@ export interface IssueVerificationInput {
   user: Pick<UserAttributes, '_id' | 'email' | 'name'>;
   /** Absolute base URL of the dashboard host, e.g. https://app.hordemart.com */
   appOrigin: string;
+  /** 'reminder' is the one follow-up sent by lib/email/reminders.ts. */
+  variant?: 'welcome' | 'reminder';
 }
 
 export async function issueEmailVerification(
@@ -68,20 +71,10 @@ export async function issueEmailVerification(
 
   const link = `${input.appOrigin.replace(/\/$/, '')}/verify-email?token=${encodeURIComponent(token)}`;
 
+  const template = input.variant === 'reminder' ? verifyEmailReminder : verifyEmail;
   const delivery = await sendEmail({
     to: input.user.email,
-    subject: 'Confirm your email for HordeMart',
-    text: [
-      `Hi ${input.user.name},`,
-      '',
-      'Confirm this address so you can connect a bank account and start taking payments:',
-      '',
-      link,
-      '',
-      'This link expires in 24 hours.',
-      '',
-      'If you did not create a HordeMart account, ignore this email — nothing was set up in your name.',
-    ].join('\n'),
+    ...template({ name: input.user.name, link }),
   });
 
   return { token, delivery };

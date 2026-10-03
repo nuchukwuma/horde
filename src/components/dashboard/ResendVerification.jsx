@@ -2,15 +2,18 @@
 
 import { useState } from 'react';
 
-/** "Send the link again", for a seller who lost the verification email. */
-export default function ResendVerification() {
+/**
+ * "Send the link again", for someone who lost the confirmation email. Sellers
+ * by default; a store passes its own shopper endpoint.
+ */
+export default function ResendVerification({ endpoint = '/api/auth/verify-email/resend' }) {
   const [state, setState] = useState('idle');
   const [message, setMessage] = useState(null);
 
   async function resend() {
     setState('busy');
     try {
-      const response = await fetch('/api/auth/verify-email/resend', { method: 'POST' });
+      const response = await fetch(endpoint, { method: 'POST' });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.error?.message ?? 'Could not send the email.');
       setState('sent');

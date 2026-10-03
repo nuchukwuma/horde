@@ -17,6 +17,7 @@ import { NextResponse } from 'next/server';
 import { ensureDatabase, requirePublicSite, requestIp, requestUserAgent } from '@/lib/http/context';
 import { toErrorResponse } from '@/lib/http/respond';
 import { registerCustomer } from '@/lib/shop/customerAccount';
+import { issueCustomerVerification } from '@/lib/shop/customerVerification';
 import { createCustomerSession } from '@/lib/auth/session';
 import { sessionCookieName, sessionCookieOptions } from '@/lib/auth/cookies';
 import { customerSignUpSchema } from '@/lib/validation/schemas';
@@ -45,8 +46,18 @@ export async function POST(request: NextRequest) {
       userAgent: requestUserAgent(request),
     });
 
+    // Best effort: the account exists and the shopper is signed in whether or
+    // not the email goes, and they can ask for it again from their account.
+    let verificationSent = false;
+    try {
+      const { delivery } = await issueCustomerVerification({ site, customer });
+      verificationSent = delivery.transport === 'resend';
+    } catch {
+      console.error('[shop] customer confirmation email not sent', String(site._id));
+    }
+
     const response = NextResponse.json(
-      { data: { name: customer.name, email: customer.email } },
+      { data: { name: customer.name, email: customer.email, verificationSent } },
       { status: 201 },
     );
 

@@ -13,6 +13,9 @@ export type { UserAttributes, PlatformRole, UserStatus } from './User';
 export { Customer } from './Customer';
 export type { CustomerAttributes, CustomerStatus } from './Customer';
 
+export { CustomerVerificationToken } from './CustomerVerificationToken';
+export type { CustomerVerificationTokenAttributes } from './CustomerVerificationToken';
+
 export { Conversation } from './Conversation';
 export type { ConversationAttributes, ConversationStatus } from './Conversation';
 

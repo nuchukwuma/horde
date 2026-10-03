@@ -1092,6 +1092,36 @@
   border-color: currentColor;
 }
 
+.setup-tips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+
+.setup-tips__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.setup-tips__label input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.setup-tips__status:empty {
+  display: none;
+}
+
 .to-send {
   text-decoration: none;
   color: inherit;

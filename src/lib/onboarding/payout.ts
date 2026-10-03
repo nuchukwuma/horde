@@ -21,6 +21,7 @@ import { ConflictError, NotFoundError, ValidationError } from '../errors';
 import { recordAudit } from '../audit';
 import { runWithoutTenantScope } from '../tenant/context';
 import { assertEmailConfigured, sendEmail } from '../email/transport';
+import { payoutChangedEmail } from '../email/templates';
 
 /**
  * How long a newly verified seller must wait before they can take payments.
@@ -210,18 +211,12 @@ export async function savePayoutDetails(
     assertEmailConfigured();
     await sendEmail({
       to: actor.email,
-      subject: `Your payout bank account was changed — ${site.name}`,
-      text: [
-        `Hi ${actor.name},`,
-        '',
-        `The bank account that receives payments for ${site.name} was just set to:`,
-        '',
-        `  ${verified.accountName}, account ending ${verified.accountNumberLast4}`,
-        '',
-        'If this was you, there is nothing to do.',
-        '',
-        'If it was NOT you, change your HordeMart password now, put your own bank details back under Payouts in your dashboard, and contact HordeMart support straight away.',
-      ].join('\n'),
+      ...payoutChangedEmail({
+        name: actor.name,
+        storeName: site.name,
+        accountName: verified.accountName,
+        accountNumberLast4: verified.accountNumberLast4,
+      }),
     });
   } catch {
     console.error('[payout] change notification email could not be sent', String(site._id));
