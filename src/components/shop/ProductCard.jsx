@@ -1,5 +1,7 @@
 import ProductArt from '@/components/art/ProductArt';
 import { formatNaira } from '@/lib/ui/format';
+import StoreImage from '@/components/media/StoreImage';
+import { IMAGE_SIZES } from '@/lib/media/responsiveImage';
 
 /**
  * A product in a grid. Takes a ProductView (lib/products/products.ts).
@@ -19,8 +21,7 @@ export default function ProductCard({ product, index = 0 }) {
     <a className="product-card" href={`/shop/${product.slug}`} style={{ '--delay': `${Math.min(index, 8) * 50}ms` }}>
       <div className="product-card__media">
         {photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo.url} alt={photo.alt ?? product.title} loading="lazy" />
+          <StoreImage image={photo} alt={photo.alt ?? product.title} sizes={IMAGE_SIZES.productCard} fallbackWidth={480} />
         ) : (
           <ProductArt title={product.title} seed={product.id} label={product.title} />
         )}

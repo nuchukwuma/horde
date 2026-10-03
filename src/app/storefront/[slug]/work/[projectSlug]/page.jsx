@@ -7,6 +7,8 @@ import { canonicalUrl } from '@/lib/seo/meta';
 import { creativeWorkJsonLd, serializeJsonLd } from '@/lib/seo/jsonLd';
 import { formatDate } from '@/lib/ui/format';
 import ProductArt from '@/components/art/ProductArt';
+import StoreImage from '@/components/media/StoreImage';
+import { IMAGE_SIZES } from '@/lib/media/responsiveImage';
 
 async function load(params) {
   const site = await requireStorefront(params);
@@ -62,8 +64,7 @@ export default async function WorkDetail({ params }) {
 
       <div className="product__media" style={{ aspectRatio: '16 / 10', marginBottom: 28 }}>
         {cover?.url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={cover.url} alt={cover.alt ?? project.title} />
+          <StoreImage image={cover} alt={cover.alt ?? project.title} sizes={IMAGE_SIZES.productMain} priority fallbackWidth={800} />
         ) : (
           <ProductArt title={project.title} seed={String(project._id)} label={project.title} />
         )}
@@ -81,7 +82,7 @@ export default async function WorkDetail({ params }) {
           {rest.map((image) => (
             <div key={image.url} className="product-card__media">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={image.url} alt={image.alt ?? ''} loading="lazy" />
+              <StoreImage image={image} sizes={IMAGE_SIZES.split} fallbackWidth={800} />
             </div>
           ))}
         </div>

@@ -2130,3 +2130,12 @@
     transition: none;
   }
 }
+
+/* Blog post cover (blog/[postSlug]): full column width, its own height. */
+.post-cover {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-lg);
+  margin-bottom: 32px;
+}

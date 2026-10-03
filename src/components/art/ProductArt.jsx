@@ -14,6 +14,8 @@
  * and weighs nothing.
  */
 
+import { circlePath, rectPath } from '@/lib/ui/svgPath';
+
 const PALETTES = [
   { bg: '#f6d38a', motif: '#e8772e', fill: '#2b3a8c', accent: '#fffaf2' },
   { bg: '#cfe6d8', motif: '#0f6b4a', fill: '#e8772e', accent: '#fffaf2' },
@@ -63,61 +65,50 @@ export function productKind(title) {
  * page (a listing and the basket). Worse, Chrome will not paint a pattern
  * whose definition sits inside a display:none copy, so a hidden duplicate
  * could blank the visible one. Shapes have no ids, so neither can happen.
+ *
+ * Each print is one or two <path>s holding every repeat (lib/ui/svgPath):
+ * the same picture as hundreds of separate circles and rects, at a fraction
+ * of the page weight and with almost nothing for the browser to hydrate.
  */
 function Motif({ kind, color }) {
-  const cells = [];
+  const d = [];
   switch (kind) {
-    case 0: // adire: concentric circles
+    case 0: {
+      // adire: concentric circles
+      const dots = [];
       for (let y = 40; y < 520; y += 80) {
         for (let x = 40; x < 420; x += 80) {
-          cells.push(
-            <g key={`${x}-${y}`}>
-              <circle cx={x} cy={y} r="26" fill="none" stroke={color} strokeWidth="5" />
-              <circle cx={x} cy={y} r="12" fill="none" stroke={color} strokeWidth="5" />
-              <circle cx={x} cy={y} r="3" fill={color} />
-            </g>,
-          );
+          d.push(circlePath(x, y, 26), circlePath(x, y, 12));
+          dots.push(circlePath(x, y, 3));
         }
-      }
-      return <g opacity="0.32">{cells}</g>;
-    case 1: // stripes
-      for (let i = -12; i < 22; i += 1) {
-        cells.push(<rect key={i} x={i * 44} y="-200" width="18" height="900" fill={color} />);
       }
       return (
-        <g opacity="0.24" transform="rotate(-28 200 250)">
-          {cells}
+        <g opacity="0.32">
+          <path d={d.join('')} fill="none" stroke={color} strokeWidth="5" />
+          <path d={dots.join('')} fill={color} />
         </g>
       );
+    }
+    case 1: // stripes
+      for (let i = -12; i < 22; i += 1) d.push(rectPath(i * 44, -200, 18, 900));
+      return <path d={d.join('')} fill={color} opacity="0.24" transform="rotate(-28 200 250)" />;
     case 2: // waves
       for (let y = 20; y < 520; y += 40) {
-        cells.push(
-          <path key={y} d={`M-20 ${y} Q5 ${y - 20} 30 ${y} T80 ${y} T130 ${y} T180 ${y} T230 ${y} T280 ${y} T330 ${y} T380 ${y} T430 ${y}`} fill="none" stroke={color} strokeWidth="6" />,
-        );
+        d.push(`M-20 ${y} Q5 ${y - 20} 30 ${y} T80 ${y} T130 ${y} T180 ${y} T230 ${y} T280 ${y} T330 ${y} T380 ${y} T430 ${y}`);
       }
-      return <g opacity="0.3">{cells}</g>;
+      return <path d={d.join('')} fill="none" stroke={color} strokeWidth="6" opacity="0.3" />;
     case 3: // dots
       for (let y = 9; y < 520; y += 36) {
-        for (let x = 9; x < 420; x += 36) {
-          cells.push(<circle key={`${x}-${y}`} cx={x} cy={y} r="5" fill={color} />);
-          cells.push(<circle key={`${x}-${y}b`} cx={x + 18} cy={y + 18} r="5" fill={color} />);
-        }
+        for (let x = 9; x < 420; x += 36) d.push(circlePath(x, y, 5), circlePath(x + 18, y + 18, 5));
       }
-      return <g opacity="0.3">{cells}</g>;
+      return <path d={d.join('')} fill={color} opacity="0.3" />;
     default: // kente-ish blocks
       for (let y = 0; y < 520; y += 96) {
         for (let x = 0; x < 420; x += 96) {
-          cells.push(
-            <g key={`${x}-${y}`} transform={`translate(${x} ${y})`}>
-              <rect x="0" y="0" width="48" height="16" fill={color} />
-              <rect x="48" y="48" width="48" height="16" fill={color} />
-              <rect x="16" y="56" width="16" height="40" fill={color} />
-              <rect x="64" y="8" width="16" height="40" fill={color} />
-            </g>,
-          );
+          d.push(rectPath(x, y, 48, 16), rectPath(x + 48, y + 48, 48, 16), rectPath(x + 16, y + 56, 16, 40), rectPath(x + 64, y + 8, 16, 40));
         }
       }
-      return <g opacity="0.26">{cells}</g>;
+      return <path d={d.join('')} fill={color} opacity="0.26" />;
   }
 }
 

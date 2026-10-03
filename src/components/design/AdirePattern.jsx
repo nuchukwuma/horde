@@ -16,6 +16,8 @@
  * page, and nothing for the CSP to object to.
  */
 
+import { circlePath, rectPath } from '@/lib/ui/svgPath';
+
 const MOTIFS = ['oniko', 'alabere', 'ladder', 'dots', 'leaf', 'cross'];
 
 function codeAt(text, i) {
@@ -36,53 +38,33 @@ export function adireTiles(name, count = 12) {
 }
 
 export function AdireMotif({ motif, resist }) {
+  // One path per motif where the strokes match (lib/ui/svgPath): the same
+  // marks with far fewer elements, since a hero cloth repeats 30 squares.
   const stroke = { stroke: resist, strokeWidth: 3.2, fill: 'none', strokeLinecap: 'round' };
   switch (motif) {
     case 'oniko':
       return (
-        <g {...stroke}>
-          <circle cx="25" cy="25" r="16" />
-          <circle cx="25" cy="25" r="9" />
-          <circle cx="25" cy="25" r="2.4" fill={resist} />
-        </g>
+        <>
+          <path d={circlePath(25, 25, 16) + circlePath(25, 25, 9)} {...stroke} />
+          {/* The dot carries the stroke too, as it did inside the stroked group. */}
+          <path d={circlePath(25, 25, 2.4)} {...stroke} fill={resist} />
+        </>
       );
     case 'alabere':
-      return (
-        <g {...stroke}>
-          {[12, 20, 28, 36].map((y) => (
-            <path key={y} d={`M8 ${y} q4 -3 8 0 t8 0 t8 0 t8 0`} />
-          ))}
-        </g>
-      );
+      return <path d={[12, 20, 28, 36].map((y) => `M8 ${y} q4 -3 8 0 t8 0 t8 0 t8 0`).join('')} {...stroke} />;
     case 'ladder':
-      return (
-        <g {...stroke}>
-          <path d="M14 7 V43 M36 7 V43" />
-          {[13, 21, 29, 37].map((y) => (
-            <path key={y} d={`M14 ${y} H36`} />
-          ))}
-        </g>
-      );
+      return <path d={`M14 7 V43 M36 7 V43${[13, 21, 29, 37].map((y) => ` M14 ${y} H36`).join('')}`} {...stroke} />;
     case 'dots':
       return (
-        <g fill={resist}>
-          {[11, 25, 39].flatMap((x) => [11, 25, 39].map((y) => <circle key={`${x}${y}`} cx={x} cy={y} r={x === 25 && y === 25 ? 4.4 : 2.6} />))}
-        </g>
+        <path
+          d={[11, 25, 39].flatMap((x) => [11, 25, 39].map((y) => circlePath(x, y, x === 25 && y === 25 ? 4.4 : 2.6))).join('')}
+          fill={resist}
+        />
       );
     case 'leaf':
-      return (
-        <g {...stroke}>
-          <path d="M25 6 C40 16 40 34 25 44 C10 34 10 16 25 6 Z" />
-          <path d="M25 10 V40 M25 20 l-6 -4 M25 20 l6 -4 M25 30 l-7 -4 M25 30 l7 -4" />
-        </g>
-      );
+      return <path d="M25 6 C40 16 40 34 25 44 C10 34 10 16 25 6 Z M25 10 V40 M25 20 l-6 -4 M25 20 l6 -4 M25 30 l-7 -4 M25 30 l7 -4" {...stroke} />;
     default:
-      return (
-        <g {...stroke}>
-          <rect x="9" y="9" width="32" height="32" rx="2" />
-          <path d="M9 9 L41 41 M41 9 L9 41" />
-        </g>
-      );
+      return <path d="M11 9h28a2 2 0 0 1 2 2v28a2 2 0 0 1 -2 2h-28a2 2 0 0 1 -2 -2v-28a2 2 0 0 1 2 -2z M9 9 L41 41 M41 9 L9 41" {...stroke} />;
   }
 }
 
@@ -116,16 +98,24 @@ export default function AdirePattern({
       {tiles.map((tile, i) => {
         const x = (i % columns) * 50;
         const y = Math.floor(i / columns) * 50;
+        // Two groups on purpose: the landing animates .adire__tile's
+        // transform, which would otherwise replace the translate.
         return (
           <g key={`${i}-${tile.motif}-${tile.turn}`} transform={`translate(${x} ${y})`}>
             <g className={tileClassName} style={{ '--i': i }} transform={`rotate(${tile.turn * 90} 25 25)`}>
               <AdireMotif motif={tile.motif} resist={resist} />
             </g>
-            {/* The hand-drawn grid between squares. */}
-            <rect x="0.5" y="0.5" width="49" height="49" fill="none" stroke={resist} strokeWidth="0.8" opacity="0.35" />
           </g>
         );
       })}
+      {/* The hand-drawn grid between squares, as one path. */}
+      <path
+        d={tiles.map((_, i) => rectPath((i % columns) * 50 + 0.5, Math.floor(i / columns) * 50 + 0.5, 49, 49)).join('')}
+        fill="none"
+        stroke={resist}
+        strokeWidth="0.8"
+        opacity="0.35"
+      />
     </svg>
   );
 }

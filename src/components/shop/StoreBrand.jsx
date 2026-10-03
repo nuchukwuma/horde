@@ -1,4 +1,8 @@
 import StoreMonogram from './StoreMonogram';
+import { imageUrlAt } from '@/lib/media/responsiveImage';
+
+// Logos show at most 52px tall; 480px wide covers a wide wordmark on a sharp screen.
+const LOGO_WIDTH = 480;
 
 /**
  * The store's name in its header: the seller's logo if they uploaded one,
@@ -32,15 +36,15 @@ export default function StoreBrand({ name, theme, mode = theme?.mode ?? 'light',
   } else if (mode === 'auto' && logoDark) {
     mark = (
       <picture className="store-brand__picture">
-        <source srcSet={logoDark.url} media="(prefers-color-scheme: dark)" />
+        <source srcSet={imageUrlAt(logoDark, LOGO_WIDTH)} media="(prefers-color-scheme: dark)" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="store-brand__logo" src={logo.url} alt="" width={logo.width} height={logo.height} />
+        <img className="store-brand__logo" src={imageUrlAt(logo, LOGO_WIDTH)} alt="" width={logo.width} height={logo.height} />
       </picture>
     );
   } else {
     const shown = mode === 'dark' && logoDark ? logoDark : logo;
     // eslint-disable-next-line @next/next/no-img-element
-    mark = <img className="store-brand__logo" src={shown.url} alt="" width={shown.width} height={shown.height} />;
+    mark = <img className="store-brand__logo" src={imageUrlAt(shown, LOGO_WIDTH)} alt="" width={shown.width} height={shown.height} />;
   }
 
   return (

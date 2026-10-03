@@ -6,6 +6,7 @@ import { formatNaira } from '@/lib/ui/format';
 import TermsCheckbox from '@/components/legal/TermsCheckbox';
 import { NIGERIAN_STATES, normaliseNigerianPhone } from '@/lib/shop/nigeria';
 import { getCart, onCartChange, removeFromCart, setQuantity } from './cart';
+import { imageUrlAt } from '@/lib/media/responsiveImage';
 
 /**
  * The basket and checkout.
@@ -179,7 +180,7 @@ export default function CartView({ storeName, shopper, privacyUrl = '/privacy', 
               <a className="cart-line__media" href={`/shop/${line.slug}`} tabIndex={-1} aria-hidden="true">
                 {line.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={line.imageUrl} alt="" />
+                  <img src={imageUrlAt({ url: line.imageUrl }, 160)} alt="" loading="lazy" decoding="async" />
                 ) : (
                   <ProductArt title={line.title} seed={line.productId} label="" />
                 )}

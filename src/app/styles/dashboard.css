@@ -5,6 +5,95 @@
 .ed {
   position: relative;
   min-height: 100vh;
+
+  /* Puck's chrome in HordeMart's own tokens, through Puck's documented
+     theming API (puckeditor.com/docs/extending-puck/theming; every token
+     below exists in the pinned 0.23.0). Mapped to tokens.css, so the editor
+     follows the light/dark switch like the rest of the dashboard. */
+  --puck-font-family: var(--font-figtree), ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif;
+  --puck-color-text: var(--text-primary);
+  --puck-color-text-secondary: var(--text-secondary);
+  --puck-color-text-muted: var(--text-secondary);
+  --puck-color-text-subtle: var(--text-muted);
+  --puck-color-surface: var(--surface-1);
+  --puck-color-surface-subtle: var(--surface-page);
+  --puck-color-surface-muted: var(--surface-2);
+  --puck-color-border: var(--border);
+  --puck-color-border-muted: var(--border);
+  --puck-color-border-hover: var(--border-strong);
+  --puck-color-interactive: var(--accent);
+  --puck-color-interactive-hover: var(--accent-hover);
+  --puck-color-interactive-active: var(--accent-hover);
+  --puck-color-interactive-subtle: var(--accent-wash);
+  --puck-color-interactive-soft: color-mix(in srgb, var(--accent) 7%, var(--surface-1));
+  --puck-color-interactive-soft-hover: var(--accent-wash);
+  --puck-color-focus-ring: var(--accent);
+  --puck-color-selection-bg: color-mix(in srgb, var(--accent) 14%, transparent);
+  --puck-color-selection-border: var(--accent);
+  --puck-button-primary-color-bg: var(--accent);
+  --puck-button-primary-color-bg-hover: var(--accent-hover);
+  --puck-button-primary-color-text: var(--accent-ink);
+  --puck-drawer-category-font-size: 13px;
+}
+
+/* Block categories ("Top of page", "Selling") in sentence case. Puck sets
+   uppercase with no token for it; the class name is Puck's own (version
+   pinned), matched by prefix so its build hash can change. */
+.ed [class*='ComponentList-title'] {
+  text-transform: none;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* Nothing selected: what to do, in place of an empty settings panel. */
+.ed-guide {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ed-guide p {
+  margin: 0;
+}
+
+.ed-guide__lead {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Save and Publish on a phone, where Puck hides its header actions behind
+   a menu toggle (below 638px). Puck fills the screen (100dvh), so it gives
+   up this bar's height rather than pushing its bottom tabs off screen. */
+.ed-phonebar {
+  display: none;
+}
+
+@media (max-width: 637px) {
+  .ed {
+    --ed-phonebar-h: 56px;
+  }
+  .ed-phonebar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: var(--ed-phonebar-h);
+    padding: 0 12px;
+    background: var(--surface-1);
+    border-bottom: 1px solid var(--border);
+  }
+  .ed-phonebar .ed-state {
+    flex: 1;
+    min-width: 0;
+    white-space: normal;
+    font-size: 12.5px;
+    line-height: 1.25;
+  }
+  .ed [class*='_PuckLayout_'] {
+    height: calc(100dvh - var(--ed-phonebar-h));
+  }
 }
 
 .ed-actions {
@@ -31,7 +120,8 @@
 .ed-state {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-muted);
+  /* Secondary, not muted: muted grey is under 4.5:1 at this size. */
+  color: var(--text-secondary);
   margin-right: 4px;
   white-space: nowrap;
 }

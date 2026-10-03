@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Puck } from '@puckeditor/core';
+import { Puck, createUsePuck } from '@puckeditor/core';
 // The no-external build: puck.css pulls Inter from rsms.me, which the CSP
 // (correctly) refuses. This variant uses the page's own fonts.
 import '@puckeditor/core/no-external.css';
@@ -31,6 +31,31 @@ const VIEWPORTS = [
   { width: 360, height: 'auto', label: 'Phone' },
   { width: 1280, height: 'auto', label: 'Desktop' },
 ];
+
+// Most customers shop on a phone, so the preview opens at phone width
+// whatever screen the seller edits on. Puck merges `ui` one level deep,
+// so `viewports` is given whole (its defaults, with this starting width).
+const INITIAL_UI = {
+  viewports: { current: { width: 360, height: 'auto' }, options: [], controlsVisible: true },
+};
+
+const usePuck = createUsePuck();
+
+/**
+ * The right-hand panel. With nothing selected Puck shows only the page's
+ * (empty) settings; say what to do instead.
+ */
+function FieldsPanel({ children }) {
+  const selected = usePuck((s) => s.selectedItem);
+  if (selected) return children;
+  return (
+    <div className="ed-guide">
+      <p className="ed-guide__lead">Tap any part of the preview to change its words and pictures.</p>
+      <p>Add a part from the list on the left: tap it, or drag it into place.</p>
+      <p>Colours, fonts and your logo are under Brand.</p>
+    </div>
+  );
+}
 
 function snapshot(theme, page) {
   return JSON.stringify({ theme, page });
@@ -193,8 +218,43 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
     [theme, products, previewDark, socials, storeName],
   );
 
+  const saveButton = (
+    <button
+      type="button"
+      className="btn btn--sm"
+      onClick={save}
+      disabled={!dirty || Boolean(busy) || unreadable}
+      title={unreadable ? 'Fix the colours in Brand first' : undefined}
+    >
+      {busy === 'save' ? 'Saving…' : 'Save draft'}
+    </button>
+  );
+  const publishButton = (
+    <button
+      type="button"
+      className="btn btn--sm btn--primary"
+      onClick={publish}
+      disabled={Boolean(busy) || unreadable || nothingToPublish}
+      title={unreadable ? 'Fix the colours in Brand first' : nothingToPublish ? 'Your store already shows this design' : undefined}
+    >
+      {busy === 'publish' ? 'Publishing…' : 'Publish'}
+    </button>
+  );
+
   return (
     <div className="ed">
+      {/* On a phone Puck folds its header actions into a hidden menu, which
+          left Save and Publish out of sight. This bar keeps them on screen. */}
+      <div className="ed-phonebar" role="toolbar" aria-label="Store design">
+        <span className={`ed-state${dirty || unreadable ? ' is-dirty' : ''}`} role="status">
+          {stateText}
+        </span>
+        <button type="button" className="btn btn--sm btn--ghost" onClick={() => setBrandOpen((open) => !open)} aria-expanded={brandOpen}>
+          Brand
+        </button>
+        {saveButton}
+        {publishButton}
+      </div>
       <Puck
         key={puckKey}
         config={config}
@@ -202,8 +262,10 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
         onChange={onPuckChange}
         metadata={metadata}
         viewports={VIEWPORTS}
-        headerTitle={`${storeName} — store design`}
+        headerTitle={`Editing ${storeName}`}
+        ui={INITIAL_UI}
         overrides={{
+          fields: FieldsPanel,
           // Blocks can be clicked to add, not only dragged (ClickToAddItem).
           drawerItem: ClickToAddItem,
           headerActions: () => (
@@ -220,24 +282,8 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
               <button type="button" className="btn btn--sm btn--ghost" onClick={resetToPreset} title="Reset to the starting design">
                 Reset
               </button>
-              <button
-                type="button"
-                className="btn btn--sm"
-                onClick={save}
-                disabled={!dirty || Boolean(busy) || unreadable}
-                title={unreadable ? 'Fix the colours in Brand first' : undefined}
-              >
-                {busy === 'save' ? 'Saving…' : 'Save draft'}
-              </button>
-              <button
-                type="button"
-                className="btn btn--sm btn--primary"
-                onClick={publish}
-                disabled={Boolean(busy) || unreadable || nothingToPublish}
-                title={unreadable ? 'Fix the colours in Brand first' : nothingToPublish ? 'Your store already shows this design' : undefined}
-              >
-                {busy === 'publish' ? 'Publishing…' : 'Publish'}
-              </button>
+              {saveButton}
+              {publishButton}
             </div>
           ),
         }}
