@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Puck, createUsePuck } from '@puckeditor/core';
 // The no-external build: puck.css pulls Inter from rsms.me, which the CSP
 // (correctly) refuses. This variant uses the page's own fonts.
@@ -40,6 +40,26 @@ const INITIAL_UI = {
 };
 
 const usePuck = createUsePuck();
+
+/**
+ * True only once the page is running in the browser: false on the server
+ * and during hydration, true on the render after.
+ *
+ * Puck mounts behind this. Its server HTML is invisible anyway (it shows
+ * itself only after measuring the page), and hydrating it compared ids
+ * that React generates from the component tree: anything that shifts the
+ * tree between server and browser — a stale dev build, an extension, dev
+ * tooling — turned into "A tree hydrated but some attributes … didn't
+ * match". Mounted in the browser only, there is nothing to compare.
+ */
+const noSubscribe = () => () => {};
+function useInBrowser() {
+  return useSyncExternalStore(
+    noSubscribe,
+    () => true,
+    () => false,
+  );
+}
 
 /**
  * The right-hand panel. With nothing selected Puck shows only the page's
@@ -241,6 +261,8 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
     </button>
   );
 
+  const inBrowser = useInBrowser();
+
   return (
     <div className="ed">
       {/* On a phone Puck folds its header actions into a hidden menu, which
@@ -255,39 +277,45 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
         {saveButton}
         {publishButton}
       </div>
-      <Puck
-        key={puckKey}
-        config={config}
-        data={page}
-        onChange={onPuckChange}
-        metadata={metadata}
-        viewports={VIEWPORTS}
-        headerTitle={`Editing ${storeName}`}
-        ui={INITIAL_UI}
-        overrides={{
-          fields: FieldsPanel,
-          // Blocks can be clicked to add, not only dragged (ClickToAddItem).
-          drawerItem: ClickToAddItem,
-          headerActions: () => (
-            <div className="ed-actions">
-              <a className="btn btn--sm btn--ghost ed-back" href={`/dashboard/${siteId}`}>
-                ← Dashboard
-              </a>
-              <span className={`ed-state${dirty || unreadable ? ' is-dirty' : ''}`} role="status">
-                {stateText}
-              </span>
-              <button type="button" className="btn btn--sm" onClick={() => setBrandOpen((open) => !open)} aria-expanded={brandOpen}>
-                Brand
-              </button>
-              <button type="button" className="btn btn--sm btn--ghost" onClick={resetToPreset} title="Reset to the starting design">
-                Reset
-              </button>
-              {saveButton}
-              {publishButton}
-            </div>
-          ),
-        }}
-      />
+      {!inBrowser ? (
+        <div className="ed-loading" role="status">
+          Opening the editor…
+        </div>
+      ) : (
+        <Puck
+          key={puckKey}
+          config={config}
+          data={page}
+          onChange={onPuckChange}
+          metadata={metadata}
+          viewports={VIEWPORTS}
+          headerTitle={`Editing ${storeName}`}
+          ui={INITIAL_UI}
+          overrides={{
+            fields: FieldsPanel,
+            // Blocks can be clicked to add, not only dragged (ClickToAddItem).
+            drawerItem: ClickToAddItem,
+            headerActions: () => (
+              <div className="ed-actions">
+                <a className="btn btn--sm btn--ghost ed-back" href={`/dashboard/${siteId}`}>
+                  ← Dashboard
+                </a>
+                <span className={`ed-state${dirty || unreadable ? ' is-dirty' : ''}`} role="status">
+                  {stateText}
+                </span>
+                <button type="button" className="btn btn--sm" onClick={() => setBrandOpen((open) => !open)} aria-expanded={brandOpen}>
+                  Brand
+                </button>
+                <button type="button" className="btn btn--sm btn--ghost" onClick={resetToPreset} title="Reset to the starting design">
+                  Reset
+                </button>
+                {saveButton}
+                {publishButton}
+              </div>
+            ),
+          }}
+        />
+      )}
 
       {brandOpen ? (
         <ThemePanel
