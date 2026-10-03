@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import PasswordInput from '@/components/auth/PasswordInput';
 
 /**
  * Connect or change the bank account that receives this store's money.
@@ -239,9 +240,8 @@ export default function PayoutForm({ siteId, current, defaultBusinessName }) {
         <label className="label" htmlFor="payout-password">
           Your HordeMart password
         </label>
-        <input
+        <PasswordInput
           id="payout-password"
-          type="password"
           className="input"
           autoComplete="current-password"
           value={password}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import PasswordInput from '@/components/auth/PasswordInput';
 
 /**
  * Change the store's address.
@@ -135,9 +136,8 @@ export default function AddressForm({ siteId, currentSlug, rootDomain }) {
         <label className="label" htmlFor="confirm-password">
           Your password
         </label>
-        <input
+        <PasswordInput
           id="confirm-password"
-          type="password"
           className="input"
           autoComplete="current-password"
           value={password}

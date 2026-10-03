@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import PlatformHeader from '@/components/platform/PlatformHeader';
 import StallScene from '@/components/scenes/StallScene';
+import PasswordInput from '@/components/auth/PasswordInput';
 
 /**
  * Sign in.
@@ -105,10 +106,9 @@ export default function LoginPage() {
                     Forgot password?
                   </a>
                 </div>
-                <input
+                <PasswordInput
                   id="password"
                   name="password"
-                  type="password"
                   className="input"
                   autoComplete="current-password"
                   required
