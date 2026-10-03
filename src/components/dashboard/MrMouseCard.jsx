@@ -49,7 +49,19 @@ export default function MrMouseCard({ siteId, isOwner, initial, initialBacklog =
     if (!window.confirm('Disconnect MrMouse? Stock sync stops. Your MrMouse account and its data are not deleted.')) return;
     run('disconnect', async () => setState(await send(base, 'PATCH', { connect: false })));
   };
-  const toggleSync = (on) => run('sync', async () => setState(await send(base, 'PATCH', { stockSync: on })));
+  const toggleSync = (on) => {
+    // Tick at once; the server's answer (or the old state, on failure) follows.
+    const before = state;
+    setState({ ...state, stockSync: on });
+    run('sync', async () => {
+      try {
+        setState(await send(base, 'PATCH', { stockSync: on }));
+      } catch (problem) {
+        setState(before);
+        throw problem;
+      }
+    });
+  };
   // Sales HordeMart is still trying to tell MrMouse about (owner only).
   const [backlog, setBacklog] = useState(initialBacklog);
   const retrySales = () => run('retry', async () => setBacklog(await send(`${base}/sales`, 'POST')));

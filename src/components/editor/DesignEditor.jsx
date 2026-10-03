@@ -68,6 +68,19 @@ export default function DesignEditor({ siteId, storeName, storeUrl, products, in
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
 
+  // Puck's preview-zoom <select> ships without a label; screen readers
+  // announce it as just "combo box". Name it once it renders.
+  useEffect(() => {
+    const label = () =>
+      document.querySelectorAll('select[class*="ViewportControls-zoomSelect"]:not([aria-label])').forEach((select) => {
+        select.setAttribute('aria-label', 'Preview zoom');
+      });
+    label();
+    const observer = new MutationObserver(label);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
   const onPuckChange = useCallback((data) => {
     pageRef.current = data;
     setPage(data);

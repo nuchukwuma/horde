@@ -10,6 +10,7 @@
 
 import { Types } from 'mongoose';
 import { Conversation, type ConversationAttributes } from '../db/models/Conversation';
+import { Customer } from '../db/models/Customer';
 import { Message, type MessageAttributes, type MessageSender } from '../db/models/Message';
 import { stripAllHtml } from '../security/sanitizeHtml';
 import { assessPaymentRisk, type PaymentRiskResult } from './paymentRisk';
@@ -26,6 +27,9 @@ export interface ConversationSummary {
   unreadForSeller: number;
   unreadForCustomer: number;
   flaggedMessageCount: number;
+  /** Who the seller is talking to. Only on the seller's inbox listing. */
+  customerName?: string;
+  customerEmail?: string;
 }
 
 function summarise(conversation: ConversationAttributes): ConversationSummary {
@@ -177,11 +181,19 @@ export async function listConversations(input: {
   const tenant = { siteId: String(input.siteId) };
   const limit = Math.min(Math.max(input.limit ?? 50, 1), 200);
 
-  const rows = await runWithTenant(tenant, () =>
-    Conversation.find({}).sort({ lastMessageAt: -1 }).limit(limit),
-  );
-
-  return rows.map(summarise);
+  return runWithTenant(tenant, async () => {
+    const rows = await Conversation.find({}).sort({ lastMessageAt: -1 }).limit(limit);
+    // The store's own signed-in customers: the seller sees who wrote, as on
+    // their orders. One query for the page, not one per thread.
+    const customers = await Customer.find({ _id: { $in: rows.map((row) => row.customerId) } })
+      .select('name email')
+      .lean();
+    const byId = new Map(customers.map((customer) => [String(customer._id), customer]));
+    return rows.map((row) => {
+      const customer = byId.get(String(row.customerId));
+      return { ...summarise(row), customerName: customer?.name, customerEmail: customer?.email };
+    });
+  });
 }
 
 /**

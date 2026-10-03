@@ -16,6 +16,8 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import { Product } from '@/lib/db/models/Product';
 import { countOrdersToSend } from '@/lib/orders/sellerOrders';
 import { getPublishedDesign } from '@/lib/design/published';
+import SiteSections from '@/components/dashboard/SiteSections';
+import { Membership } from '@/lib/db/models/Membership';
 
 /**
  * Seller dashboard.
@@ -272,6 +274,9 @@ export default async function DashboardPage({ params }) {
             </div>
           )}
         </section>
+        {(await Membership.exists({ userId: session.user._id, siteId: site._id, role: 'owner' })) ? (
+          <SiteSections siteId={siteId} initial={{ blog: site.modules.blog, portfolio: site.modules.portfolio }} />
+        ) : null}
       </main>
     </div>
   );

@@ -68,7 +68,12 @@ export default function SellerInbox({ siteId, conversations }) {
           >
             <div className="row row--between" style={{ gap: 10, flexWrap: 'wrap' }}>
               <strong style={{ fontSize: 15 }}>
-                Customer
+                {conversation.customerName || 'Customer'}
+                {conversation.customerEmail ? (
+                  <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 13, marginLeft: 6 }}>
+                    {conversation.customerEmail}
+                  </span>
+                ) : null}
                 {conversation.unreadForSeller > 0 ? (
                   // A count and a word, never colour alone.
                   <span className="badge badge--good" style={{ marginLeft: 8 }}>
