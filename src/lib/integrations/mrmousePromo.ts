@@ -17,6 +17,7 @@ export const PROMO_SNOOZE_DAYS = 14;
 export function shouldSuggestMrMouse(input: {
   storeOn: boolean;
   productCount: number;
+  /** Connected now, or connected before and paused for new terms. */
   connected: boolean;
   snoozed: boolean;
 }): boolean {

@@ -94,9 +94,8 @@ export default async function StorefrontLayout({ children, params }) {
             ) : null}
           </StoreNav>
 
-          {/* On phones the menu's "Sign in" / "Messages" text link is hidden to
-              make room, which left customers no way into their account from
-              the header. This icon takes its place there. */}
+          {/* Phones only: the account link one tap away, without opening the
+              menu (where it is also listed, written out). */}
           {modules.store ? (
             <a
               className="store-head__account"

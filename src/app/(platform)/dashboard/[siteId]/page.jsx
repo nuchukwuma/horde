@@ -93,7 +93,8 @@ export default async function DashboardPage({ params }) {
   const suggestMrMouse = shouldSuggestMrMouse({
     storeOn: Boolean(site.modules.store),
     productCount,
-    connected: mrmouseState(site).connected,
+    // Paused for new terms still counts: they need "reconnect", not "try it".
+    connected: mrmouseState(site).connected || mrmouseState(site).termsOutdated,
     snoozed: Boolean(cookieStore.get(PROMO_COOKIE)?.value),
   });
   const mm = mrmouseConfig();

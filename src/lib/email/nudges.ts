@@ -70,8 +70,11 @@ export async function nudgeFor(
 
   if (!site.nudgesSent?.noProducts) {
     // Any product counts, drafts included: someone who has started adding
-    // products does not need to be told to.
-    const hasProduct = await runWithTenant({ siteId: String(site._id) }, () => Product.exists({}));
+    // products does not need to be told to. Archived ones do not — that is
+    // what deleting a product does (lib/products/products.ts).
+    const hasProduct = await runWithTenant({ siteId: String(site._id) }, () =>
+      Product.exists({ status: { $ne: 'archived' } }),
+    );
     if (!hasProduct) return 'no_products';
   }
 

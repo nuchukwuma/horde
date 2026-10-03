@@ -166,6 +166,17 @@ describe.runIf(hasMongo)('setup tips', () => {
     expect(emails).toHaveLength(0);
   });
 
+  it('still suggests adding products when every product was deleted', async () => {
+    const owner = await makeSeller('emptied@example.com', { ageDays: 4 });
+    const site = await makeStore('emptied-store', owner._id, 4);
+    await runWithTenant({ siteId: String(site._id) }, () =>
+      Product.create({ title: 'Old', slug: 'old', priceKobo: 100_000, status: 'archived', inventory: { track: false, quantity: 0, policy: 'deny' } }),
+    );
+    const emails = captureEmails();
+    expect((await sendNudges({ now: NOW, env: ENV })).sent).toBe(1);
+    expect(emails[0]).toContain('has no products yet');
+  });
+
   it('sends one tip per seller per run, however many stores they have', async () => {
     const owner = await makeSeller('many@example.com', { ageDays: 4 });
     await makeStore('many-one', owner._id, 4);
