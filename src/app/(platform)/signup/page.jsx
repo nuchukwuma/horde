@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import TermsCheckbox from '@/components/legal/TermsCheckbox';
 import PlatformHeader from '@/components/platform/PlatformHeader';
 import StallScene from '@/components/scenes/StallScene';
+import PasswordInput from '@/components/auth/PasswordInput';
 
 /**
  * Seller signup.
@@ -252,10 +253,9 @@ export default function SignupPage() {
                 <label className="label" htmlFor="password">
                   Password
                 </label>
-                <input
+                <PasswordInput
                   id="password"
                   name="password"
-                  type="password"
                   className="input"
                   autoComplete="new-password"
                   required

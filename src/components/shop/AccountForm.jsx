@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import TermsCheckbox from '@/components/legal/TermsCheckbox';
+import PasswordInput from '@/components/auth/PasswordInput';
 
 /**
  * Shopper sign-in and registration for one storefront.
@@ -110,10 +111,9 @@ export default function AccountForm({ mode, storeName, next = '/', termsUrl = '/
           <label htmlFor="password" style={labelStyle}>
             Password
           </label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete={isSignup ? 'new-password' : 'current-password'}
             required
             minLength={isSignup ? 12 : undefined}

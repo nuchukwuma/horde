@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import PasswordInput from '@/components/auth/PasswordInput';
 
 /** Upgrade to Premium, or stop it renewing. The server does the checking. */
 export default function BillingActions({ siteId, mode, available }) {
@@ -71,15 +72,14 @@ export default function BillingActions({ siteId, mode, available }) {
         Confirm your password to stop Premium renewing
       </label>
       <div className="row row--wrap">
-        <input
+        <PasswordInput
           id="cancel-password"
-          type="password"
           className="input"
           autoComplete="current-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           required
-          style={{ maxWidth: 260 }}
+          wrapperStyle={{ maxWidth: 260, flex: '1 1 200px' }}
         />
         <button type="submit" className="btn btn--danger" disabled={busy || !password}>
           {busy ? 'Cancelling…' : 'Stop renewing'}

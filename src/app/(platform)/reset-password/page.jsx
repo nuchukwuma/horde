@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import PlatformHeader from '@/components/platform/PlatformHeader';
+import PasswordInput from '@/components/auth/PasswordInput';
 
 const MIN_LENGTH = 12;
 
@@ -101,9 +102,8 @@ export default function ResetPasswordPage() {
               <label className="label" htmlFor="new-password">
                 New password
               </label>
-              <input
+              <PasswordInput
                 id="new-password"
-                type="password"
                 className="input"
                 autoComplete="new-password"
                 minLength={MIN_LENGTH}
@@ -121,9 +121,8 @@ export default function ResetPasswordPage() {
               <label className="label" htmlFor="confirm-password">
                 Type it again
               </label>
-              <input
+              <PasswordInput
                 id="confirm-password"
-                type="password"
                 className="input"
                 autoComplete="new-password"
                 required

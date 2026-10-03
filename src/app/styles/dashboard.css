@@ -1130,3 +1130,12 @@
   justify-self: start;
   color: var(--critical);
 }
+
+/* Shown for the moment before the editor mounts in the browser. */
+.ed-loading {
+  display: grid;
+  place-items: center;
+  min-height: 60vh;
+  color: var(--text-secondary);
+  font-size: 15px;
+}

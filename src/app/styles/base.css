@@ -1212,3 +1212,40 @@ table.data th.num {
     width: 30px;
   }
 }
+
+/* ---------- Password field with Show / Hide (components/auth/PasswordInput) ---------- */
+
+.password-field {
+  position: relative;
+  display: block;
+}
+
+.password-field > input {
+  width: 100%;
+  padding-right: 48px;
+}
+
+.password-field__toggle {
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.password-field__toggle:hover {
+  color: var(--text-primary);
+}
+
+.password-field__toggle[aria-pressed='true'] {
+  color: var(--accent);
+}
