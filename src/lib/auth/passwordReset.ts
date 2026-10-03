@@ -21,6 +21,7 @@ import { ValidationError } from '../errors';
 import { recordAudit } from '../audit';
 import { assertEmailConfigured, sendEmail } from '../email/transport';
 import { appOrigin } from '../seo/meta';
+import { passwordResetEmail } from '../email/templates';
 import { hashPassword } from './password';
 import { revokeAllSessionsForUser } from './session';
 import { generateVerificationToken, hashVerificationToken } from './emailVerification';
@@ -70,21 +71,7 @@ export async function requestPasswordReset(email: string, context: ResetContext 
   });
 
   const link = `${appOrigin()}/reset-password?token=${encodeURIComponent(token)}`;
-  await sendEmail({
-    to: user.email,
-    subject: 'Reset your HordeMart password',
-    text: [
-      `Hi ${user.name},`,
-      '',
-      'Someone — hopefully you — asked to reset the password for your HordeMart account. Choose a new one here:',
-      '',
-      link,
-      '',
-      'This link works once and expires in 1 hour. Resetting signs you out on every device.',
-      '',
-      'If you did not ask for this, ignore this email: your password has not changed.',
-    ].join('\n'),
-  });
+  await sendEmail({ to: user.email, ...passwordResetEmail({ name: user.name, link }) });
 }
 
 const invalidLink = () =>

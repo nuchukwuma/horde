@@ -7,6 +7,7 @@ import { validateCustomerSessionToken } from '@/lib/auth/session';
 import { sessionCookieName } from '@/lib/auth/cookies';
 import ChatThread from '@/components/chat/ChatThread';
 import SignOutButton from '@/components/auth/SignOutButton';
+import ResendVerification from '@/components/dashboard/ResendVerification';
 
 /**
  * A shopper's conversation with this store.
@@ -39,6 +40,17 @@ export default async function ShopMessagesPage({ params }) {
       <p style={{ color: 'var(--text-secondary)', marginTop: 0, marginBottom: 28 }}>
         Ask {site.name} about an order, sizing, delivery — anything.
       </p>
+
+      {session && !session.customer.emailVerifiedAt ? (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <strong>Confirm your email</strong>
+          <p style={{ color: 'var(--text-secondary)', margin: '6px 0 12px', fontSize: 14, overflowWrap: 'anywhere' }}>
+            We sent a link to {session.customer.email} so {site.name}’s replies and your receipts reach you.
+            Didn’t get it?
+          </p>
+          <ResendVerification endpoint="/api/shop/account/verify-email/resend" />
+        </div>
+      ) : null}
 
       {session ? (
         <ChatThread

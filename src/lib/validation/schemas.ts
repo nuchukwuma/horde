@@ -102,6 +102,17 @@ export const verifyEmailSchema = z.object({
   token: z.string().trim().min(20).max(200),
 });
 
+/** The query string of an unsubscribe link (lib/email/unsubscribe.ts). */
+export const unsubscribeQuerySchema = z.object({
+  u: z.string().regex(/^[a-f0-9]{24}$/i),
+  t: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+});
+
+/** The seller's own email settings. One switch today. */
+export const emailPreferencesSchema = z.object({
+  setupTips: z.boolean(),
+}).strict();
+
 /** A chat message. Plain text; the service strips any HTML on write. */
 export const chatMessageSchema = z.object({
   body: z.string().trim().min(1, 'Write a message first').max(4000),

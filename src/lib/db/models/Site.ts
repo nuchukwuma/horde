@@ -87,6 +87,8 @@ export interface SiteAttributes extends Timestamps {
    * explains why, and builds the links for rendering.
    */
   socials: Record<string, string>;
+  /** Which setup tips have gone to the owner (lib/email/nudges.ts). Each is sent once. */
+  nudgesSent?: { noProducts?: Date | null; noPayout?: Date | null };
   subscription: SiteSubscription;
   /** Separate apps the seller has connected. See lib/integrations/. */
   integrations?: {
@@ -171,6 +173,10 @@ const siteSchema = new Schema<SiteAttributes>(
         termsVersion: { type: String, default: null },
         stockSync: { type: Boolean, default: false },
       },
+    },
+    nudgesSent: {
+      noProducts: { type: Date, default: null },
+      noPayout: { type: Date, default: null },
     },
     subscription: {
       status: {

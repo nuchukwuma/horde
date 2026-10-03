@@ -18,6 +18,8 @@ import { countOrdersToSend } from '@/lib/orders/sellerOrders';
 import { getPublishedDesign } from '@/lib/design/published';
 import SiteSections from '@/components/dashboard/SiteSections';
 import { Membership } from '@/lib/db/models/Membership';
+import SetupTipsSwitch from '@/components/dashboard/SetupTipsSwitch';
+import { nudgesEnabled } from '@/lib/email/nudges';
 
 /**
  * Seller dashboard.
@@ -141,6 +143,8 @@ export default async function DashboardPage({ params }) {
                 </li>
               ))}
             </ol>
+            {/* Only while tips can actually be sent: a switch for emails that never come is noise. */}
+            {nudgesEnabled() ? <SetupTipsSwitch initial={!session.user.nudgeOptOutAt} /> : null}
           </section>
         ) : null}
 

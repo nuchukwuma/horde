@@ -19,9 +19,10 @@ import { runWithoutTenantScope } from '../tenant/context';
 import { assertEmailConfigured, sendEmail } from '../email/transport';
 import { appOrigin, siteOrigin } from '../seo/meta';
 import { formatKobo } from '../money/kobo';
+import { newOrderSellerEmail, orderReceiptEmail } from '../email/templates';
 
 function itemLines(order: OrderAttributes): string[] {
-  return order.items.map((item) => `  ${item.quantity} × ${item.title} — ${formatKobo(item.lineTotalKobo)}`);
+  return order.items.map((item) => `${item.quantity} × ${item.title} — ${formatKobo(item.lineTotalKobo)}`);
 }
 
 export async function notifyOrderPaid(order: OrderAttributes): Promise<void> {
@@ -40,21 +41,16 @@ export async function notifyOrderPaid(order: OrderAttributes): Promise<void> {
       sends.push(
         sendEmail({
           to: owner.email,
-          subject: `New order ${order.orderNumber} — ${total}`,
-          text: [
-            `Hi ${owner.name},`,
-            '',
-            `${order.customerName || order.customerEmail} just paid ${total} at ${site.name}:`,
-            '',
-            ...itemLines(order),
-            '',
-            order.delivery?.method === 'pickup'
-              ? 'They will collect it (or nothing needs delivering).'
-              : 'Their phone number and delivery address are on the order:',
-            `${appOrigin()}/dashboard/${String(site._id)}/orders/${String(order._id)}`,
-            '',
-            'Paystack settles your share to your bank account directly.',
-          ].join('\n'),
+          ...newOrderSellerEmail({
+            name: owner.name,
+            storeName: site.name,
+            orderNumber: order.orderNumber,
+            buyer: order.customerName || order.customerEmail,
+            total,
+            itemLines: itemLines(order),
+            pickup: order.delivery?.method === 'pickup',
+            orderUrl: `${appOrigin()}/dashboard/${String(site._id)}/orders/${String(order._id)}`,
+          }),
         }),
       );
     }
@@ -62,21 +58,20 @@ export async function notifyOrderPaid(order: OrderAttributes): Promise<void> {
     sends.push(
       sendEmail({
         to: order.customerEmail,
-        subject: `Your order from ${site.name} (${order.orderNumber})`,
-        text: [
-          `Hi ${order.customerName || 'there'},`,
-          '',
-          `Thank you — ${site.name} has your payment of ${total}.`,
-          '',
-          ...itemLines(order),
-          '',
-          order.delivery?.method === 'delivery'
-            ? `${site.name} will contact you about delivery to ${order.delivery.city}, ${order.delivery.state}.`
-            : `${site.name} will be in touch about collecting your order.`,
-          '',
-          `Your receipt: ${siteOrigin(site)}/checkout/complete?reference=${order.paystack?.reference ?? ''}`,
-          `Questions? Message ${site.name}: ${siteOrigin(site)}/account/messages`,
-        ].join('\n'),
+        fromName: site.name,
+        ...orderReceiptEmail({
+          customerName: order.customerName,
+          storeName: site.name,
+          orderNumber: order.orderNumber,
+          total,
+          itemLines: itemLines(order),
+          deliveryLine:
+            order.delivery?.method === 'delivery'
+              ? `${site.name} will contact you about delivery to ${order.delivery.city}, ${order.delivery.state}.`
+              : `${site.name} will be in touch about collecting your order.`,
+          receiptUrl: `${siteOrigin(site)}/checkout/complete?reference=${encodeURIComponent(order.paystack?.reference ?? '')}`,
+          messagesUrl: `${siteOrigin(site)}/account/messages`,
+        }),
       }),
     );
 

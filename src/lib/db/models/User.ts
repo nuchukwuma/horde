@@ -26,6 +26,12 @@ export interface UserAttributes extends Timestamps {
   termsAcceptedVersion?: string | null;
   termsAcceptedAt?: Date | null;
   emailVerifiedAt?: Date | null;
+  /** When the one "you haven't confirmed your email" reminder went (lib/email/reminders.ts). */
+  verificationReminderSentAt?: Date | null;
+  /** Set when they turn off setup tips (lib/email/nudges.ts). Never cleared by us. */
+  nudgeOptOutAt?: Date | null;
+  /** The last setup tip of any kind, so a seller with three stores still gets one every few days at most. */
+  lastNudgeAt?: Date | null;
   status: UserStatus;
   lastLoginAt?: Date | null;
   failedLoginAttempts: number;
@@ -53,6 +59,9 @@ const userSchema = new Schema<UserAttributes>(
       index: true,
     },
     emailVerifiedAt: { type: Date, default: null },
+    verificationReminderSentAt: { type: Date, default: null },
+    nudgeOptOutAt: { type: Date, default: null },
+    lastNudgeAt: { type: Date, default: null },
     termsAcceptedVersion: { type: String, default: null },
     termsAcceptedAt: { type: Date, default: null },
     status: {

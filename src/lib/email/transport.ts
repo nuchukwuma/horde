@@ -28,6 +28,14 @@ export interface EmailMessage {
   /** Plain text. Every message here is transactional and short. */
   text: string;
   html?: string;
+  /**
+   * Display name for the From header, e.g. a store's own name on its emails
+   * to shoppers. The address is always EMAIL_FROM's; only the name changes,
+   * and it is cleaned by `fromWithName` because it is seller-typed.
+   */
+  fromName?: string;
+  /** Extra headers. Today only List-Unsubscribe and List-Unsubscribe-Post. */
+  headers?: Record<string, string>;
 }
 
 export type TransportName = 'resend' | 'log';
@@ -59,6 +67,46 @@ export function emailFrom(env: Record<string, string | undefined> = process.env)
 }
 
 /**
+ * "Ade Fabrics via HordeMart" <onboarding@resend.dev>
+ *
+ * The name is seller-typed and goes into a mail header, so anything that could
+ * end the header or open a new one (CR, LF), break out of the quoted name
+ * (quotes, backslash) or start an address (<, >) is removed rather than
+ * escaped. Long names are cut: some clients show nothing at all when it
+ * overflows.
+ */
+export function fromWithName(
+  name: string,
+  env: Record<string, string | undefined> = process.env,
+): string {
+  const from = emailFrom(env);
+  const address = /<([^<>]+)>\s*$/.exec(from)?.[1] ?? from.trim();
+  const clean = name
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001f\u007f"\\<>]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 60)
+    .trim();
+  if (!clean) return from;
+  return `"${clean} via HordeMart" <${address}>`;
+}
+
+const ALLOWED_HEADERS = new Set(['List-Unsubscribe', 'List-Unsubscribe-Post']);
+
+function cleanHeaders(headers: Record<string, string> | undefined): Record<string, string> | null {
+  if (!headers) return null;
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(headers)) {
+    if (!ALLOWED_HEADERS.has(key)) throw new Error(`Email header ${key} is not allowed`);
+    // A newline in a header value is header injection.
+    if (/[\r\n]/.test(value)) throw new Error('Email header value contains a line break');
+    out[key] = value;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+/**
  * Refuse to continue where not sending would leave someone stuck.
  *
  * Called before issuing a verification link in production. Without it, a
@@ -81,13 +129,17 @@ export async function sendEmail(
   env: Record<string, string | undefined> = process.env,
 ): Promise<SendResult> {
   const transport = emailTransport(env);
+  const headers = cleanHeaders(message.headers);
+  const from = message.fromName ? fromWithName(message.fromName, env) : emailFrom(env);
+  // Subjects carry store names, which sellers type. One line, always.
+  const subject = message.subject.replace(/[\r\n]+/g, ' ').trim();
 
   if (transport === 'log') {
     // Deliberately the whole body: the point is that a developer can click the
     // link. This path never runs in production — assertEmailConfigured throws
     // first — so it cannot leak a real customer's mail into a shared log.
     console.info(
-      `[email:log] to=${message.to} subject=${message.subject}\n${message.text}`,
+      `[email:log] from=${from} to=${message.to} subject=${subject}\n${message.text}`,
     );
     return { transport, id: null };
   }
@@ -101,11 +153,12 @@ export async function sendEmail(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: emailFrom(env),
+        from,
         to: [message.to],
-        subject: message.subject,
+        subject,
         text: message.text,
         ...(message.html ? { html: message.html } : {}),
+        ...(headers ? { headers } : {}),
       }),
     });
   } catch {

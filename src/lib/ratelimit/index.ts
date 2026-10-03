@@ -22,6 +22,7 @@ export type LimitName =
   | 'site:slug-change'
   | 'shop:signup'
   | 'shop:login'
+  | 'shop:verify-email'
   | 'chat:send'
   | 'payout:verify'
   | 'payout:update'
@@ -66,6 +67,8 @@ const LIMITS: Record<LimitName, { tokens: number; window: `${number} ${'s' | 'm'
   // signup (no site is created) but it still writes a row and burns a hash.
   'shop:signup': { tokens: 10, window: '1 h' },
   'shop:login': { tokens: 10, window: '10 m' },
+  // Same reasoning as auth:verify-email: mail to one shopper's inbox.
+  'shop:verify-email': { tokens: 6, window: '1 h' },
   // Generous: this is a conversation, and a limit that interrupts one pushes
   // both parties to WhatsApp, where we can see nothing at all.
   'chat:send': { tokens: 60, window: '10 m' },
