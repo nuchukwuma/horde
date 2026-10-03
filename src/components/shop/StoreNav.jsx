@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { Children, useEffect, useId, useRef, useState } from 'react';
 
 /**
  * The store's main menu. On a wide screen the links sit in the header; on a
@@ -39,6 +39,9 @@ export default function StoreNav({ children }) {
       wide.removeEventListener('change', onWide);
     };
   }, [open]);
+
+  // A site with no sections switched on has nothing to fold away.
+  if (Children.toArray(children).length === 0) return null;
 
   return (
     <>

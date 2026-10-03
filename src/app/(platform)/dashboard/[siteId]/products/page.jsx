@@ -31,7 +31,8 @@ export default async function ProductsPage({ params, searchParams }) {
   const suggestMrMouse = shouldSuggestMrMouse({
     storeOn,
     productCount: products.length,
-    connected: mrmouseState(site).connected,
+    // Paused for new terms still counts: they need "reconnect", not "try it".
+    connected: mrmouseState(site).connected || mrmouseState(site).termsOutdated,
     snoozed: Boolean((await cookies()).get(PROMO_COOKIE)?.value),
   });
 
