@@ -6,6 +6,10 @@ import { isModuleEnabled } from '@/lib/content/modules';
 import { siteOrigin } from '@/lib/seo/meta';
 import { formatNaira } from '@/lib/ui/format';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import { cookies } from 'next/headers';
+import MrMousePromo from '@/components/dashboard/MrMousePromo';
+import { PROMO_COOKIE, shouldSuggestMrMouse } from '@/lib/integrations/mrmousePromo';
+import { mrmouseState } from '@/lib/integrations/mrmouseService';
 
 /**
  * The seller's catalogue: what is for sale, what is hidden, what is running
@@ -24,6 +28,12 @@ export default async function ProductsPage({ params, searchParams }) {
   const limit = limitsFor(site).products;
   const storeOn = isModuleEnabled(site, 'store');
   const storeUrl = siteOrigin(site);
+  const suggestMrMouse = shouldSuggestMrMouse({
+    storeOn,
+    productCount: products.length,
+    connected: mrmouseState(site).connected,
+    snoozed: Boolean((await cookies()).get(PROMO_COOKIE)?.value),
+  });
 
   return (
     <div className="shell">
@@ -47,6 +57,8 @@ export default async function ProductsPage({ params, searchParams }) {
             <span>Saved “{saved.slice(0, 120)}”.</span>
           </div>
         ) : null}
+
+        {suggestMrMouse ? <MrMousePromo siteId={siteId} variant="tip" /> : null}
 
         {!storeOn ? (
           <div className="alert alert--warning" style={{ marginBottom: 16 }}>

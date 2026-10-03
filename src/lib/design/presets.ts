@@ -33,6 +33,8 @@ export const PRESET_THEMES: Record<PresetId, Theme> = {
     logoDark: null,
     logoSize: 'md',
     showName: true,
+    imageShape: 'portrait',
+    imageFit: 'cover',
   },
   food: {
     preset: 'food',
@@ -53,6 +55,8 @@ export const PRESET_THEMES: Record<PresetId, Theme> = {
     logoDark: null,
     logoSize: 'md',
     showName: true,
+    imageShape: 'square',
+    imageFit: 'cover',
   },
   electronics: {
     preset: 'electronics',
@@ -73,6 +77,8 @@ export const PRESET_THEMES: Record<PresetId, Theme> = {
     logoDark: null,
     logoSize: 'md',
     showName: true,
+    imageShape: 'square',
+    imageFit: 'contain',
   },
 };
 

@@ -82,7 +82,6 @@ export function fromWithName(
   const from = emailFrom(env);
   const address = /<([^<>]+)>\s*$/.exec(from)?.[1] ?? from.trim();
   const clean = name
-    // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u001f\u007f"\\<>]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()

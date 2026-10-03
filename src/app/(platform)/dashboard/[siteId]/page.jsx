@@ -20,6 +20,10 @@ import SiteSections from '@/components/dashboard/SiteSections';
 import { Membership } from '@/lib/db/models/Membership';
 import SetupTipsSwitch from '@/components/dashboard/SetupTipsSwitch';
 import { nudgesEnabled } from '@/lib/email/nudges';
+import MrMousePromo from '@/components/dashboard/MrMousePromo';
+import { PROMO_COOKIE, shouldSuggestMrMouse } from '@/lib/integrations/mrmousePromo';
+import { mrmouseState } from '@/lib/integrations/mrmouseService';
+import { mrmouseConfig } from '@/lib/integrations/mrmouse';
 
 /**
  * Seller dashboard.
@@ -47,7 +51,8 @@ export default async function DashboardPage({ params }) {
   const { siteId } = await params;
   await ensureDatabase();
 
-  const token = (await cookies()).get(sessionCookieName('platform'))?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(sessionCookieName('platform'))?.value;
   const session = await validateSessionToken(token, 'platform');
   if (!session) redirect('/login');
   redirectIfTermsOutdated(session.user, `/dashboard/${siteId}`);
@@ -84,6 +89,14 @@ export default async function DashboardPage({ params }) {
   const remaining = steps.filter((step) => !step.done).length;
 
   const gate = site.canAcceptPayments();
+
+  const suggestMrMouse = shouldSuggestMrMouse({
+    storeOn: Boolean(site.modules.store),
+    productCount,
+    connected: mrmouseState(site).connected,
+    snoozed: Boolean(cookieStore.get(PROMO_COOKIE)?.value),
+  });
+  const mm = mrmouseConfig();
 
   // One source for the public address. The nav link previously hardcoded
   // https:// and re-derived the host, which pointed at a dead URL in dev and
@@ -171,6 +184,12 @@ export default async function DashboardPage({ params }) {
                 Add bank details
               </a>
             ) : null}
+          </div>
+        ) : null}
+
+        {suggestMrMouse ? (
+          <div style={{ marginBottom: 20 }}>
+            <MrMousePromo siteId={siteId} androidUrl={mm.androidUrl} iosUrl={mm.iosUrl} />
           </div>
         ) : null}
 

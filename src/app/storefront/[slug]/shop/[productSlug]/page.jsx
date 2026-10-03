@@ -94,7 +94,7 @@ export default async function ProductPage({ params }) {
 
       <article className="product">
         <div className="product__gallery">
-          <div className="product__media">
+          <div className="product__media shop-media">
             {photo ? (
               <StoreImage image={photo} alt={photo.alt ?? product.title} sizes={IMAGE_SIZES.productMain} priority fallbackWidth={800} />
             ) : (

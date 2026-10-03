@@ -34,6 +34,22 @@ export default async function MrMousePage({ params }) {
           Inventory and more for your shop, on your phone or in your browser. MrMouse is a separate app with its own
           account and subscription — it works alongside your HordeMart store.
         </p>
+        {!mrmouseState(site).connected ? (
+          <ul className="mm-why" aria-label="What MrMouse does for your shop">
+            <li>
+              <strong>Stock that stays right</strong>
+              <span>Store sales come off your MrMouse stock automatically, and in-person or WhatsApp sales come off here.</span>
+            </li>
+            <li>
+              <strong>Your books, done as you go</strong>
+              <span>Money in, money out, profit and invoices — without a bookkeeper.</span>
+            </li>
+            <li>
+              <strong>Made for Nigerian network</strong>
+              <span>Record offline on your phone; it syncs when you’re back online.</span>
+            </li>
+          </ul>
+        ) : null}
         <MrMouseCard
           siteId={siteId}
           isOwner={isOwner}

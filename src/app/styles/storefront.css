@@ -77,30 +77,71 @@
   display: none;
 }
 
+/* The menu button exists for phones only. */
+.store-menu-btn {
+  display: none;
+}
+
 @media (max-width: 560px) {
-  /* Phones: brand and the account/basket buttons share the first row, the
-     menu gets a row of its own. Squeezed onto one row, the menu scrolled
-     sideways with no visible scrollbar, so "Journal" sat half off-screen and
-     the store's name shrank to "Ade …". */
-  .store-head .masthead__inner {
-    flex-wrap: wrap;
-    row-gap: 0;
-    padding-top: 8px;
-  }
+  /* Phones: brand, account, basket and the menu button share one row; the
+     links fold behind the button and open as a panel under the header. */
   .store-head .store-brand {
     flex: 1 1 0;
   }
-  .store-nav {
-    order: 3;
-    flex: 1 0 100%;
-    margin-left: -8px;
-    padding-bottom: 6px;
+  .store-menu-btn {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    order: 5;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 999px;
+    border: 1.5px solid var(--border-strong);
+    background: var(--surface-1);
+    color: var(--text-primary);
+    cursor: pointer;
   }
-  .store-nav a:not(.store-nav__account) {
-    padding-inline: 8px;
+  .store-menu-btn[aria-expanded='true'] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
   }
-  .store-nav__account {
+  .store-head .store-nav {
     display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 6px 0 10px;
+    overflow: visible;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    background: var(--surface-1);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 16px 24px -16px rgb(0 0 0 / 35%);
+  }
+  .store-head .store-nav--open {
+    display: flex;
+  }
+  .store-head .store-nav a {
+    display: flex;
+    align-items: center;
+    min-height: 52px;
+    padding: 0 20px;
+    font-size: 17px;
+    font-weight: 600;
+    border-radius: 0;
+  }
+  .store-head .store-nav a + a {
+    border-top: 1px solid var(--border);
+  }
+  /* The header icon covers the account link on the first row; the menu keeps
+     it too, written out, because an unlabeled person icon is easy to miss. */
+  .store-head .store-nav__account {
+    display: flex;
   }
 }
 
@@ -573,6 +614,60 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* ---------- Product photo frames (theme.imageShape, theme.imageFit) ----------
+   Only product photos carry .shop-media; portfolio images keep their own
+   frames. Portrait (4:5) is the default every store had before this setting. */
+
+.shop-media {
+  aspect-ratio: 4 / 5;
+}
+
+.storefront[data-image-shape='square'] .shop-media,
+.storefront[data-image-shape='circle'] .shop-media {
+  aspect-ratio: 1 / 1;
+}
+
+.storefront[data-image-shape='landscape'] .shop-media {
+  aspect-ratio: 4 / 3;
+}
+
+/* A doorway arch: round top, the store's own corners at the bottom. */
+.storefront[data-image-shape='arch'] .shop-media {
+  border-radius: 999px 999px var(--radius) var(--radius);
+}
+
+.storefront[data-image-shape='circle'] .shop-media {
+  border-radius: 50%;
+}
+
+/* In an arch or a circle the top corners are cut away, so the price-cut and
+   sold-out flags move to where there is room: centred, top and bottom. */
+.storefront:is([data-image-shape='arch'], [data-image-shape='circle']) .product-card__flag {
+  top: auto;
+  bottom: 9%;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.storefront:is([data-image-shape='arch'], [data-image-shape='circle']) .product-card__flag--out {
+  top: 9%;
+  bottom: auto;
+}
+
+.storefront[data-image-shape='circle'] .product-card__peek {
+  display: none;
+}
+
+/* "Show the whole photo": for product shots on a plain background, where
+   cropping would cut off the product. Generated art still fills the frame. */
+.storefront[data-image-fit='contain'] .shop-media img {
+  object-fit: contain;
+  padding: 6%;
+  background: var(--surface-1);
 }
 
 .product__thumbs {

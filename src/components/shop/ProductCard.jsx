@@ -19,7 +19,7 @@ export default function ProductCard({ product, index = 0 }) {
 
   return (
     <a className="product-card" href={`/shop/${product.slug}`} style={{ '--delay': `${Math.min(index, 8) * 50}ms` }}>
-      <div className="product-card__media">
+      <div className="product-card__media shop-media">
         {photo ? (
           <StoreImage image={photo} alt={photo.alt ?? product.title} sizes={IMAGE_SIZES.productCard} fallbackWidth={480} />
         ) : (

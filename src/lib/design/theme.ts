@@ -69,6 +69,13 @@ export function contrastProblems(colors: ThemeColors) {
   });
 }
 
+/**
+ * Frames for product photos (storefront.css, `data-image-shape`). Portrait is
+ * what every store had before this setting existed, so it is the default.
+ */
+export const IMAGE_SHAPES = ['portrait', 'square', 'landscape', 'arch', 'circle'] as const;
+export type ImageShape = (typeof IMAGE_SHAPES)[number];
+
 export const themeSchema = z
   .object({
     preset: z.enum(['fashion', 'food', 'electronics', 'custom']),
@@ -89,6 +96,10 @@ export const themeSchema = z
     logoSize: z.enum(['sm', 'md', 'lg']).default('md'),
     /** Off when the logo already spells out the store's name. */
     showName: z.boolean().default(true),
+    /** The frame product photos sit in, in grids and on the product page. */
+    imageShape: z.enum(IMAGE_SHAPES).default('portrait'),
+    /** cover: fill the frame, trimming edges. contain: show the whole photo. */
+    imageFit: z.enum(['cover', 'contain']).default('cover'),
   })
   .strict()
   .transform((theme) => ({ ...theme, darkColors: theme.darkColors ?? { ...LOOKS[theme.style].dark } }))
@@ -140,6 +151,8 @@ export function normaliseTheme(raw: unknown): Theme {
     logoDark: stored.logoDark ?? null,
     logoSize: stored.logoSize ?? 'md',
     showName: stored.showName ?? true,
+    imageShape: stored.imageShape ?? 'portrait',
+    imageFit: stored.imageFit ?? 'cover',
   };
 }
 
@@ -195,6 +208,8 @@ export function themeAttributes(theme: Theme): Record<string, string> {
     'data-mode': theme.mode ?? 'light',
     'data-buttons': theme.buttonStyle,
     'data-logo-size': theme.logoSize ?? 'md',
+    'data-image-shape': theme.imageShape ?? 'portrait',
+    'data-image-fit': theme.imageFit ?? 'cover',
   };
 }
 
