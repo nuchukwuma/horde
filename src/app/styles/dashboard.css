@@ -610,9 +610,15 @@
   display: none;
 }
 
-@media (min-width: 900px) {
+/* Tablets and up: right-aligned, wrapping to a second line when crowded.
+   Right-aligning a row that also scrolls cut its START off where it could
+   not be scrolled to — "Overview" showed as "verview" at 1280px. */
+@media (min-width: 721px) {
   .dash-nav {
     justify-content: flex-end;
+    flex-wrap: wrap;
+    overflow-x: visible;
+    row-gap: 2px;
   }
 }
 

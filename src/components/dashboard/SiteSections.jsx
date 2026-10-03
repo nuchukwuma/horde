@@ -19,6 +19,8 @@ export default function SiteSections({ siteId, initial }) {
   const [error, setError] = useState(null);
 
   async function toggle(key, on) {
+    const before = modules;
+    setModules({ ...modules, [key]: on }); // tick at once; undone below if it fails
     setBusy(key);
     setError(null);
     try {
@@ -33,6 +35,7 @@ export default function SiteSections({ siteId, initial }) {
       // The menu above shows "Blog & work" only when one is on.
       window.location.reload();
     } catch (problem) {
+      setModules(before);
       setError(problem.message);
       setBusy(null);
     }

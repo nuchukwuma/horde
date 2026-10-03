@@ -15,6 +15,8 @@ import { z } from 'zod';
 import { requireSession } from '@/lib/http/context';
 import { ok, toErrorResponse } from '@/lib/http/respond';
 import { requireSiteAccess } from '@/lib/auth/guards';
+import { Membership } from '@/lib/db/models/Membership';
+import { ForbiddenError } from '@/lib/errors';
 import { Site } from '@/lib/db/models/Site';
 import { assertModuleAllowedByPlan } from '@/lib/content/modules';
 import { runWithoutTenantScope } from '@/lib/tenant/context';
@@ -32,6 +34,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const { siteId } = await params;
     const session = await requireSession(request, 'platform');
     const access = await requireSiteAccess(session, siteId, ['owner']);
+    // The real owner: a platform admin passes requireSiteAccess on every
+    // store, but what a store's public site shows is its owner's decision.
+    const owner = await Membership.exists({ userId: session.user._id, siteId: access.site._id, role: 'owner' });
+    if (!owner) {
+      throw new ForbiddenError('Not the store owner', 'Only the store owner can switch sections of the site on or off.');
+    }
     const change = modulesSchema.parse(await request.json());
 
     const set: Record<string, boolean> = {};
