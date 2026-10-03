@@ -259,17 +259,34 @@ svg {
   }
 }
 
+/* The call to action's short label (PlatformHeader), for the narrowest phones. */
+.cta-short {
+  display: none;
+}
+
 @media (max-width: 400px) {
+  /* Tightened a little so the light/dark switch fits beside Sign in and
+     the call to action on a 360px phone. */
+  .masthead__inner {
+    gap: 8px;
+  }
   .brand {
-    font-size: 15px;
+    font-size: 14.5px;
+    gap: 6px;
   }
   .nav .btn {
-    padding: 6px 10px;
+    padding: 6px 9px;
     font-size: 13px;
     min-height: 38px;
   }
   .nav a {
-    padding-inline: 7px;
+    padding-inline: 6px;
+  }
+  .cta-long {
+    display: none;
+  }
+  .cta-short {
+    display: inline;
   }
 }
 
@@ -1123,4 +1140,75 @@ table.data th.num {
   color: inherit;
   text-decoration: underline;
   cursor: pointer;
+}
+
+/* ---------- Light / dark switch (components/platform/ColorSchemeSwitch) ----------
+   Three icon buttons in one pill. Each is 32px drawn, with an invisible
+   44px target around it, so the pill stays compact in a crowded header. */
+
+.scheme-switch {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  margin-inline: 4px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-1);
+}
+
+.scheme-switch__option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.scheme-switch__option::after {
+  content: '';
+  position: absolute;
+  inset: -6px -2px;
+}
+
+.scheme-switch__option:hover {
+  color: var(--text-primary);
+}
+
+.scheme-switch__option[aria-pressed='true'] {
+  background: var(--surface-2);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+/* Narrow phones: just the current choice, which steps to the next on tap
+   (ColorSchemeSwitch). The header was already full at 360px. */
+@media (max-width: 560px) {
+  .scheme-switch {
+    padding: 0;
+    margin-inline: 0;
+    border: 0;
+    background: transparent;
+  }
+  .scheme-switch__option[aria-pressed='false'] {
+    display: none;
+  }
+  .scheme-switch__option[aria-pressed='true'] {
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-secondary);
+  }
+}
+
+@media (max-width: 400px) {
+  .scheme-switch__option {
+    width: 30px;
+  }
 }

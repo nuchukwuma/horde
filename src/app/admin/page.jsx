@@ -8,6 +8,7 @@ import { adminOverview, flaggedTransactions, storesWithVolume } from '@/lib/dash
 import { siteOrigin } from '@/lib/seo/meta';
 import { formatDateTime, formatNaira } from '@/lib/ui/format';
 import SignOutButton from '@/components/auth/SignOutButton';
+import ColorSchemeSwitch from '@/components/platform/ColorSchemeSwitch';
 import SiteModeration from '@/components/admin/SiteModeration';
 
 /**
@@ -57,6 +58,7 @@ export default async function AdminPage() {
             <a href="#flagged">Needs a look{flagged.length ? ` (${flagged.length})` : ''}</a>
             <a href="/dashboard">My dashboard</a>
           </nav>
+          <ColorSchemeSwitch />
           <SignOutButton endpoint="/api/auth/logout" redirectTo="/login" />
         </div>
       </header>
